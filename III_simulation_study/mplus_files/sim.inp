@@ -1,0 +1,52 @@
+TITLE:
+model;
+DATA:
+FILE = "mplus_files/sim_ac30da776763ab3e6a912b705d56ca4f.dat";
+ 
+VARIABLE:
+NAMES = subject_ID item_ID y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 z1 z2 z3 z4 z5 z6 z7 z8 z9
+     z10 z11 z12 z13 z14 z15 z16 z17 z18 z19 z20 z21 z22 z23 z24 z25 z26 z27 z28 z29
+     z30 z31 z32 z33 z34 z35 z36 z37 z38 z39 z40 z41 z42 z43 z44 z45 z46 z47 z48 z49
+     z50 z51 z52 z53 z54 z55 z56 z57 z58 z59 z60 z61 z62 z63 z64 z65 z66 z67 z68 z69
+     z70 z71 z72 z73 z74 z75 z76 z77 z78 z79 z80; 
+ MISSING=.;
+ 
+  USEVARIABLES = item_ID subject_ID y1-y10 z1-z80;
+  CLUSTER = item_ID subject_ID;
+  BETWEEN = (item_ID) z1-z80;
+ANALYSIS:
+
+  TYPE = CROSSCLASSIFIED RANDOM;
+  ESTIMATOR = BAYES;
+  FBITERATIONS = 500;
+  ALGORITHM = GIBBS(RW);
+  PROCESSORS = 11;
+MODEL:
+
+  
+  %within% 
+  y1-y10;
+  
+  %between subject_ID% 
+  y1-y10; [y1-y10@0];
+  
+  %between item_ID% 
+  y1-y10; [y1-y10];  
+
+  y1  WITH  z1- z8;
+  y2  WITH  z9-z16;
+  y3  WITH z17-z24;
+  y4  WITH z25-z32;
+  y5  WITH z33-z40;
+  y6  WITH z41-z48;
+  y7  WITH z49-z56;
+  y8  WITH z57-z64;
+  y9  WITH z65-z72;
+  y10 WITH z73-z80;
+  
+  
+OUTPUT:
+standardized cinterval(hpd)
+SAVEDATA:
+FILE IS fscores.dat;
+              Save = fscores(50 10);

@@ -1,0 +1,90 @@
+---
+title: '"lyrics checker"'
+author: "Andrew M. Demetriou"
+date: "3/24/2022"
+---
+
+```{r}
+library("here")
+library("data.table")
+library("dplyr")
+library("knitr")
+library("searcher")
+```
+
+#AIM 
+The purpose of this notebook is to help check the accuracy of lyrics. Lyrics are drawn from the primary dataset, and then queried on google. 
+
+This chunk creates the dataframes to be used for searching. Note that the raw lyrics file is not available. 
+
+```{r}
+# path with data
+data_file_path <- here("IV_survey_builder", "primary_data_")
+
+# note: the raw lyrics file isn't available in the repo
+file_name <- "not_simple_medium_alpha_2021_full_2.csv"
+selection_file <- "not_simple_medium_alpha_2021_full_10w (2).csv"
+
+# lyric dataframes:
+lyrics_dt <- fread(here(data_file_path, file_name)) %>% select(mxm_id, lyrics_body)
+lyrics_ids_dt <- fread(here(data_file_path, file_name)) %>% select(artist_name, lyrics_name)
+
+# manual selection process
+selected_dt <- fread(here(data_file_path, selection_file)) %>% 
+  select(mxm_id, Keep) %>% 
+  # these are the four identifiers from the lyric rating process
+  filter(Keep == "O" | Keep == "o" | Keep == "m" | Keep == "M" | Keep == "a" | Keep == "A")
+selected_dt <- merge(selected_dt, lyrics_dt, be=mxm_id)
+```
+
+This chunk takes a row number from the dataset and queries the song on google:
+
+```{r}
+#enter row number
+row_number <- 64
+
+# artist name and lyrics name is concatenated into a string
+query <- paste(lyrics_ids_dt[[eval(row_number), 1]], lyrics_ids_dt[[eval(row_number), 2]], "lyrics")
+
+# use search string on google
+search_google(query)
+
+# print out lyrics body from the row to check against versions on google
+kable(lyrics_dt[eval(row_number),])
+```
+
+To test out notebook functionality when raw lyrics are not available:
+
+```{r}
+# create dummy dataframes to use for searching:
+
+# df with artist and song names
+test_ids_df <- data.frame(
+  artist_name = "Tool", 
+  lyrics_name = "Lateralus")
+
+# use lorem ipsum in place of lyrics
+test_df <- data.frame(
+  mxm_id = 123456, 
+  lyrics_body =
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+)
+```
+
+```{r}
+# enter row number
+row_number <- 1
+
+# artist name and lyrics name is concatenated into a string
+query <- paste(
+  test_ids_df[[eval(row_number), 1]],
+  test_ids_df[[eval(row_number), 2]], 
+  "lyrics")
+
+# use search string on google
+search_google(query)
+
+# print out lyrics body from the row to check against versions on google
+kable(test_df[eval(row_number),])
+```
+

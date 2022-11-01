@@ -1,0 +1,66 @@
+---
+title: "item analysis"
+author: "andrew demetriou"
+date: "07/12/2021"
+---
+
+
+#AIM
+
+This notebook examines the standard deviation of the participant intercepts. 
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('tidyverse')       # data manipulation
+library('ggplot2')         # visualization
+library("broom.mixed")     # data wrangling
+library("broom")           # data wrangling
+library("lme4")            # estimating random effects
+```
+
+```{r}
+# path with the actual data
+data_file_path <- here("II_rater_pilot", "response_data")
+
+# file name as a string
+file_name <- "annotation_number_estimation _2.2_November 28, 2021_07.51.csv"
+
+# organize qualtrics output
+source(here("II_rater_pilot", "scripts", "data_file_re-shape_1.0.R"))
+
+# read in qualtrics data file
+responses_dt <- fread(here(data_file_path, file_name)) %>%
+  data_file_reshape(., file_name)
+
+rm(data_file_reshape, file_name, data_file_path)
+```
+
+```{r}
+source(here("0_functions", "descriptives_function_1.6.R"))
+
+# create 'subject_ID' column
+responses_dt$subject_ID <- responses_dt$participant_ID
+
+# rename columns
+colnames(responses_dt)[3:12] <- c("y_achievement", "y_benevolence", "y_conformity", "y_hedonism", "y_power", "y_security","y_self_direction", "y_stimulation", "y_tradition","y_universalism")
+           
+# create random effects dataframe
+random_effect_sd_dt <- assemble_random_effect_sd_dt(responses_dt)
+```
+
+```{r}
+participant_random_effect_sd_plot <- random_effect_sd_dt %>%
+  ggplot(aes(x=model, y=subject_ID, color=model)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=subject_ID_lower, ymax=subject_ID_higher)) +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45)) +
+  #scale_y_continuous(limits = c(1, 10), n.breaks = 10) +
+  ggtitle("participant random effect SD by value")
+
+participant_random_effect_sd_plot
+
+participant_random_effect_sd_plot |>
+  saveRDS(here("II_rater_pilot", "intermediary_data", "participant_random_effect_sd_plot.RDS"))
+```
+

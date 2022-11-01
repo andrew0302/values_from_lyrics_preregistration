@@ -1,0 +1,68 @@
+"explanations","block_order","item_order","class","type","optional","name","showif","label","choice1","choice2","choice3","choice4","choice5","choice6","choice7","choice8","choice9","choice10","choice11","choice12","value"
+"prolific ID block","",,"","get code","","code","","","","","",,,,,,,,,,""
+"stimuli sampling","",,"","calculate","","random_vector","","","","","",,,,,,,,,,"sample(size = 2, 1:7)"
+"consent block","",,"","note","","consent_form","","This page is designed to provide you with information about this study to help you to decide whether you wish to participate. 
+
+In this study we will ask you to answer questions about your preferences for song lyrics. By clicking """"Agree"""" below, you certify that you have read, understood, and agree to the following:
+
+1. Your participation is completely voluntary, and you may end your participation at any time. 
+ 
+
+2. You will be asked to respond to questions about your preferences for song lyrics, and related behaviors. 
+
+
+3. The team of researchers currently working on this study will have access to this data. In addition, journal article reviewers and researchers from accredited institutions may have access to de-identified versions of this data set. In the event that this occurs, no personally identifying information will be included with the transfered dataset. 
+ 
+
+4. If desired, you will receive a digital copy of your data. You may also instruct this research team to purge your data, all or in part, at any time. 
+ 
+
+5. Excerpts of the data collected in this study may appear in scientific research papers, conference presentations, public presentations, and media presentations. In the event that this occurs, no personally identifying information will be included. 
+ 
+
+6. Anonymized data will be kept and maintained confidentially by researcher Andrew M. Demetriou at Delft University of Technology. Researchers working with Andrew M. Demetriou will also have access to the data. Upon conclusion of the study, de-identified data will be maintained on the Open Science Framework (osf.io). 
+
+7. Details regarding the purposes of this study will be revealed in a debriefing description on-screen at the conclusion of this survey, so as not to bias your responses.
+ 
+
+8. Additional questions you may have may be directed to Andrew M. Demetriou: a.m.demetriou@tudelft.nl.  
+
+
+We anticipate that your participation in this study will require about 5 minutes. 
+","","","",,,,,,,,,,""
+"consent block","",,"square square80","mc_button","","consent","","Please indicate:","agree","disagree","",,,,,,,,,,""
+"","",,"","submit","","submit_consent","","Continue:","","","",,,,,,,,,,""
+"manual prolific","",,"","text","","prolific_ID","","Please type in your Prolific ID:","","","",,,,,,,,,,""
+"manual prolific","",,"","submit","","submit_prolific_ID","","Continue:","","","",,,,,,,,,,""
+"survey instructions","",,"","note","","survey_instructions_1","","### __Instructions:__ 
+#### On the following page, you'll be asked how much you agree with a number of statements. 
+#### The statements will describe behaviors associated with song lyrics. 
+#### You'll be asked to show how much you agree to the statements by clicking on a bar that looks like this:","","","",,,,,,,,,,""
+"survey instructions","",,"analogue_rating_scale","rating_button 1,20,1","","survey_instructions_test_1","","Click on the grey bar to indicate how much you agree.","strongly agree","strongly disagree","",,,,,,,,,,""
+"survey instructions","",,"","note","","survey_instructions_2","","#### The closer you click to the left, the more you say you agree with the statement; the more you click to the right, the more you disagree with the statement. ","","","",,,,,,,,,,""
+"survey instructions","",,"","submit","","submit_instructions","","Continue:","","","",,,,,,,,,,""
+"lyric prefs instructions","",,"","note","","lyrics_prefs_instructions","","Please indicate the degree to which you agree with the following statements:","","","",,,,,,,,,,""
+"lyric prefs","",,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_1","","I prefer music that contains lyrics, as opposed to music that does not","strongly agree","strongly disagree","",,,,,,,,,,""
+"lyric prefs","",,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_2","","I only pay attention to the lyrics of songs or artists that I like.","strongly agree","strongly disagree","",,,,,,,,,,""
+"lyric prefs","",,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_3","","I always pay attention to the lyrics of a song, if the song has them","strongly agree","strongly disagree","",,,,,,,,,,""
+"lyric prefs","",,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_4","","I enjoy learning about song lyrics and their meaning, for example by reading  blogs and forums or listening to artist interviews","strongly agree","strongly disagree","",,,,,,,,,,""
+"lyric prefs","",,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_5","","If a song has lyrics that I don't like for any reason, I don't listen to it","strongly agree","strongly disagree","",,,,,,,,,,""
+"lyric prefs","",,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_6","","If I am not sure about the lyrics of a song, I search them on the internet","strongly agree","strongly disagree","",,,,,,,,,,""
+"lyric prefs","",,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_7","","I contribute to online resources on lyrics, for example forums, or on platforms where I can contribute lyric transcriptions","strongly agree","strongly disagree","",,,,,,,,,,""
+"lyric prefs","",,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_8","","I memorize the lyrics to the songs I listen to","strongly agree","strongly disagree","",,,,,,,,,,""
+"lyric prefs","",,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_9","","I write my own song lyrics","strongly agree","strongly disagree","",,,,,,,,,,""
+"lyric prefs","",,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_10","","What percentage of your music library do you think contains songs with lyrics? Please make your best guess using the slider below:","&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0%","100%","",,,,,,,,,,""
+"lyric activities","",,"","note","","lyric_activities_instructions","","Can you think of any other activities or indications that someone has an affinity for song lyrics? If so, please enter them here:","","","",,,,,,,,,,""
+"lyric activities","",,"","text","*","lyric_activities_1","","","","","",,,,,,,,,,""
+"lyric activities","",,"","text","*","lyric_activities_2","","","","","",,,,,,,,,,""
+"lyric activities","",,"","text","*","lyric_activities_3","","","","","",,,,,,,,,,""
+"lyric activities","",,"","text","*","lyric_activities_4","","","","","",,,,,,,,,,""
+"lyric activities","",,"","text","*","lyric_activities_5","","","","","",,,,,,,,,,""
+"header end","",,"","submit","","submit_lyrics","","Continue:","","","",,,,,,,,,,""
+"debrief","",,"","note","","debrief","","Thanks for completing the survey! 
+
+This study had two purposes: Firstly, our research group is interested in how individuals perceive and understand song lyrics. We would expect that not everyone is interested in the lyrics of songs. To our knowledge, there isn't a scientifically validated method for measuring a person's general interest in song lyrics. Your responses will assist us in developing a questionnaire to help us measure this. 
+
+In addition, we are learning how to use integrate survey platform called formR with prolific.co. This study is a small pilot that will pave the way for a number of future studies. 
+ 
+Thanks for participating! Please let us know if you have any feedback for us below or email Andrew Demetriou at a.m.demetriou@tudelft.nl. When you're ready, click the arrow below to be re-directed back to Prolific to register your submission. ","","","",,,,,,,,,,""

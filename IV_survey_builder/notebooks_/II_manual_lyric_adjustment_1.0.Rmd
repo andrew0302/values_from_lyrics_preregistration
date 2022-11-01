@@ -1,0 +1,260 @@
+---
+title: "manual_lyric_adjustment"
+author: "andrew demetriou"
+date: "4/21/2022"
+---
+
+#AIM
+
+This notebook details manual changes to the raw lyrics we downloaded from musixmatch. They run in reverse order, with the most recent changes shown first, and earlier changes shown later. 
+
+
+```{r setup}
+library("here")
+library("data.table")
+library("dplyr")
+```
+
+Here we document manual changes to song lyrics based on discussions among the research group, resulting in primary data __version 2_2__. These manual changes include:
+* the minor adjustment of non-English characters, 
+* the removal of time-stamps, 
+* the removal of artist and/or song names, and 
+* the removal of section indications (e.g. 'verse', 'chorus' etc.). 
+
+At this time we found 18 songs that could be manually adjusted for inclusion in our study, denoted by the 'M' indicator in our spreadsheet. 
+
+```{r import_files_2.2}
+# path with data
+data_file_path <- here("IV_survey_builder", "primary_data_")
+lyrics_file    <- "not_simple_medium_alpha_2021_full_2.csv"
+selection_file <- "not_simple_medium_alpha_2021_full_10w (2).csv"
+
+# manual selection process
+selected_dt <- fread(here(data_file_path, selection_file)) %>% 
+  select(mxm_id, Keep) %>% 
+  # these are the four identifiers from the lyric rating process
+  filter(Keep == "M" | Keep == "m")
+
+# make smaller dt with only adjustable songs
+songs <- selected_dt[,1]
+
+# lyrics datasets
+all_lyrics_dt     <- fread(here(data_file_path, lyrics_file)) %>% select(mxm_id, lyrics_body)
+```
+
+We remove artist names from the first song:
+
+```{r first_song_2.2}
+# select first song
+song <- as.character(songs[1,1])
+
+#view complete lyrics
+knitr::kable(all_lyrics_dt[mxm_id %in% song][,2])
+
+# replace characters
+lyrics <- all_lyrics_dt[mxm_id %in% song][, 2] %>%
+          gsub("\\(Feat. P. Diddy\\)", "", .) %>% 
+          gsub("P- ", "", .) %>%
+          gsub("N- ", "", .)
+
+# replace lyrics
+all_lyrics_dt[mxm_id %in% song][, 2] <- lyrics
+```
+
+We remove artist names in the first song:
+
+```{r export_lyrics_2.2}
+primary_data_path <- here("IV_survey_builder", "primary_data_")
+file_name <- paste0(primary_data_path, "/", "not_simple_medium_alpha_2021_full_2_2.csv")
+
+write.csv(all_lyrics_dt, file_name, na="", row.names = FALSE)
+```
+
+Here we document manual changes to song lyrics based on discussions among the research group, resulting in primary data __version 2.1__. These manual changes include:
+* the minor adjustment of non-English characters, 
+* the removal of time-stamps, 
+* the removal of artist and/or song names, and 
+* the removal of section indications (e.g. 'verse', 'chorus' etc.). 
+
+At this time we found 7 songs that could be manually adjusted for inclusion in our study, denoted by the 'A' indicator in our spreadsheet. 
+
+```{r import_files_2.1}
+# path with data
+data_file_path <- here("IV_survey_builder", "primary_data_")
+lyrics_file    <- "not_simple_medium_alpha_2021_full_2.csv"
+selection_file <- "not_simple_medium_alpha_2021_full_10w (2).csv"
+
+# manual selection process
+selected_dt <- fread(here(data_file_path, selection_file)) %>% 
+  select(mxm_id, Keep) %>% 
+  # these are the four identifiers from the lyric rating process
+  filter(Keep == "A" | Keep == "a")
+
+# make smaller dt with only adjustable songs
+songs <- selected_dt[,1]
+
+# lyrics datasets
+all_lyrics_dt     <- fread(here(data_file_path, lyrics_file)) %>% select(mxm_id, lyrics_body)
+```
+
+We replace non-English characters in the first song:
+
+```{r first_song_2.1}
+# select first song
+song <- as.character(songs[1,1])
+
+#view complete lyrics
+knitr::kable(all_lyrics_dt[mxm_id %in% song][,2])
+
+# replace characters
+lyrics <- all_lyrics_dt[mxm_id %in% song][, 2] %>%
+          gsub("æŠ°", "'t", .) %>% 
+          gsub("æŠ¯", "'s", .) %>%
+          gsub("æŠ®", "'r", .)
+
+# replace lyrics
+all_lyrics_dt[mxm_id %in% song][, 2] <- lyrics
+```
+
+We remove artist and song name from the second song:
+
+```{r second_song_2.1}
+# select second song
+song <- as.character(songs[2,1])
+
+#view complete lyrics
+knitr::kable(all_lyrics_dt[mxm_id %in% song][,2])
+
+# replace characters
+lyrics <- all_lyrics_dt[mxm_id %in% song][, 2] %>%
+  gsub("My silent loveisham jones ", "", .)
+
+# replace lyrics
+all_lyrics_dt[mxm_id %in% song][, 2] <- lyrics
+```
+
+We remove song section from the third song:
+
+```{r third_song_2.1}
+#select song
+song <- as.character(songs[3,1])
+
+#view complete lyrics
+knitr::kable(all_lyrics_dt[mxm_id %in% song][,2])
+#or copy this to console:
+print(all_lyrics_dt[mxm_id %in% song][,2])
+
+lyrics <- all_lyrics_dt[mxm_id %in% song][, 2] %>%
+  gsub("\\[Verse\\]", "", .) %>%
+  gsub("\\(Choppa\\)", "", .) %>%
+  gsub("\\(Verse One\\)", "", .)
+
+# replace lyrics
+all_lyrics_dt[mxm_id %in% song][, 2] <- lyrics
+```
+
+We replace artist names from fourth song:
+
+```{r fourth_song_2.1}
+#select song
+song <- as.character(songs[4,1])
+
+#view complete lyrics
+knitr::kable(all_lyrics_dt[mxm_id %in% song][,2])
+#or copy this to console:
+print(all_lyrics_dt[mxm_id %in% song][,2])
+
+lyrics <- all_lyrics_dt[mxm_id %in% song][, 2] %>%
+  gsub("Chad: ", "", .) %>%
+  gsub("Chad and Team: ", "", .) %>%
+  gsub("Ryan: ", "", .) %>%
+  gsub("Chad and Team: ", "", .) %>%
+  gsub("Girls in the Stands: ", "", .) %>%
+  gsub("Ryan and Team: ", "", .) %>%
+  gsub("Ryan, Team and Girls:", "", .) %>%
+  gsub("Team: ", "", .)
+
+# replace lyrics
+all_lyrics_dt[mxm_id %in% song][, 2] <- lyrics
+```
+
+We replace time stamps in the fifth song:
+
+```{r fifth_song_2.1}
+#select song
+song <- as.character(songs[5,1])
+
+#view complete lyrics
+knitr::kable(all_lyrics_dt[mxm_id %in% song][,2])
+#or copy this to console:
+print(all_lyrics_dt[mxm_id %in% song][,2])
+
+lyrics <- all_lyrics_dt[mxm_id %in% song][, 2] %>%
+  gsub("\\[00: 16.31\\]", "", .) %>%
+  gsub("\\[00: 19.24\\]", "", .) %>%
+  gsub("\\[00: 21.99\\]", "", .) %>%
+  gsub("\\[00: 27.72\\]", "", .) %>%
+  gsub("\\[00: 30.41\\]", "", .) %>%
+  gsub("\\[00: 33.21\\]", "", .) %>%
+  gsub("\\[00: 39.40\\]", "", .) %>%
+  gsub("\\[00: 42.20\\]", "", .) %>%
+  gsub("\\[00: 44.89\\]", "", .) %>%
+  gsub("\\[00: 50.63\\]", "", .) %>%
+  gsub("\\[00: 53.43\\]", "", .) %>%
+  gsub("\\[00: 56.24\\]", "", .) %>%
+  gsub("\\[01: 24.08\\]", "", .) %>%
+  gsub("\\[01: 27.00\\]", "", .) %>%
+  gsub("\\[01: 29.57\\]", "", .)
+
+# replace lyrics
+all_lyrics_dt[mxm_id %in% song][, 2] <- lyrics
+```
+
+We remove artist names from the sixth song:
+
+```{r sixth_song_2.1}
+#select song
+song <- as.character(songs[6,1])
+
+#view complete lyrics
+knitr::kable(all_lyrics_dt[mxm_id %in% song][,2])
+#or copy this to console:
+print(all_lyrics_dt[mxm_id %in% song][,2])
+
+lyrics <- all_lyrics_dt[mxm_id %in% song][, 2] %>%
+  gsub("Featuring Joe Stampley", "", .)
+
+# replace lyrics
+all_lyrics_dt[mxm_id %in% song][, 2] <- lyrics
+```
+
+We remove artist names from the seventh song:
+
+```{r seventh_song_2.1}
+#select song
+song <- as.character(songs[7,1])
+
+#view complete lyrics
+knitr::kable(all_lyrics_dt[mxm_id %in% song][,2])
+#or copy this to console:
+print(all_lyrics_dt[mxm_id %in% song][,2])
+
+lyrics <- all_lyrics_dt[mxm_id %in% song][, 2] %>%
+  gsub("\\(Feat. Method Man\\)", "", .) %>%
+  gsub("\\[N-Tyce\\])", "", .) %>%
+  gsub("\\[Chorus: N-Tyce \\(Method Man\\)\\]", "", .)
+
+# replace lyrics
+all_lyrics_dt[mxm_id %in% song][, 2] <- lyrics
+```
+
+We write primary data file version 2.1, which includes the manual adjustments. 
+
+```{r export_lyrics_2.1}
+primary_data_path <- here("IV_survey_builder", "primary_data_")
+file_name <- paste0(primary_data_path, "/", "not_simple_medium_alpha_2021_full_2_1.csv")
+
+write.csv(all_lyrics_dt, file_name, na="", row.names = FALSE)
+```
+
+

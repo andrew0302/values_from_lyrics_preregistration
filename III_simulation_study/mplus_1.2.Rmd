@@ -1,0 +1,693 @@
+---
+title: "simulation study"
+author: "Andrew M. Demetriou"
+date: "27/9/2022"
+---
+
+# AIM:
+
+The aim of this notebook is to specify Mplus models to estimate the parameters of interest in this project, with simulated data.
+
+```{r, include=FALSE}
+library("here")            # file logistics
+library("tidyverse")       # data wrangling 
+library("corrplot")        # visualization
+library("MplusAutomation") # Mplus integration
+library("boot")            # bootstrapping CIs
+
+# ensure this script returns the same results on each run
+# set.seed(42)  # the answer to life, the universe, and everything
+# set.seed(666) # the number of the beast
+# set.seed(667) # the neighbor of the beast
+```
+
+This function simulates multivariate normal data using a correlation matrix from prior research on psychological values, and formats it to conform with the data I expect to collect.
+
+```{r, echo=FALSE}
+#import custom simulation functions:
+source(here("0_functions", "big_bad_sim_function_3.3.R"))
+```
+
+## Setting and checking parameters:
+
+Here I am checking to see that I can specify parameters when I simulate data, and estimate them correctly with my statistical models.
+
+I estimate the parameters with multilevel structural equation models, using the `Mplusautomation` package to run Mplus software.
+
+Parameters of interest:
+
+1\. the random intercept SD for participants; `tau_0`, which I set to 4
+
+2\. the random intercept SD for the items, `SD`, which I set according to the prior study
+
+3\. the means for the 10 variables; `mu`, which I set to be 0
+
+4\. the correlations of the 10 variables, estimated from the correlations of the item intercepts, and the correlations of the machine estimates - I compare this to the original correlation matrix used to simulate the data.
+
+5\. the correlations between the item intercept estimates of the 10 variables, with the 10 machine latent variable estimates.
+
+```{r}
+#set parameters:
+n_items    <- 360
+n_ratings  <- 25
+n_subj     <- 500
+n_machines <- 8
+n_trials   <- 10
+tau_0      <- 4 # by-subject random intercept sd
+tau_0_m    <- 6 # by-machine random intercept sd
+#tau_1      <- rnorm(10,0,1) # by subject randomslope sd: set to vary
+tau_1      <- rep(0, 10) # by subject random slope sd: set to 0
+tau_1_m    <- rnorm(10,0,1) # by machine random slope sd
+
+# these are the original means from the prior study
+#mu         <- c(3.08, 4.29, 3.63, 2.59, 4.60, 3.98, 4.66, 3.92, 4.26, 4.47)
+# for ease of verification, I set them all to 0
+mu         <- rep(0, 10) 
+# these are the SDs for each value from the prior study
+SD         <- c(1.3, 1.11, 1.13, 1.11, .94, .87, .88, 1.34, 1.27, 1.13)
+```
+
+```{r}
+# simulate data with above parameters
+
+# machine outputs as rows:
+sim_data <- my_sim_data_dt(
+  n_items    = n_items, 
+  n_ratings  = n_ratings, 
+  n_subj     = n_subj, 
+  n_machines = n_machines, 
+  n_trials   = n_trials, 
+  mu         = mu,
+  SD         = SD,
+  tau_0      = tau_0, 
+  tau_0_m    = tau_0_m,
+  tau_1      = tau_1, 
+  tau_1_m    = tau_1_m,
+  process    = "fixed", 
+  output     = "both"
+)
+
+# formats machine outputs as columns (i.e. fixed effects)
+machines_as_fixed    <- sim_data$sim_data
+
+# the 'ground truth' of the simulated item data
+item_ground_truth    <- sim_data$item_ground_truth
+```
+
+```{r}
+#cleanup parameters
+rm(tau_1, tau_1_m, tau_0, tau_0_m, n_items, n_machines, n_ratings, n_trials, n_subj)
+
+# cleanup functions
+rm(item_ground_truth_sim_function_dt, machine_sim_function_dt, 
+machines_as_fixed_function_dt, machines_as_subjects_function_dt, subject_sim_function_dt, 
+my_sim_data_dt)
+```
+
+## Estimate model and extract parameter estimates
+
+```{r}
+#formatting data to pass it to Mplus:
+
+# original variable order:
+# variable_order <- colnames(machines_as_fixed)
+#  "y_power", "y_security", "y_conformity", "y_tradition", "y_benevolence", "y_universalism", "y_self_direction", "y_stimulation", "y_hedonism", "y_achievement")
+
+#renaming:
+colnames(machines_as_fixed) <- c(
+  #item and participant ID variables 
+  "subject_ID", "item_ID", 
+  
+  #participant ratings
+  "y1", "y2", "y3", "y4", "y5", "y6", "y7", "y8", "y9", "y10", 
+  
+  # machine ratings, n_machines per value
+  # there are n_machines per value
+  paste0("z", as.character(seq(length(colnames(machines_as_fixed))-12))))
+
+machines_as_fixed <- as.data.frame(machines_as_fixed)
+```
+
+I now run a series of Mplus models. Because the parameters are all estimated at the same time, I run different models to estimate different parameters.
+
+The first model aims to examine the parameters of the participant ratings.
+
+```{r}
+#this model estimates the participant parameters, including the correlation of the item intercepts
+mplus_model <- mplusObject(
+  TITLE = "model;",
+  MISSING = ".;",
+  # select only participant variables
+  VARIABLE = "
+  USEVARIABLES = item_ID subject_ID y1-y10;
+  CLUSTER = item_ID subject_ID;",
+  
+  # the only estimator available is Bayes
+  # manual page 656:
+  # FBITERATIONS: number of iterations for each MCMC chain
+  ANALYSIS = "
+  TYPE = CROSSCLASSIFIED RANDOM;
+  ESTIMATOR = BAYES;
+  FBITERATIONS = 10000;
+  ALGORITHM = GIBBS(RW);
+  PROCESSORS = 11;",
+  
+  MODEL = "
+  
+  %within% 
+  y1-y10;
+  
+  %between item_ID% 
+  y1-y10; [y1-y10];  
+  y1 WITH y1-y10;
+  y2 WITH y1-y10;
+  y3 WITH y1-y10;
+  y4 WITH y1-y10;
+  y5 WITH y1-y10;
+  y6 WITH y1-y10;
+  y7 WITH y1-y10;
+  y8 WITH y1-y10;
+  y9 WITH y1-y10;
+  y10 WITH y1-y10;
+  
+  %between subject_ID% 
+  y1-y10; [y1-y10@0];", 
+  
+  OUTPUT = "standardized cinterval(hpd)",
+  
+  # page 838 of the manual:
+  # distribution of plausible values for each observation
+  # first number in fscores is the number of draws to compute per observation
+  # when second number in fscores is ten, every tenth draw is used to compute 
+  SAVEDATA = "FILE IS fscores.dat;
+              Save = fscores(100 10);",
+  
+  rdata = machines_as_fixed
+)
+
+fit <- mplusModeler(mplus_model, modelout = "mplus_files/sim.inp", run=TRUE)
+fit$results$errors
+fit$results$warnings
+
+rm(mplus_model)
+```
+
+
+```{r}
+fit |>
+ saveRDS(here("III_simulation_study", "intermediary_data", "mplus_model_participant_effects.RDS"))
+```
+
+```{r}
+# import custom descriptives functions
+source(here('0_functions', 'mplus_descriptives_function_1.4.R'))
+```
+
+```{r}
+random_effects_df <- assemble_ci_dfs(fit)
+random_effects_df$SD <- SD
+```
+
+The red dotted line is the number specified when I simulated the data. The point estimates and 95% confidence intervals are shown for the participant ratings below. The bootstrapping procedure may not be ideal, but in general the confidence interval captures the ground truth SD.
+
+```{r}
+random_effects_df %>%
+  ggplot(aes(x=model, y=SUBJECT_ID, color=model)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=SUBJECT_ID_lower, ymax=SUBJECT_ID_upper)) +
+  geom_hline(yintercept = 4, linetype = 'dotted',color = "red") +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45)) +
+  scale_y_continuous(limits = c(1, 10), n.breaks = 10) +
+  ggtitle("subject random effect SD by value")
+```
+
+The red 'x' indicates the ground truth values for the item intercept SDs specified when the data was simulated. Generally, the 95% confidence intervals capture the ground truth item SDs.
+
+```{r}
+# estimating item_intercept SD from mplus fscores output
+random_effects_df %>%
+  ggplot(aes(x=model, y=ITEM_ID, color=model)) +
+  geom_errorbar(aes(ymin=ITEM_ID_lower, ymax=ITEM_ID_upper)) + 
+  geom_point() +
+  geom_point(aes(x=model, y=SD, color = "red"), shape = 4, size=4) +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45)) +
+  ggtitle("item random effect SD by value")
+
+rm(random_effects_df)
+```
+
+## Means of variables
+
+The means of the values were all set to 0. Here I look at two model estimates of the means: firstly the Mplus output means and 95% confidence interval, and the means estimated from the mplus output file with the individual factor scores.
+
+```{r}
+# retrieve item intercepts from mplus model fscores output:
+item_intercepts <- get_random_intercepts_mplus(fit, intercept = 'item_ID')
+
+# compute mean of item intercepts
+# in simulated data these were set to 0
+item_intercept_summary_df <-  item_intercepts |>
+  select(starts_with("y_")) |>
+  colMeans() |>
+  t() |>
+  as.data.frame() |>
+  t() |>
+  as.data.frame() |>
+  rownames_to_column() |>
+  rename('mean' = 'V1', 'values' = 'rowname') 
+```
+
+The point estimate and confidence interval is taken directly from the 'results' in the mplus output. The red 'x' is the estimated mean from the fscores output file. The confidence intervals generally capture the 0, and are not statistically significantly different from 0.
+
+```{r}
+#original values order
+#values <- c("y_power", "y_security", "y_conformity", "y_tradition", "y_benevolence", "y_universalism", "y_self_direction", "y_stimulation", "y_hedonism", "y_achievement")
+
+# retrieve mean item intercept by value from model output
+model_output_means <- fit$results$parameters$unstandardized |>
+  filter(BetweenWithin == "Between ITEM_ID") |>
+  filter(paramHeader == "Means") |>
+  select(-paramHeader, -sig, -BetweenWithin)
+
+#model_output_means$values <- values
+model_output_means$values <- c("y_power", "y_security", "y_conformity", "y_tradition", "y_benevolence", "y_universalism", "y_self_direction", "y_stimulation", "y_hedonism", "y_achievement")
+#merge(model_output_means, item_intercepts, by=values)
+
+model_output_means |> 
+  ggplot(aes(x = values, y= est, color = values)) +
+    geom_point() +
+    geom_errorbar(aes(ymin=lower_2.5ci, ymax=upper_2.5ci)) + 
+    geom_hline(yintercept = 0, linetype = 'dotted', color = 'red') +
+    # plot the means extracted from the fscores file as a red 'x' (item_intercepts_summary_df)
+    geom_point(data = item_intercept_summary_df, aes(x=values, y=mean, color = "red"), shape = 4, size = 4) +
+    theme_minimal() +
+    theme(legend.position = "none", axis.text.x = element_text(angle = 45)) +
+    ggtitle("item intercept mean by value")
+```
+
+```{r}
+rm(model_output_means, variable_order, item_intercept_summary_df, assemble_ci_dfs, bootstrap_SD_list, ci_list_item_to_row, format_ci_df, get_random_intercepts_mplus, samplesd)
+```
+
+## Correlations of values
+
+This is the original correlation matrix, that we're trying to retrieve:
+
+Correlation matrix taken from SVS correlations (upper triangle) in the appendix: ![appendix_table](screenshots/appendix,%20Schwartz%202001.png){width="489"}
+
+```{r}
+og_correlation_matrix <- as.data.frame(rbind(
+    c(   1,  .04, -.04, -.20, -.32, -.48,  -.11,  .01,  .09,   .50), #power
+    c( .04,    1,  .25,  .08,  .01, -.30,  -.34, -.35, -.12,  -.11), #security
+    c(-.04,  .25,    1,  .35,  .15, -.19,  -.41, -.31, -.32,  -.18), #conformity
+    c(-.20,  .08,  .35,    1,  .12, -.07,  -.31, -.19, -.42,  -.38), #tradition
+    c(-.32,  .01,  .15,  .12,    1, -.08,  -.20, -.25, -.26,  -.25), #benevolence
+    c(-.48, -.30, -.19, -.07, -.08,    1,   .12, -.02, -.01,  -.39), #universalism
+    c(-.11, -.34, -.41, -.31, -.20,  .12,     1,  .22,  .19,   .13), #self-direction
+    c( .01, -.35, -.31, -.19, -.25, -.02,   .22,    1,  .29,   .02), #stimulation
+    c( .09, -.12, -.32, -.42, -.26, -.01,   .19,  .29,    1,   .12), #hedonism
+    c( .50, -.11, -.18, -.38, -.25, -.39,   .13,  .02,  .12,     1) #achievement
+))
+
+values <- c("power", "security", "conformity", "tradition", "benevolence", "universalism", "self_direction", "stimulation", "hedonism", "achievement")
+
+colnames(og_correlation_matrix) <- values
+rownames(og_correlation_matrix) <- values
+```
+
+This matrix shows the correlations between the item intercepts taken from the factor scores output file, and the ground truth. We can see the very high correlations on the diagnoal.
+
+```{r}
+item_ids <- item_intercepts$ITEM_ID
+
+# reconstitute original item IDs
+for(i in 1:length(item_ids)){
+ item_intercepts$item_ID_r[i] <- paste0("2", str_pad(i, 4, pad='0')) 
+}
+
+# merge two dataframes
+correlation_dt <- merge(item_intercepts, item_ground_truth, by.x = 'item_ID_r', by.y = 'item_ID') |>
+  select(-ITEM_ID)
+
+# plot correlation matrix between two sets of variables
+cor(correlation_dt[,2:11], correlation_dt[,12:21]) |> 
+  corrplot(
+    method = "color", 
+    type = "full", 
+    addCoef.col = "black", 
+    number.cex = 0.75)
+```
+
+Here I compare the correlation matrices between the original correlation matrix, and the item intercepts taken from the fscores output file.
+
+```{r}
+par(mfrow = c(1,2))
+
+correlation_dt[, 2:11] |>
+  # correlation matrix estimated from item intercepts
+  select(
+      y_power, y_security, y_conformity, 
+      y_tradition, y_benevolence, y_universalism, 
+      y_self_direction, y_stimulation, y_hedonism, y_achievement) |>
+  cor() |>
+  corrplot(
+    method = "color", 
+    type = "full", 
+    addCoef.col = "black", 
+    number.cex = 0.50)
+
+og_correlation_matrix |> as.matrix() |> 
+  # original correlation matrix
+  corrplot(
+    method = "color", 
+    type = "full", 
+    addCoef.col = "black", 
+    number.cex = 0.50)
+```
+
+Here I compare the model output correlations, to the correlations estimated from the factor scores output, and to the original correlation matrix.
+
+```{r}
+par(mfrow = c(1,3))
+
+corr_mat <- build_mplus_correlation_matrix(fit)
+
+# correlation matrix from estimated model
+corr_mat |>
+  as.matrix() |>
+  corrplot(
+    method = "color", 
+    type = "full", 
+    addCoef.col = "black", 
+    number.cex = 0.50)
+
+correlation_dt[, 2:11] |>
+  # correlation matrix estimated from item intercepts
+  select(
+      y_power, y_security, y_conformity, 
+      y_tradition, y_benevolence, y_universalism, 
+      y_self_direction, y_stimulation, y_hedonism, y_achievement) |>
+  cor() |>
+  corrplot(
+    method = "color", 
+    type = "full", 
+    addCoef.col = "black", 
+    number.cex = 0.50)
+
+# original correlation matrix
+og_correlation_matrix |> as.matrix() |> 
+  corrplot(
+    method = "color", 
+    type = "full", 
+    addCoef.col = "black", 
+    number.cex = 0.50)
+```
+
+```{r}
+rm(item_intercepts, item_ids, i, values, item_intercepts, correlations, correlation_dt, corr_mat)
+
+rm(assemble_ci_dfs, bootstrap_SD_list, build_correlation_matrix, ci_list_item_to_row, format_ci_df, get_random_intercepts_mplus, samplesd)
+```
+
+Here I estimate an Mplus model to examine the correlations estimated from the machine fixed effects.
+
+```{r}
+# this model estimates the correlations among the machine latent variables
+mplus_model <- mplusObject(
+  TITLE = "model;",
+  MISSING = ".;",
+  # starting without machine ratings
+  VARIABLE = "
+  USEVARIABLES = item_ID subject_ID y1-y10 z1-z80;
+  CLUSTER = item_ID subject_ID;
+  BETWEEN = (item_ID)z1-z80;",
+  
+  # the only estimator available is Bayes
+  # manual page 656:
+  #FBITERATIONS: number of iterations for each MCMC chain
+  ANALYSIS = "
+  TYPE = CROSSCLASSIFIED RANDOM;
+  ESTIMATOR = BAYES;
+  FBITERATIONS = 500;
+  ALGORITHM = GIBBS(RW);
+  PROCESSORS = 11;",
+  
+  MODEL = "
+  
+  %within% 
+  y1-y10;
+  
+  %between subject_ID% 
+  y1-y10; [y1-y10@0];
+  
+  %between item_ID% 
+  y1-y10; [y1-y10];  
+
+  m1 BY z1-z8;
+  m2 BY z9-z16;
+  m3 BY z17-z24;
+  m4 BY z25-z32;
+  m5 BY z33-z40;
+  m6 BY z41-z48;
+  m7 BY z49-z56;
+  m8 BY z57-z64;
+  m9 BY z65-z72;
+  m10 BY z73-z80;
+  
+  m1@1; m2@1; m3@1; m4@1; m5@1; 
+  m6@1; m7@1; m8@1; m9@1; m10@1;
+  
+  m1 WITH m2-m10;
+  m2 WITH m3-m10;
+  m3 WITH m4-m10;
+  m4 WITH m5-m10;
+  m5 WITH m6-m10;
+  m6 WITH m7-m10;
+  m7 WITH m8-m10;
+  m8 WITH m9-m10;
+  m9 WITH m10;
+  
+  ", 
+  
+  OUTPUT = "standardized cinterval(hpd)",
+  
+  # page 838 of the manual:
+  # distribution of plausible values for each observation
+  # first number in fscores is the number of draws to compute per observation
+  # when second number in fscores is ten, every tenth draw is used to compute 
+  SAVEDATA = "FILE IS fscores.dat;
+              Save = fscores(50 10);",
+  
+  rdata = machines_as_fixed
+)
+
+fit <- mplusModeler(mplus_model, modelout = "mplus_files/sim.inp", run=TRUE)
+fit$results$errors
+fit$results$warnings
+```
+
+```{r}
+fit |>
+  saveRDS(here("III_simulation_study", "intermediary_data", "mplus_model_machine_effects.RDS"))
+```
+
+
+The correlation matrices look very similar.
+
+```{r}
+par(mfrow = c(1,2))
+
+corr_mat <- build_mplus_correlation_matrix(fit, human_or_machine = 'M')
+  corr_mat |>as.matrix() |> 
+    corrplot(
+      method = "color", 
+      type = "full", 
+      addCoef.col = "black", 
+      number.cex = 0.50)
+
+og_correlation_matrix |>
+  as.matrix() |> 
+    corrplot(
+      method = "color", 
+      type = "full", 
+      addCoef.col = "black", 
+      number.cex = 0.50)
+```
+
+```{r}
+#this model estimates the correlations between the machine scores and human ratings
+mplus_model <- mplusObject(
+  TITLE = "model;",
+  MISSING = ".;",
+  # starting without machine ratings
+  VARIABLE = "
+  USEVARIABLES = item_ID subject_ID y1-y10 z1-z80;
+  CLUSTER = item_ID subject_ID;
+  BETWEEN = (item_ID)z1-z80;",
+  
+  # the only estimator available is Bayes
+  # manual page 656:
+  #FBITERATIONS: number of iterations for each MCMC chain
+  ANALYSIS = "
+  TYPE = CROSSCLASSIFIED RANDOM;
+  ESTIMATOR = BAYES;
+  FBITERATIONS = 500;
+  ALGORITHM = GIBBS(RW);
+  PROCESSORS = 11;",
+  
+  MODEL = "
+  
+  %within% 
+  y1-y10;
+  
+  %between subject_ID% 
+  y1-y10; [y1-y10@0];
+  
+  %between item_ID% 
+  y1-y10; [y1-y10];  
+
+  m1 BY z1-z8;
+  m2 BY z9-z16;
+  m3 BY z17-z24;
+  m4 BY z25-z32;
+  m5 BY z33-z40;
+  m6 BY z41-z48;
+  m7 BY z49-z56;
+  m8 BY z57-z64;
+  m9 BY z65-z72;
+  m10 BY z73-z80;
+  
+  m1@1; m2@1; m3@1; m4@1; m5@1; 
+  m6@1; m7@1; m8@1; m9@1; m10@1;
+  
+  m1 WITH y1;
+  m2 WITH y2;
+  m3 WITH y3;
+  m4 WITH y4;
+  m5 WITH y5;
+  m6 WITH y6;
+  m7 WITH y7;
+  m8 WITH y8;
+  m9 WITH y9;
+  m10 WITH y10;
+  
+  ", 
+  
+  OUTPUT = "standardized cinterval(hpd)",
+  
+  # page 838 of the manual:
+  # distribution of plausible values for each observation
+  # first number in fscores is the number of draws to compute per observation
+  # when second number in fscores is ten, every tenth draw is used to compute 
+  SAVEDATA = "FILE IS fscores.dat;
+              Save = fscores(50 10);",
+  
+  rdata = machines_as_fixed
+)
+
+fit <- mplusModeler(mplus_model, modelout = "mplus_files/sim.inp", run=TRUE)
+fit$results$errors
+fit$results$warnings
+```
+
+```{r}
+fit |>
+  saveRDS(here("III_simulation_study", "intermediary_data", "mplus_model_item_combined_machine_correlations.RDS"))
+```
+
+
+The machine correlations should be very similar to the item intercepts.
+
+```{r}
+item_machine_correlations <- fit$results$parameters$stdyx.standardized |>
+  filter(grepl('.WITH', paramHeader)) |>
+  select(paramHeader, param, est)  |>
+  filter(grepl('M', paramHeader)) |>
+  filter(grepl('Y', param))
+
+item_machine_correlations
+```
+
+In case it's interesting to see how strongly individual machine estimates correlate with the item intercepts, I estimate a model where I correlate the individual machine fixed effects with the relevant item intercept.
+
+```{r}
+#this model estimates the correlations between individual machines and human ratings
+mplus_model <- mplusObject(
+  TITLE = "model;",
+  MISSING = ".;",
+  # starting without machine ratings
+  VARIABLE = "
+  USEVARIABLES = item_ID subject_ID y1-y10 z1-z80;
+  CLUSTER = item_ID subject_ID;
+  BETWEEN = (item_ID) z1-z80;",
+  
+  # the only estimator available is Bayes
+  # manual page 656:
+  # FBITERATIONS: number of iterations for each MCMC chain
+  ANALYSIS = "
+  TYPE = CROSSCLASSIFIED RANDOM;
+  ESTIMATOR = BAYES;
+  FBITERATIONS = 500;
+  ALGORITHM = GIBBS(RW);
+  PROCESSORS = 11;",
+  
+  
+  # because I expect the correlations between participant responses
+  # are independent from the machine ratings, I don't estimate
+  # the residual correlations between the y variables
+  MODEL = "
+  
+  %within% 
+  y1-y10;
+  
+  %between subject_ID% 
+  y1-y10; [y1-y10@0];
+  
+  %between item_ID% 
+  y1-y10; [y1-y10];  
+
+  y1  WITH  z1- z8;
+  y2  WITH  z9-z16;
+  y3  WITH z17-z24;
+  y4  WITH z25-z32;
+  y5  WITH z33-z40;
+  y6  WITH z41-z48;
+  y7  WITH z49-z56;
+  y8  WITH z57-z64;
+  y9  WITH z65-z72;
+  y10 WITH z73-z80;
+  
+  ", 
+  
+  OUTPUT = "standardized cinterval(hpd)",
+  
+  # page 838 of the manual:
+  # distribution of plausible values for each observation
+  # first number in fscores is the number of draws to compute per observation
+  # when second number in fscores is ten, every tenth draw is used to compute 
+  SAVEDATA = "FILE IS fscores.dat;
+              Save = fscores(50 10);",
+  
+  rdata = machines_as_fixed
+)
+
+fit <- mplusModeler(mplus_model, modelout = "mplus_files/sim.inp", run=TRUE)
+fit$results$errors
+fit$results$warnings
+```
+
+```{r}
+fit |>
+  saveRDS(here("III_simulation_study", "intermediary_data", "mplus_model_item_machine_correlations.RDS"))
+```
+
+
+```{r}
+item_machine_correlations <- fit$results$parameters$stdyx.standardized |>
+  filter(grepl('.WITH', paramHeader)) |>
+  select(paramHeader, param, est)
+
+item_machine_correlations
+```

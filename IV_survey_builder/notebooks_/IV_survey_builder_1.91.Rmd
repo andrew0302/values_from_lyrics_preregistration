@@ -1,0 +1,413 @@
+---
+title: "lyric_annotation_survey_builder"
+author: "Andrew M. Demetriou"
+date: "12/21/2021"
+---
+
+#AIM
+
+This notebook builds the set of survey files to be used on formR.
+
+```{r setup}
+library("here")
+library("data.table")
+library("dplyr")
+```
+
+## Import Files
+
+To build a survey on the formR platform, this notebook uses:
+
+Three files:
+
+1.  `lyrics_file`    - the full lyrics and song ID
+2.  `selection_file` - whether the lyrics are usable
+3.  `template_file`  - building blocks for the survey
+
+In two folders:
+
+1.  `primary_data`   - lyrics and selection data
+2.  `template_files` - building blocks of survey
+
+Note: the full lyrics file is not publicly available as we conducted this study in collaboration with **MusixMatch** (mxm).
+
+```{r set_file_names}
+# file names: SET THESE TO THE CURRENT FILES
+lyrics_file    <- "not_simple_medium_alpha_2021_full_2_2.csv"
+selection_file <- "not_simple_medium_alpha_2021_full_10w (2).csv"
+template_file  <- "lyrics_annotation_template_v11 - survey.csv"
+
+# paths with data and template
+primary_data_file_path <- here("IV_survey_builder", "primary_data_")
+template_file_path <- here("IV_survey_builder", "template_files_")
+```
+
+The lyrics were collected using the API of a lyrics platform: **MusixMatch** (mxm).
+
+The song ID in the lyrics and selection files is the 'mxm ID'. 
+The `lyrics_file` contains the lyrics themselves in the second column.
+The `selection_file` contains the results of the screening the researchers conducted to determine if a song was usable. 
+The `template_file` was developed using googlesheets and the formR platform.
+
+```{r import_files}
+# lyrics datasets
+all_lyrics_dt     <- fread(here(primary_data_file_path, lyrics_file)) %>% select(mxm_id, lyrics_body)
+
+# manual selection process
+selected_dt <- fread(here(primary_data_file_path, selection_file)) %>% 
+  select(mxm_id, Keep) %>% 
+  # these are the four identifiers from the lyric rating process
+  filter(Keep == "O" | Keep == "o" | Keep == "m" | Keep == "M" | Keep == "a" | Keep == "A")
+
+#complete template for survey
+complete_survey_dt <- fread(here(
+  #template_file_path, "lyrics_annotation_template_v11 - survey.csv"))
+  template_file_path, template_file))
+```
+
+## Build Template
+
+Because we're collecting annotations for song lyrics, we're asking the same set of questions for each song lyric. So the approach is to build a template, and then replace variables in it with the details of each song resulting in a 'block' with it's own ID. 
+
+The chunk below creates a single dataframe for the song lyrics that will be used to build the survey.
+
+formR uses the block_id column to determine what sets of questions go together. Block ids are strings of one or more letters. So this chunk first creates a vector with block_id combinations, and then assigns them as a column to the dataframe of songs that were selected by the research team.
+
+It then merges the song lyrics into the dataframe that contains the selection variable from the research team. Finally, it removes objects that are no longer needed.
+
+```{r formR_variables}
+#grid for block identification
+#formR will use this to identify which questions are blocks that belong together
+letters <- list(c('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'))
+blocks <- expand.grid(rep(letters, 2)) %>% .[1:nrow(selected_dt),]
+blocks <- paste0(blocks$Var1, blocks$Var2)
+
+#insert block_id into selected dt
+selected_dt$block_id <- blocks
+
+#merge into working dataframe
+selected_dt <- merge(selected_dt, all_lyrics_dt, be=mxm_id)
+
+#cleanup
+rm(letters, template_file_path, primary_data_file_path, lyrics_file, selection_file, all_lyrics_dt, blocks, template_file)
+```
+
+The survey itself is essentially:
+
+1.  a 'header': containing all elements at the start of a survey including:
+    -   collection of participant ID from Prolific
+    -   number of lyrics shown to participants
+    -   mechanism to randomly select the lyrics
+    -   consent form
+    -   respondent-level questions (lyric preference intensity)
+2.  a template containing the questions that will be asked of each song lyric
+3.  a 'footer': containing all the elements at the end of a survey including:
+    -   perceived subjectivity of the task
+    -   respondent feedback for the survey
+    -   a debrief explaining the purpose of the study
+
+The chunk below takes the complete survey template, and defines the header and the footer. 
+Each section is defined in the `explanations` column of the survey file. 
+This column has no effect on the survey itself when used as input for formR, so I used it to define each section.
+
+This chunk also defines a string in a cell that will be used to randomly select song lyrics for annotation, represented by a 'block' of questions: `header_dt$value[2]`.
+
+```{r create_header_footer}
+# set survey 'header' and 'footer' are the parts that stay the same
+#header_dt <- complete_survey_dt %>% .[1:37]
+header_dt <- complete_survey_dt[explanations == "header"]
+
+# adjustment based on: https://groups.google.com/g/formr/c/p6xDx57r5Iw/m/THo2s2yoDAAJ
+header_dt$value[2] <- 'paste0(sample(size = 5, 1:%1$s), collapse = ",")'
+
+#footer_dt <- complete_survey_dt %>% .[57:59]
+footer_dt <- complete_survey_dt[explanations == "footer"]
+```
+
+The chunk below creates the template to be used.
+
+The protocol this notebook uses to replace items in the template is sprintf, which is reflected in the way the variables are defined.
+
+Variables defined in the template are:
+
+-   name: objects in the survey (e.g. questions, but also text descriptions)
+-   label: what is displayed to participants (e.g. the wording of the question)
+-   block order: block id used by formR to group questions together
+-   showif: determines if a question is shown to participants
+    -   `header_dt$value[2]` creates a vector of random numbers selected from a range
+    -   `size =` determines how many items are shown to participants
+    -   `showif` will display the question if the number is in the random vector
+
+```{r create_template}
+# the template is a block of questions to be applied to each song lyric
+# i.e. the questions are the same, but the variables related to each stimulus change
+#template_dt <- complete_survey_dt %>% .[30:48]
+template_dt <- complete_survey_dt[explanations == "template"]
+
+# set strings for substitution:
+
+#'name' is the musixmatch song ID
+template_dt$name <- gsub("4116102", "%1$s", template_dt$name)
+
+#'label' is the actual song lyrics, which occur in two places
+template_dt$label[1] <- 'Between the quotation marks below are some song lyrics. Please take a moment to read them and think about the SPEAKER the lyrics. Please remember that this SPEAKER might be a the AUTHOR themselves, or someone or something else: \n \n  "%1$s"'
+template_dt$label[5] <- template_dt$label[1]
+
+#block order is the block id used by formR to determine which questions belong in a block
+#we assign them to each set of questions, that are asked of each set of lyrics
+template_dt$block_order <- "%1$s"
+
+#the showif is an id used for sampling (see header_dt$value[1] above)
+
+#adjustment based on: https://groups.google.com/g/formr/c/p6xDx57r5Iw/m/THo2s2yoDAAJ
+template_dt$showif <- 'random_vector %contains_word% "1"'
+
+##sprinf uses the `%`, so we add a second one to escape it
+template_dt$showif <- gsub("%", "%%", template_dt$showif)
+##then replace 1 with a variable for replacement
+template_dt$showif <- gsub("1", "%1$s", template_dt$showif)
+
+#cleanup
+rm(complete_survey_dt)
+```
+
+Because the lyrics themselves can't be made available, we create a dummy dataframe resembling the `selected_dt` dataframe we would have normally had. 
+
+```{r}
+selected_dt_test <- data.frame(
+  mxm_id = "123456", 
+  Keep = "O", 
+  block_id = "AA", 
+  lyrics_body = "
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", 
+  showif_id = "1")
+```
+
+
+## Survey Building Functions
+
+The following chunk is the first of three functions that uses the `template_file` to build the survey files for formR.
+
+The `replace lyrics` function creates a single block of questions from the template and fills in:
+
+1.  the mxm ID for individual question / variable names
+2.  the block ID for the specific song
+3.  'showif' number to determine if the song will be shown
+
+
+```{r replace_lyrics_function}
+replace_lyrics <- function(song_id, song_lyrics, block_id, showif_id){
+  #create copy of template to adjust for this specific word pair
+  working_block <- template_dt
+  
+  #inset song id
+  working_block$name <- sprintf(working_block$name, song_id)
+
+  #insert lyrics of the song
+  working_block$label[1] <- sprintf(working_block$label[1], song_lyrics)
+  working_block$label[5] <- sprintf(working_block$label[5], song_lyrics)
+  
+  #insert block identifier
+  working_block$block_order <- sprintf(working_block$block_order, block_id)
+  
+  #insert 'showif' ID number
+  working_block$showif <- sprintf(working_block$showif, showif_id)
+  
+  
+  #set object to return
+  return(working_block)
+}
+```
+
+This chunk is commented out, but can be used to test whether the above function is working.
+
+```{r test_function}
+#showif_id <- 25
+#song_id <- "828136"
+#song <- selected_dt[mxm_id == song_id]
+#song$mxm_id
+#song$lyrics_body
+#song_lyrics <- song$lyrics_body
+#block_id <- song$block_id
+
+#t<- replace_lyrics(song_id, song_lyrics, block_id, showif_id)
+#t$label[1]
+```
+
+The `build_blocks` function takes a row number, and retrieves the variables for substitution into each 'block' of the template from `selected_dt`.
+
+It then calls the `replace lyrics` function to carry out the substitutions.
+
+```{r build_blocks_function}
+build_blocks <- function(selected_dt, selected_dt_row_number){
+  
+  # get song id
+  song_id <- selected_dt[[selected_dt_row_number, 1]]
+  
+  # get song lyrics
+  song_lyrics <- selected_dt[[selected_dt_row_number, 4]]
+
+  # get block id
+  block_id <- selected_dt[[selected_dt_row_number, 3]]
+  
+  # get showif id
+  showif_id <- selected_dt[[selected_dt_row_number, 5]]
+  
+  #create question block using word pair
+  block <- replace_lyrics(song_id, song_lyrics, block_id, showif_id)
+}
+```
+
+The `assemble_survey` function:
+
+1.  gets the total number of rows in `selected_dt`
+2.  makes a block for each row and puts them in a large list
+3.  binds the blocks in the list into one long dataframe
+4.  adds the header and footer of the survey
+5.  adds the total row number to the cell that creates the random vector used to select which items are shown to which participant
+
+
+```{r assemble_survey}
+assemble_survey <- function(selected_dt){
+
+  # set a variable to represent row numbers
+  selected_dt_row_number <- 1:nrow(selected_dt)
+
+  # make a large list of question blocks, one for each row 
+  question_block_list <- lapply(selected_dt_row_number, build_blocks, selected_dt = selected_dt)
+
+  # blind list into one large datafame
+  question_block_dt <- rbindlist(question_block_list)
+
+  #add beginning and end of survey
+  survey_dt <- rbind(header_dt, question_block_dt, footer_dt)
+  
+  #add total number of rows to cell that creates the random vector 
+  survey_dt$value[1] <- sprintf(survey_dt$value[1], nrow(selected_dt))
+  
+  return(survey_dt)
+}
+```
+
+Thus chunk will produce a single-lyric survey .csv file that can be uploaded to formR to get an idea what our survey looked like. 
+
+```{r}
+test_survey <- assemble_survey(selected_dt_test)
+write.csv(test_survey, here("IV_survey_builder", "survey_files_", "test_survey.csv"))
+```
+
+
+
+## Split Survey Script
+
+We experienced crashes on the formR platform when trying to run a survey with too many lines. Within the formR environment, you can have multiple individual surveys, and randomly assign participants to each.
+
+In this first chunk, we determine the number of surveys to build:
+
+```{r number_of_surveys}
+#set number of surveys to build
+n_splits = 6
+```
+
+This chunk takes `selected_dt` and randomly splits it into `n_splits` sub-tables. It then names each sub-table.
+
+```{r split_into_subtables}
+#empty list of subtables
+subtables = list()
+
+#take total number of samples, and break into n_splits 
+for (offset in seq(1, n_splits)) {
+subtables[[offset]] <- selected_dt[seq(offset, nrow(selected_dt), n_splits),]
+}
+
+#name each survey
+names(subtables) <- paste0("survey_dt_", seq(1, n_splits, 1))
+
+subtables <- lapply(subtables, function(subtable){
+  #add 'showif' column
+  subtable$showif <- seq(1:nrow(subtable)) 
+  #adjust value for random selection
+  return(subtable)
+  })
+
+rm(selected_dt, n_splits, offset)
+```
+
+The sub-tables are then used as individual inputs for the `assemble_survey` function. The output is a survey dataframe for each sub-table.
+
+```{r format_surveys}
+# build survey out of lyric subtables and template
+formatted_surveys <- lapply(subtables, assemble_survey) %>%
+  
+  #format surveys
+  lapply(., function (survey){
+    #insert string for replacement
+    survey$value[2] <- 'paste0(sample(size = 17, 1:%1$s), collapse = ",")'
+  
+    ##get number of rows
+    #extract references to numbers
+    nrow <- gsub(".*?([0-9]+).*", "\\1", survey$showif) %>%
+      noquote() %>%       # remove quotes
+      as.numeric() %>%    # make numeric
+      max(na.rm=TRUE)     # extract max
+  
+    #replace value with number of rows
+    survey$value[2] <- sprintf(survey$value[2], nrow)
+  
+  return(survey)
+  })
+
+# convert to individual dataframes
+list2env(formatted_surveys, envir = .GlobalEnv)
+
+
+#survey <- formatted_surveys[[1]]
+#t <- gsub(".*?([0-9]+).*", "\\1", survey$showif) %>%
+#    noquote() %>%
+#    as.numeric() %>%
+#    max(na.rm=TRUE)
+```
+
+```{r}
+# cleanup
+rm(template_dt, header_dt, footer_dt, subtables, 
+   assemble_survey, build_blocks, replace_lyrics, 
+   formatted_surveys, selected_dt_test, test_survey)
+```
+
+## Export Survey Files Function
+
+The last function exports a .csv, given a survey dataframe.
+
+```{r export_survey}
+export_survey <- function(
+    survey_dt,
+    data_path = here("IV_survey_builder", "survey_files_"), 
+    name = "lyrics_annotation_run1_set_"
+    ){
+  # convert argument to a string
+  object_name <- deparse(substitute(survey_dt))
+  
+  # get the number of the survey
+  number <- as.numeric(gsub("survey_dt_", "", object_name))
+  
+  #survey template folder
+  file_name <- paste0(data_path, "/", name, number, ".csv")
+  
+  # write file
+  write.csv(survey_dt, file_name, na="", row.names = FALSE)
+}
+```
+
+
+
+```{r}
+export_survey(survey_dt_1, name = "annotation_run_1_set_")
+export_survey(survey_dt_2, name = "annotation_run_1_set_")
+export_survey(survey_dt_3, name = "annotation_run_1_set_")
+export_survey(survey_dt_4, name = "annotation_run_1_set_")
+export_survey(survey_dt_5, name = "annotation_run_1_set_")
+export_survey(survey_dt_6, name = "annotation_run_1_set_")
+```
+
+To estimate the number of participants necessary to get 25 ratings per stimulus we used this notebook: <https://colab.research.google.com/drive/1-gp0lTBTVe0lmHBJEz1K5HHg6dmNpUEE#scrollTo=wDufvH0ErcCo>

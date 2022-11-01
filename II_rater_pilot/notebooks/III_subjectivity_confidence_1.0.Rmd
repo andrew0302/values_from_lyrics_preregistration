@@ -1,0 +1,151 @@
+---
+title: "qualitative_analysis"
+author: "andrew demetriou"
+date: "12/26/2021"
+---
+
+#AIM
+
+In this notebook, I examine the responses to questions that asked about the overall subjectivity of the task, the overall rater confidence, and at the open response format 'feedback' fields.
+
+```{r}
+library('data.table') # data manipulation
+#library('dplyr')      # data manipulation
+library('tidyverse')  # data manipulation
+library('here')       # file logistics
+library('ggplot2')    # visualization
+library('ggridges')   # joyplots
+library('viridis')    # visualization
+```
+
+```{r}
+# path with the actual data
+data_file_path <- here("II_rater_pilot", "response_data")
+
+# read in qualtrics data file
+responses_dt <- fread(here(data_file_path, "annotation_number_estimation _2.2_November 28, 2021_07.51.csv"))
+
+# remove junk on first two rows
+responses_dt <- responses_dt[3:.N]
+
+rm(data_file_path)
+```
+
+```{r}
+feedback <- responses_dt[,'feedback']
+feedback <- feedback[feedback != ""]
+feedback
+
+rm(feedback)
+```
+
+```{r}
+subjectivity <- responses_dt[,'subjective']
+
+# convert worded ratings to numbers
+subjectivity[subjectivity == "Completely objective"] <- 1
+subjectivity[subjectivity == "Very objective"] <- 2
+subjectivity[subjectivity == "Somewhat objective"] <- 3
+subjectivity[subjectivity == "Neither subjective nor objective"] <- 4
+subjectivity[subjectivity == "Somewhat subjective"] <- 5
+subjectivity[subjectivity == "Very subjective"] <- 6
+subjectivity[subjectivity == "Completely subjective"] <- 7
+```
+
+People overall found this to be a subjective task, with the modal rating being "Very subjective". 
+
+```{r}
+subjectivity_plot <- subjectivity |>
+  ggplot(aes(x=as.numeric(subjective))) +
+  geom_histogram(bins=13, fill = "orange") +
+  scale_x_continuous(
+       position = "top",
+       breaks = seq(1, 7, by = 1),
+       labels = c(
+       "Completely objective", "Very objective", "Somewhat objective", 
+       "Neither subjective nor objective", "Somewhat subjective", "Very subjective", 
+       "Completely subjective")
+  ) +
+  coord_flip() +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(), axis.title.x = element_blank())
+
+subjectivity_plot
+
+subjectivity_plot |> 
+  saveRDS(here("II_rater_pilot", "intermediary_data", "subjectivity_plot.RDS"))
+```
+
+```{r}
+# select columns to keep: '-r' indicates the reason for the confidence ratings
+confidence_open_responses <- grepl("-r", colnames(responses_dt))
+
+# remove junk on first two rows
+confidence_open_responses_dt <- responses_dt[,..confidence_open_responses]#[3:.N]
+
+# pivot to long format
+confidence_open_responses_dt <- confidence_open_responses_dt |> 
+  pivot_longer(
+    cols = ends_with("-r"),
+    names_to = "song", 
+    values_to = "responses")
+
+# remove empty cells
+confidence_open_responses_dt <- confidence_open_responses_dt |>
+  filter(responses != "")
+
+confidence_open_responses_dt
+
+rm(confidence_open_responses_dt)
+```
+
+```{r}
+# select columns to keep: '-c' indicates the confidence ratings
+confidence_ratings_dt <- grepl("-c", colnames(responses_dt))
+confidence_ratings_dt <- responses_dt[,..confidence_ratings_dt]
+
+# convert worded ratings to numbers
+confidence_ratings_dt[confidence_ratings_dt == "Extremely unconfident"] <- 1
+confidence_ratings_dt[confidence_ratings_dt == "Very unconfident"] <- 2
+confidence_ratings_dt[confidence_ratings_dt == "Somewhat unconfident"] <- 3
+confidence_ratings_dt[confidence_ratings_dt == "Neither confident nor unconfident"] <- 4
+confidence_ratings_dt[confidence_ratings_dt == "Somewhat confident"] <- 5
+confidence_ratings_dt[confidence_ratings_dt == "Very confident"] <- 6
+confidence_ratings_dt[confidence_ratings_dt == "Extremely confident"] <- 7
+
+# pivot to long format
+confidence_ratings_dt<-confidence_ratings_dt |>
+  pivot_longer(
+    cols = ends_with("-c"),
+    names_to = "song", 
+    values_to = "responses")
+```
+
+Participants mostly responded with `Somewhat confident` across all lyrics. 
+
+```{r}
+confidence_plot <- confidence_ratings_dt |>
+  ggplot(aes(x=as.numeric(responses), y=song, fill = stat((y)))) +
+  scale_fill_viridis_c(option = "A")+
+  geom_density_ridges(show.legend = FALSE, alpha = .75) +
+  scale_x_continuous(
+    position = "bottom",
+    breaks = seq(1, 7, by = 1), 
+           labels = c(
+       "Extremely unconfident", "Very unconfident", "Somewhat unconfident", 
+       "Neither confident nor unconfident", "Somewhat confident", "Very confident", 
+       "Extremely confident")
+    ) +
+  coord_flip()+
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  xlab("")
+
+confidence_plot
+
+confidence_plot |>
+  saveRDS(here(
+    "II_rater_pilot", "intermediary_data", "confidence_plot.RDS"
+  ))
+```
+

@@ -1,0 +1,47 @@
+---
+title: "prolific integration test"
+author: "Andrew M. Demetriou"
+date: "12/21/2021"
+---
+
+```{r setup}
+library("here")
+library("data.table")
+library("dplyr")
+```
+
+#AIM:
+
+To check whether we've correctly coded the spreadsheet to automatically collect participant identification numbers from prolific.co, we put together a pilot. 
+
+The pilot will ask participants to manually enter their prolific ID, which we will check against the automatically collected prolific ID. We include all the components of our survey at the time, but only included a small number of survey items. 
+
+```{r create_header_footer}
+# path with data
+data_file_path <- here("template_files_")
+
+#complete template for survey
+complete_survey_dt <- fread(here(
+  data_file_path, "lyrics_annotation_template_v9 - survey.csv"))
+
+# set survey 'header' and 'footer', without lyric annotation components
+header_dt <- complete_survey_dt %>% .[1:29]
+footer_dt <- complete_survey_dt %>% .[51]
+
+# bind header and footer
+survey_dt <- rbind(header_dt, footer_dt)
+```
+
+We upload items to formR via csv. This chunk saves the .csv to export for testing on prolific. 
+
+```{r export survey}
+# folder to save data
+data_file_path <- here("IV_survey_builder", "survey_files_")
+
+# adjust file name based to save based on convention and number
+file_name <- paste0(data_file_path, "/", "prolific_integration_test_v2.csv")
+  
+# write file
+#write.csv(survey_dt, file_name, na="", row.names = FALSE)
+```
+

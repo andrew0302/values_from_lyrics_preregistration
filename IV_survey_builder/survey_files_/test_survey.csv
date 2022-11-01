@@ -1,0 +1,117 @@
+"","explanations","block_order","item_order","class","type","optional","name","showif","label","choice1","choice2","choice3","choice4","choice5","choice6","choice7","choice8","choice9","choice10","choice11","choice12","value"
+"1","header","",NA,"","get code","","code","","","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"2","header","",NA,"","calculate","","random_vector","","","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,"paste0(sample(size = 5, 1:%1$s), collapse = "","")"
+"3","header","",NA,"","note","","consent_form","","This page is designed to provide you with information about this study to help you to decide whether you wish to participate. 
+
+In this study we will ask you to answer questions about your preferences for song lyrics. We will then ask you to read samples of song lyrics, and to answer some questions about them. By clicking """"Agree"""" below, you certify that you have read, understood, and agree to the following:
+
+ 
+
+1. Your participation is completely voluntary, and you may end your participation at any time. 
+ 
+
+2. You will be asked some questions: First, you will be asked about your preferences for song lyrics. Next, you will be asked to read the lyrics to several songs and to answer some questions about your perceptions of them. 
+ 
+
+3. The team of researchers currently working on this study will have access to this data. In addition, journal article reviewers and researchers from accredited institutions may have access to de-identified versions of this data set. In the event that this occurs, no personally identifying information will be included with the transfered dataset. 
+ 
+
+4. If desired, you will receive a digital copy of your data. You may also instruct this research team to purge your data, all or in part, at any time. 
+ 
+
+5. Excerpts of the data collected in this study may appear in scientific research papers, conference presentations, public presentations, and media presentations. In the event that this occurs, no personally identifying information will be included. 
+ 
+
+6. Anonymized data will be kept and maintained confidentially by researcher Andrew M. Demetriou at Delft University of Technology. Researchers working with Andrew M. Demetriou will also have access to the data. Upon conclusion of the study, de-identified data will be maintained on the Open Science Framework (osf.io). 
+
+7. Details regarding the purposes of this study will be revealed in a debriefing description on-screen at the conclusion of this survey, so as not to bias your responses.
+ 
+
+8. Additional questions you may have may be directed to Andrew M. Demetriou: a.m.demetriou@tudelft.nl.  
+
+
+We anticipate that your participation in this study will require about 30 minutes. 
+","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"4","header","",NA,"square square80","mc_button","","consent","","Please indicate:","agree","disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"5","header","",NA,"","submit","","submit_consent","","Continue:","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"6","header","",NA,"","text","","prolific_ID","","Please type in your Prolific ID:","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"7","header","",NA,"","submit","","submit_prolific_ID","","Continue:","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"8","header","",NA,"","note","","lyric_prefs_instructions_1","","### __Instructions:__ 
+#### On the following page, you'll be asked how much you agree with a number of statements. 
+#### The statements will describe behaviors associated with song lyrics. 
+#### You'll be asked to show how much you agree to the statements by clicking on a bar that looks like this:","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"9","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_instructions_test_1","","Click on the grey bar to indicate how much you agree.","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"10","header","",NA,"","note","","lyric_prefs_instructions_2","","#### The closer you click to the left, the more you show that you agree with the statement; the more you click to the right, the more you disagree with the statement. 
+
+###Warning: Lyrics were taken from popular music and may contain offensive language, or describe offensive situations. ","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"11","header","",NA,"","submit","","submit_lyric_prefs_instructions","","Continue:","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"12","header","",NA,"","note","","lyrics_prefs_instructions_3","","Please indicate the degree to which you agree with the following statements:","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"13","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_1","","I prefer music that contains lyrics, as opposed to music that does not","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"14","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_2","","I only pay attention to the lyrics of songs or artists that I like.","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"15","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_3","","I always pay attention to the lyrics of a song, if the song has them","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"16","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_4","","I enjoy learning about song lyrics and their meaning, for example by reading  blogs and forums or listening to artist interviews","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"17","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_5","","If a song has lyrics that I don't like for any reason, I don't listen to it","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"18","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_6","","If I am not sure about the lyrics of a song, I look them up","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"19","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_7","","I contribute to online resources on lyrics, for example forums, or on platforms where I can contribute lyric transcriptions","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"20","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_8","","I memorize the lyrics to the songs I listen to","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"21","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_9","","I write my own song lyrics","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"22","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_10","","I post excerpts of song lyrics online, e.g. on social media","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"23","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_11","","I discuss song lyrics with my friends","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"24","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_12","","I come up with alternate versions of song lyrics that I find entertaining, i.e. song parodies","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"25","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_13","","I ponder the meaning of song lyrics","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"26","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_14","","I quote lyrics often in conversation","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"27","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_15","","I read and/or write poetry","strongly agree","strongly disagree","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"28","header","",NA,"analogue_rating_scale","rating_button 1,20,1","","lyric_prefs_16","","What percentage of your music library do you think contains songs with lyrics? Please make your best guess using the gray bar below:","&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0%","100%","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"29","header","",NA,"","note","","lyric_activities_instructions","","Can you think of any other activities or indications that someone has an affinity for song lyrics? If so, please enter them here:","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"30","header","",NA,"","text","*","lyric_activities_1","","","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"31","header","",NA,"","text","*","lyric_activities_2","","","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"32","header","",NA,"","text","*","lyric_activities_3","","","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"33","header","",NA,"","text","*","lyric_activities_4","","","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"34","header","",NA,"","text","*","lyric_activities_5","","","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"35","header","",NA,"","submit","","submit_lyrics","","Continue:","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"36","header","",NA,"","note","","annotation_instructions_1","","### __Instructions:__ 
+#### Thanks!
+#### You will now be shown lyrics from songs, and asked to complete some questions about how you perceive them. 
+#### TRIGGER WARNING: These lyrics are drawn from popular music, some of which use offensive language or describe offensive situations.
+#### IMPORTANT: yrics can be written from different perspectives, some of which are not the same as the writer of the lyrics. In other words, the AUTHOR of the lyrics may choose a SPEAKER for their lyrics that is not themselves. 
+ 
+#### The SPEAKER of the lyrics could be could be a fictional character, a real person from history or the present, or even an imaginary object.  And of course it could be the AUTHOR themselves. Please answer the questions while thinking about the SPEAKER. ","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"37","header","",NA,"","submit","","submit_annotation_instructions","","Continue:","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"38","template","AA",1,"","note","","L_123456_t_1","random_vector %contains_word% ""1""","Between the quotation marks below are some song lyrics. Please take a moment to read them and think about the SPEAKER the lyrics. Please remember that this SPEAKER might be a the AUTHOR themselves, or someone or something else: 
+ 
+  ""
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.""","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"39","template","AA",2,"","mc_button","","L_123456_w","random_vector %contains_word% ""1""","Do you think the SPEAKER and the AUTHOR are the same person?","Yes","Maybe","No",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"40","template","AA",3,"","mc_button","","L_123456_f","random_vector %contains_word% ""1""","Do you recognize the song that the lyrics come from?","Yes","No","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"41","template","AA",4,"","submit","","L_123456_submit_1","random_vector %contains_word% ""1""","Continue:","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"42","template","AA",5,"","note","","L_123456_t_2","random_vector %contains_word% ""1""","Between the quotation marks below are some song lyrics. Please take a moment to read them and think about the SPEAKER the lyrics. Please remember that this SPEAKER might be a the AUTHOR themselves, or someone or something else: 
+ 
+  ""
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.""","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"43","template","AA",6,"","note","","L_123456_instructions","random_vector %contains_word% ""1""","Please, rate the importance of the following values as a life-guiding principle for the SPEAKER of the lyrics. Use the slider in which 100 indicates that the value is of supreme importance for them, and -100 indicates that the value is completely opposed to their principles. ","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"44","template","AA",7,"analogue_rating_scale","rating_button 1,20,1","","L_123456_1","random_vector %contains_word% ""1""","POWER (social power, authority, wealth)","opposed to thier values","of supreme importance","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"45","template","AA",8,"analogue_rating_scale","rating_button 1,20,1","","L_123456_2","random_vector %contains_word% ""1""","ACHIEVEMENT (success, capability, ambition, influence on people and events)","opposed to thier values","of supreme importance","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"46","template","AA",9,"analogue_rating_scale","rating_button 1,20,1","","L_123456_3","random_vector %contains_word% ""1""","HEDONISM (gratification of desires, enjoyment in life, self- indulgence)","opposed to thier values","of supreme importance","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"47","template","AA",10,"analogue_rating_scale","rating_button 1,20,1","","L_123456_4","random_vector %contains_word% ""1""","STIMULATION (daring, a varied and challenging life, an exciting life)","opposed to thier values","of supreme importance","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"48","template","AA",11,"analogue_rating_scale","rating_button 1,20,1","","L_123456_5","random_vector %contains_word% ""1""","SELF-DIRECTION (creativity, freedom, curiosity, independence, choosing one's own goals)","opposed to thier values","of supreme importance","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"49","template","AA",12,"analogue_rating_scale","rating_button 1,20,1","","L_123456_6","random_vector %contains_word% ""1""","UNIVERSALISM (broad-mindedness, beauty of nature and arts, social justice, a world at peace, equality, wisdom, unity with nature, environmental protection)","opposed to thier values","of supreme importance","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"50","template","AA",13,"analogue_rating_scale","rating_button 1,20,1","","L_123456_7","random_vector %contains_word% ""1""","BENEVOLENCE (helpfulness, honesty, forgiveness, loyalty, responsibility)","opposed to thier values","of supreme importance","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"51","template","AA",14,"analogue_rating_scale","rating_button 1,20,1","","L_123456_8","random_vector %contains_word% ""1""","TRADITION (respect for tradition, humbleness, accepting one's portion in life, devotion, modesty)","opposed to thier values","of supreme importance","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"52","template","AA",15,"analogue_rating_scale","rating_button 1,20,1","","L_123456_9","random_vector %contains_word% ""1""","CONFORMITY (obedience, honoring parents and elders, self- discipline, politeness)","opposed to thier values","of supreme importance","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"53","template","AA",16,"analogue_rating_scale","rating_button 1,20,1","","L_123456_10","random_vector %contains_word% ""1""","SECURITY (national security, family security, social order, cleanliness, reciprocation of favors)","opposed to thier values","of supreme importance","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"54","template","AA",17,"analogue_rating_scale","rating_button 1,20,1","","L_123456_c","random_vector %contains_word% ""1""","How confident are you in your ratings of these lyrics?","extremely unconfident","extremely confident","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"55","template","AA",18,"","text","*","L_123456_r","random_vector %contains_word% ""1""","Was there anything specific about the lyrics that makde you unconfident in your ratings? (Optional)   e.g. they containted words or slang that you didn't know, the words in the lyrics were incorrect, or they were too poetic or abstract to interpret","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"56","template","AA",19,"","submit","","L_123456_submit_2","random_vector %contains_word% ""1""","Continue:","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"57","footer","",NA,"analogue_rating_scale","rating_button 1,20,1","","subjectiveness","","Something is subjective if it is influenced by personal feelings, tastes or opinions. On the other hand, something is objective if it is not influenced by personal feelings, tastes or opinions. 
+
+You were asked to read lyrics and rate them in terms of the values that were present. How subjective do you think this task was?","completely objective","completely subjective","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"58","footer","",NA,"","submit","","subjectiveness_submit","","Continue:","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""
+"59","footer","",NA,"","note","","debrief","","Thanks for completing the survey! 
+ 
+Our research group is interested in perceived personal values in song lyrics. Some people might have a strong preference for song lyrics, or pay more attention to them when they listen. We asked a number of questions about your song lyric preferences.
+
+Personal values are defined as abstract concepts or beliefs. They are related to our behaviors and goals at the most abstract level, above an beyond any specific situation. According to Shalom Schwartz, there are 10 main values that all people share, and each person has their own ranking of these values. In more recent work, these are broken up further into 19 values; we used an older 10-item questionnaire. 
+ 
+This study is helping us learn how to gather data from people about the values that they think song lyrics express. This questionnaire is based on one that was a part of the European Social Survey. However, in that version, individuals were responding about themselves and not song lyrics. We will investigate whether this questionnaire is also useful for gathering information on song lyrics. 
+ 
+","","","",NA,NA,NA,NA,NA,NA,NA,NA,NA,""

@@ -1,0 +1,308 @@
+---
+title: "simulation study"
+author: "Andrew M. Demetriou"
+date: "27/9/2022"
+---
+
+# AIM:
+
+The aim of this notebook is to build a model using `lme4` to estimate the parameters of interest in this project, with simulated data.
+
+```{r, include=FALSE}
+library("here")            # file logistics
+library("tidyverse")       # data wrangling 
+library("corrplot")        # visualization
+
+# ensure this script returns the same results on each run
+#set.seed(42) #the answer to life, the universe, and everything
+#set.seed(666) # the number of the beast
+#set.seed(667) # the neighbor of the beast
+```
+
+```{r, echo=FALSE}
+#Import custom simulation functions:
+source(here("0_functions", "big_bad_sim_function_3.3.R"))
+```
+
+## Setting and checking parameters:
+
+Here I am checking to see that I can specify parameters when I simulate data, and estimate them correctly with my statistical models. I first estimate the parameters with a series of multilevel regression models, one for each of the 10 values, using the `lme4` package.
+
+Parameters of interest:
+
+1\. the random intercept SD for participants; `tau_0`, which I set to 4
+
+2\. the means for the 10 variables; mu, which I set to be 0
+
+3\. the SD of the 10 variables; which I set according to the SDs of a prior study
+
+```{r}
+#set parameters:
+n_items    <- 360
+n_ratings  <- 25
+n_subj     <- 500
+n_machines <- 8
+n_trials   <- 10
+#mu         <- c(3.08, 4.29, 3.63, 2.59, 4.60, 3.98, 4.66, 3.92, 4.26, 4.47)
+mu         <- rep(0, 10) #means of each variable, set to 0
+SD         <- c(1.3, 1.11, 1.13, 1.11, .94, .87, .88, 1.34, 1.27, 1.13)
+tau_0      <- 4 # by-subject random intercept sd
+tau_0_m    <- 2 # by-machine random intercept sd
+#tau_1      <- rnorm(10,0,1) # by subject randomslope sd: set to vary
+tau_1      <- rep(0, 10) # by subject random slope sd: set to 0
+tau_1_m    <- rnorm(10,0,1) # by machine random slope sd
+```
+
+```{r}
+# simulate data with above parameters
+
+# machine outputs as rows:
+sim_data <- my_sim_data_dt(
+  n_items    = n_items, 
+  n_ratings  = n_ratings, 
+  n_subj     = n_subj, 
+  n_machines = n_machines, 
+  n_trials   = n_trials, 
+  mu         = mu,
+  SD         = SD,
+  tau_0      = tau_0, 
+  tau_0_m    = tau_0_m,
+  tau_1      = tau_1, 
+  tau_1_m    = tau_1_m,
+  process    = "subjects", 
+  output     = "both"
+)
+
+machines_as_subjects <- sim_data$sim_data
+item_ground_truth    <- sim_data$item_ground_truth
+```
+
+```{r}
+# cleanup functions
+rm(item_ground_truth_sim_function_dt, machine_sim_function_dt, 
+machines_as_fixed_function_dt, machines_as_subjects_function_dt, subject_sim_function_dt, 
+my_sim_data_dt, sim_data)
+```
+
+## LME4:
+
+### SD of subjects:
+
+Estimate the random intercepts and 95% confidence intervals with `lme4` using a custom set of functions:
+
+```{r}
+#custom descriptives function:
+source(here("0_functions", "descriptives_function_1.6.r"))
+
+#make dataframe of random effects per value
+random_effect_sd_dt <- machines_as_subjects |> 
+  # select participant rows 
+  filter(group == '1') |> 
+  assemble_random_effect_sd_dt() |>
+  add_column(tau_0 = tau_0, SD = SD) 
+```
+
+```{r}
+random_effect_sd_dt |>
+  saveRDS(here("III_simulation_study", "intermediary_data", "lme4_random_effect_sd_dt.RDS"))
+```
+
+
+The dotted line is the random intercept SD for subject: `tau_0`. We can see the point estimate of each variable is close to 4.
+
+```{r}
+random_effect_sd_dt %>%
+  ggplot(aes(x=model, y=subject_ID, color=model)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=subject_ID_lower, ymax=subject_ID_higher)) +
+  geom_hline(yintercept = 4, linetype = 'dotted',color = "red") +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45)) +
+  scale_y_continuous(limits = c(1, 10), n.breaks = 10) +
+  ggtitle("subject random effect SD by value")
+```
+
+The `x` indicates the ground truth standard deviations for the items. Here we see that the 95% confidence interval captures the SD.
+
+```{r}
+random_effect_sd_dt %>%
+  ggplot(aes(x=model, y=item_ID, color=model)) +
+  geom_errorbar(aes(ymin=item_ID_lower, ymax=item_ID_higher)) + 
+  geom_point() +
+  geom_point(aes(x=model, y=SD, color = "red"), shape = 4, size=4) +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45)) +
+  ggtitle("item random effect SD by value")
+
+rm(random_effect_sd_dt)
+```
+
+### Means of variables
+
+I see that taking the means of each of the columns that represents each variable doesn't recover the original mu, which is the ground truth item means. They've been set at 0 for all values.
+
+```{r}
+# make dataframe of participant responses
+machines_as_subjects |>
+  filter(group == '1') |>
+  select(starts_with("y_")) |>
+  colMeans() |>
+  t() |>
+  as.data.frame() |>
+  t() |>
+  as.data.frame() |>
+  rownames_to_column() |>
+  rename('mean' = 'V1', 'value' = 'rowname') |>
+  
+  # plot means
+    ggplot(aes(x=value, y=mean)) +
+    geom_point() +
+    geom_hline(yintercept = 0, linetype = 'dotted', color = 'red') +
+    theme_minimal() +
+    theme(legend.position = "none", axis.text.x = element_text(angle = 45))
+```
+
+```{r}
+intercept_and_predicted_dt <- machines_as_subjects |> 
+  # select participant rows 
+  filter(group == '1') |> 
+  # retrieve item intercept per item
+  assemble_intercept_and_predicted_dt()
+```
+
+```{r}
+intercept_and_predicted_dt |>
+  saveRDS(here("III_simulation_study", "intermediary_data", "lme4_intercept_and_predicted_dt.RDS"))
+```
+
+
+Here we see that the means of the item intercepts are very close to 0.
+
+```{r}
+# make dataframe of mean of item intercept per item
+intercept_summary_dt <- intercept_and_predicted_dt |>
+  group_by(value) |>
+  summarize(mean_intercept = mean(intercept), mean_fitted = mean(mean))
+
+# format in non-scientific  notation for plotting
+intercept_summary_dt$mean_intercept <- intercept_summary_dt$mean_intercept |> 
+  format(scientific = F) |> as.numeric()
+intercept_summary_dt$mean_fitted    <- intercept_summary_dt$mean_fitted    |> 
+  format(scientific = F) |> as.numeric()
+
+# plot means
+intercept_summary_dt |>
+  ggplot(aes(x=value, y=mean_intercept)) +
+    geom_point() +
+    scale_y_continuous(limits = c(-0.001, 0.001)) +
+    geom_hline(yintercept = 0, linetype = 'dotted', color = 'red') +
+    theme_minimal() +
+    theme(legend.position = "none", axis.text.x = element_text(angle = 45))
+
+rm(intercept_summary_dt)
+```
+
+Here I compare the item intercepts to the ground truth values generated during the simulation process.
+
+```{r}
+intercept_dt <- intercept_and_predicted_dt |>
+  # remove 'within' values
+  select(-mean) |>
+  # set each value as a column
+  pivot_wider(names_from = 'value', values_from = 'intercept')
+
+# alphabetize column order in a vector
+column_order <- item_ground_truth |> select(-item_ID) |> colnames() |> sort()
+
+# re-order columns for easier interpretation of correlation matrix
+item_ground_truth <- item_ground_truth |>
+  select(item_ID, column_order)
+
+# merge two dataframes
+correlation_dt <- merge(item_ground_truth, intercept_dt, by='item_ID')
+
+# plot correlation matrix between two sets of variables
+cor(correlation_dt[,2:11], correlation_dt[,12:21]) |> 
+  corrplot(
+    method = "color", 
+    type = "full", 
+    addCoef.col = "black", 
+    number.cex = 0.75)
+
+rm(column_order, intercept_dt, intercept_and_predicted_dt)
+```
+
+This is the original correlation matrix, that we're trying to retrieve:
+
+Correlation matrix taken from SVS correlations (upper triangle) in the appendix: ![appendix_table](screenshots/appendix,%20Schwartz%202001.png){width="489"}
+
+c( 1, .04, -.04, -.20, -.32, -.48, -.11, .01, .09, .50), #power
+
+c( .04, 1, .25, .08, .01, -.30, -.34, -.35, -.12, -.11), #security
+
+c(-.04, .25, 1, .35, .15, -.19, -.41, -.31, -.32, -.18), #conformity
+
+c(-.20, .08, .35, 1, .12, -.07, -.31, -.19, -.42, -.38), #tradition
+
+c(-.32, .01, .15, .12, 1, -.08, -.20, -.25, -.26, -.25), #benevolence
+
+c(-.48, -.30, -.19, -.07, -.08, 1, .12, -.02, -.01, -.39), #universalism
+
+c(-.11, -.34, -.41, -.31, -.20, .12, 1, .22, .19, .13), #self-direction
+
+c( .01, -.35, -.31, -.19, -.25, -.02, .22, 1, .29, .02), #stimulation
+
+c( .09, -.12, -.32, -.42, -.26, -.01, .19, .29, 1, .12), #hedonism
+
+c( .50, -.11, -.18, -.38, -.25, -.39, .13, .02, .12, 1)) #achievement
+
+```{r}
+par(mfrow = c(1,2))
+
+correlation_dt[, 12:21] |>
+  select(
+      y_power, y_security, y_conformity, 
+      y_tradition, y_benevolence, y_universalism, 
+      y_self_direction, y_stimulation, y_hedonism, y_achievement) |>
+  cor() |>
+  corrplot(
+    method = "color", 
+    type = "full", 
+    addCoef.col = "black", 
+    number.cex = 0.50)
+
+correlation_dt[,2:11] |>
+  # order of original correlation matrix
+    select(
+      power, security, conformity, 
+      tradition, benevolence, universalism, 
+      self_direction, stimulation, hedonism, achievement) |>
+    cor() |>
+    corrplot(
+    method = "color", 
+    type = "full", 
+    addCoef.col = "black", 
+    number.cex = 0.50)
+```
+
+```{r}
+# cleanup
+rm(
+mu, SD, 
+run_mods_f, 
+list_to_dt, 
+makeNamedList, 
+correlation_dt, 
+n_subj, n_trials,
+item_ground_truth,
+get_within_estimates, 
+machines_as_subjects,
+get_random_confints_dt, 
+get_individual_intercepts, 
+get_random_intercept_sd_dt, 
+assemble_random_effect_sd_dt,
+n_items, n_machines, n_ratings, 
+tau_0, tau_0_m, tau_1, tau_1_m,
+assemble_intercept_and_predicted_dt 
+)
+```

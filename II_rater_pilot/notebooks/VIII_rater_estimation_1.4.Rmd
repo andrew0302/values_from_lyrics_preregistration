@@ -1,0 +1,127 @@
+---
+title: "alpha_estimation"
+author: "andrew demetriou"
+date: "07/10/2022"
+---
+
+# AIM:
+
+The aim of this notebook is to estimate the number of ratings necessary per item. The threshold is estimated using cronbach's alpha. 
+
+```{r setup, include=FALSE}
+library('data.table') # data manipulation
+library('here')       # file logistics
+library('dplyr')      # logistics
+library('ggplot2')    # visualization
+library('shiny')      # interactive results
+library('DT')         # interactive table
+```
+
+Import dataset in qualtrics format, and re-organize for further processing:
+
+```{r}
+# organize qualtrics output
+source(here("II_rater_pilot", "scripts", "data_file_re-shape_1.0.R"))
+
+# path with the actual data
+data_file_path <- here("II_rater_pilot", "response_data")
+
+# file name as a string
+file_name <- "annotation_number_estimation _2.2_November 28, 2021_07.51.csv"
+
+# read in qualtrics data file
+responses_dt <- fread(here(data_file_path, file_name)) %>%
+  data_file_reshape(., file_name)
+
+rm(data_file_path, file_name, data_file_reshape)
+```
+
+The general approach is to compute the cronbach's alpha per value. Participants responded on a scale of -100 to 100. Because 0 is a legitimate response, issues may arise with further computations. Thus, I add 101 to the scores. 
+
+```{r}
+responses_dt[,3:12] <- responses_dt[,3:12] + 101
+```
+
+```{r}
+# import custom alpha estimation function
+source(here("0_functions", "alpha_function_1.9.R"))
+```
+
+```{r}
+# make a dataframe of alpha estimations for each variable
+list_of_alpha_tibbles <- make_list_of_alpha_tibbles(responses_dt)
+
+# summarize dataframes
+alpha_tibble_summary <- make_tibble_of_alpha_tibble_summaries(responses_dt)
+
+# smallest n that reaches threshold
+minimum_n <- minimum_n_by_alpha(responses_dt)
+
+rm(get_alpha, make_list_of_alpha_tibbles, pivot_dataframe, make_list_of_pivoted_dataframes, rename_columns, samples_of_alphas, summarize_alpha_tibble, make_tibble_of_alpha_tibble_summaries, minimum_n_by_alpha)
+```
+
+
+```{r}
+plot_alphas <- function(alpha_dt){
+  ggplot(alpha_dt) +
+    geom_vline(xintercept = 0.7, color = "grey50" ) +
+    geom_density(aes(alpha, colour = as.factor(n))) + 
+    xlim(0, 1) +
+    labs(title = "Distribution of Alphas by Rater N\n", 
+       color = "Number of raters\n") +
+    theme_minimal()
+}
+```
+
+```{r}
+list_of_plots <- lapply(list_of_alpha_tibbles, plot_alphas)
+names <- names(list_of_alpha_tibbles)
+```
+
+```{r}
+for(i in 1:length(names)){
+  list_of_plots[[i]] <- list_of_plots[[i]] + labs(title=paste("Distribution of Alphas by Rater N for", names[i]))
+}
+```
+
+```{r}
+list_of_plots |>
+  saveRDS(here("II_rater_pilot", "intermediary_data", "list_of_alpha_plots.RDS"))
+
+list_of_alpha_tibbles |>
+  saveRDS(here("II_rater_pilot", "intermediary_data", "list_of_alpha_tibbles.RDS"))
+```
+
+
+```{r}
+ui <- fluidPage(
+  titlePanel("Alpha Reliability by Value"),
+  
+  # drop down menu to display the values
+  selectInput('value', 'select value', choice = c(names)), 
+  
+  #plot this thing called 'alpha_plot'
+  plotOutput('alpha_plot'),
+  
+  #tableOutput('alpha_table')
+  DT::DTOutput('alpha_table')
+)
+
+server <- function(input, output, session){
+  
+  # render the plots; alpha distribution by n
+  output$alpha_plot <- renderPlot({
+  
+    #note: I've already created the plots 
+    plot_alphas(list_of_alpha_tibbles[[input$value]]) +
+    
+    #this adds the label to the title
+    labs(title=paste("Distribution of Alphas by Rater N for", input$value))
+  })
+  
+  # render the table of minimum n alpha summaries
+  output$alpha_table <- renderDataTable(minimum_n)
+}
+shinyApp(ui=ui, server=server)
+```
+

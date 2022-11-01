@@ -1,0 +1,137 @@
+explanations,block_order,item_order,class,type,optional,name,showif,label,choice1,choice2,choice3,choice4,choice5,choice6,choice7,choice8,choice9,choice10,choice11,choice12,value
+prolific ID block,,,,get code,,code,,,,,,,,,,,,,,,
+stimuli sampling,,,,calculate,,random_vector,,,,,,,,,,,,,,,"sample(size = 2, 1:7)"
+consent block,,,,note,,consent_form,,"This page is designed to provide you with information about this study to help you to decide whether you wish to participate. 
+
+In this study we will ask you to answer questions about your preferences for song lyrics. We will then ask you to read samples of song lyrics, and to answer some questions about them. By clicking ""Agree"" below, you certify that you have read, understood, and agree to the following:
+
+ 
+
+1. Your participation is completely voluntary, and you may end your participation at any time. 
+ 
+
+2. You will be asked some questions: First, you will be asked about your preferences for song lyrics. Next, you will be asked to read the lyrics to several songs and to answer some questions about your perceptions of them. 
+ 
+
+3. The team of researchers currently working on this study will have access to this data. In addition, journal article reviewers and researchers from accredited institutions may have access to de-identified versions of this data set. In the event that this occurs, no personally identifying information will be included with the transfered dataset. 
+ 
+
+4. If desired, you will receive a digital copy of your data. You may also instruct this research team to purge your data, all or in part, at any time. 
+ 
+
+5. Excerpts of the data collected in this study may appear in scientific research papers, conference presentations, public presentations, and media presentations. In the event that this occurs, no personally identifying information will be included. 
+ 
+
+6. Anonymized data will be kept and maintained confidentially by researcher Andrew M. Demetriou at Delft University of Technology. Researchers working with Andrew M. Demetriou will also have access to the data. Upon conclusion of the study, de-identified data will be maintained on the Open Science Framework (osf.io). 
+
+7. Details regarding the purposes of this study will be revealed in a debriefing description on-screen at the conclusion of this survey, so as not to bias your responses.
+ 
+
+8. Additional questions you may have may be directed to Andrew M. Demetriou: a.m.demetriou@tudelft.nl.  
+
+
+We anticipate that your participation in this study will require about 30 minutes. 
+",,,,,,,,,,,,,
+consent block,,,square square80,mc_button,,consent,,Please indicate:,agree,disagree,,,,,,,,,,,
+,,,,submit,,submit_consent,,Continue:,,,,,,,,,,,,,
+manual prolific,,,,text,,prolific_ID,,Please type in your Prolific ID:,,,,,,,,,,,,,
+manual prolific,,,,submit,,submit_prolific_ID,,Continue:,,,,,,,,,,,,,
+survey instructions,,,,note,,survey_instructions_1,,"### __Instructions:__ 
+#### On the following page, you'll be asked how much you agree with a number of statements. 
+#### The statements will describe behaviors associated with song lyrics. 
+#### You'll be asked to show how much you agree to the statements by clicking on a bar that looks like this:",,,,,,,,,,,,,
+survey instructions,,,analogue_rating_scale,"rating_button 1,20,1",,survey_instructions_test_1,,Click on the grey bar to indicate how much you agree. ,strongly agree,strongly disagree,,,,,,,,,,,
+survey instructions,,,,note,,survey_instructions_2,,"#### The closer you click to the left, the more you say you agree with the statement; the more you click to the right, the more you disagree with the statement. 
+
+###Warning: Lyrics were taken from popular music and may contain offensive language, or describe offensive situations. ",,,,,,,,,,,,,
+survey instructions,,,,submit,,submit_instructions,,Continue:,,,,,,,,,,,,,
+lyric prefs instructions,,,,note ,,lyrics_prefs_instructions,,Please indicate the degree to which you agree with the following statements:,,,,,,,,,,,,,
+lyric prefs,,,analogue_rating_scale,"rating_button 1,20,1",,lyric_prefs_1,,"I prefer music that contains lyrics, as opposed to music that does not",strongly agree,strongly disagree,,,,,,,,,,,
+lyric prefs,,,analogue_rating_scale,"rating_button 1,20,1",,lyric_prefs_2,,I only pay attention to the lyrics of songs or artists that I like.,strongly agree,strongly disagree,,,,,,,,,,,
+lyric prefs,,,analogue_rating_scale,"rating_button 1,20,1",,lyric_prefs_3,,"I always pay attention to the lyrics of a song, if the song has them",strongly agree,strongly disagree,,,,,,,,,,,
+lyric prefs,,,analogue_rating_scale,"rating_button 1,20,1",,lyric_prefs_4,,"I enjoy learning about song lyrics and their meaning, for example by reading  blogs and forums or listening to artist interviews",strongly agree,strongly disagree,,,,,,,,,,,
+lyric prefs,,,analogue_rating_scale,"rating_button 1,20,1",,lyric_prefs_5,,"If a song has lyrics that I don't like for any reason, I don't listen to it",strongly agree,strongly disagree,,,,,,,,,,,
+lyric prefs,,,analogue_rating_scale,"rating_button 1,20,1",,lyric_prefs_6,,"If I am not sure about the lyrics of a song, I search them on the internet",strongly agree,strongly disagree,,,,,,,,,,,
+lyric prefs,,,analogue_rating_scale,"rating_button 1,20,1",,lyric_prefs_7,,"I contribute to online resources on lyrics, for example forums, or on platforms where I can contribute lyric transcriptions",strongly agree,strongly disagree,,,,,,,,,,,
+lyric prefs,,,analogue_rating_scale,"rating_button 1,20,1",,lyric_prefs_8,,I memorize the lyrics to the songs I listen to,strongly agree,strongly disagree,,,,,,,,,,,
+lyric prefs,,,analogue_rating_scale,"rating_button 1,20,1",,lyric_prefs_9,,I write my own song lyrics,strongly agree,strongly disagree,,,,,,,,,,,
+lyric prefs,,,analogue_rating_scale,"rating_button 1,20,1",,lyric_prefs_10,,What percentage of your music library do you think contains songs with lyrics? Please make your best guess using the slider below:,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0%,100%,,,,,,,,,,,
+lyric activities,,,,note,,lyric_activities_instructions,,"Can you think of any other activities or indications that someone has an affinity for song lyrics? If so, please enter them here:",,,,,,,,,,,,,
+lyric activities,,,,text,*,lyric_activities_1,,,,,,,,,,,,,,,
+lyric activities,,,,text,*,lyric_activities_2,,,,,,,,,,,,,,,
+lyric activities,,,,text,*,lyric_activities_3,,,,,,,,,,,,,,,
+lyric activities,,,,text,*,lyric_activities_4,,,,,,,,,,,,,,,
+lyric activities,,,,text,*,lyric_activities_5,,,,,,,,,,,,,,,
+header end,,,,submit,,submit_lyrics,,Continue:,,,,,,,,,,,,,
+template,A,1,,note,,L_4116102_t_1,1 %in% random_vector,"Between the quotation marks below are some song lyrics. Please take a moment to read them and think about the SPEAKER the lyrics. Please remember that this SPEAKER might be a the AUTHOR themselves, or someone or something else:
+ 
+""All the lord's done for you, you're telling me you don't have nothing to
+Say? 
+You can't tell it, oh let me tell it 
+Get all worked up, go tell somebody and if they look at you a little 
+Strange 
+Tell 'em ""let me tell it!"" 
+Ohh ohh ohh 
+I remember the day when I was all confused 
+I searched for the truth time after time 
+Then came you, to my rescue, and improved my way of living 
+I remember the day, peace I could not find 
+There was change on my soul, and change in my mind 
+And then came you, and you had the key 
+You loosed all my burdens, and set me free, yeah 
+I can't sit down when I think of his touch 
+When I think if his goodness, how he loves me so much 
+Then I get a real good feeling 
+From my head down to my feet 
+That's when I raise up both of my hands 
+And I get up out of my seat, yeah""",,,,,,,,,,,,,
+template,A,2,,mc_button,,L_4116102_w,1 %in% random_vector,Do you think the SPEAKER and the AUTHOR are the same person? ,Yes,Maybe ,No,,,,,,,,,,
+template,A,3,,mc_button,,L_4116102_f,1 %in% random_vector,Do you recognize the song that the lyrics come from?,Yes,No,,,,,,,,,,,
+template,A,4,,submit,,L_4116102_submit_1,1 %in% random_vector,Continue:,,,,,,,,,,,,,
+template,A,5,,note,,L_4116102_t_2,1 %in% random_vector,"""All the lord's done for you, you're telling me you don't have nothing to
+Say? 
+You can't tell it, oh let me tell it 
+Get all worked up, go tell somebody and if they look at you a little 
+Strange 
+Tell 'em ""let me tell it!"" 
+Ohh ohh ohh 
+I remember the day when I was all confused 
+I searched for the truth time after time 
+Then came you, to my rescue, and improved my way of living 
+I remember the day, peace I could not find 
+There was change on my soul, and change in my mind 
+And then came you, and you had the key 
+You loosed all my burdens, and set me free, yeah 
+I can't sit down when I think of his touch 
+When I think if his goodness, how he loves me so much 
+Then I get a real good feeling 
+From my head down to my feet 
+That's when I raise up both of my hands 
+And I get up out of my seat, yeah""",,,,,,,,,,,,,
+template,A,6,,note,,L_4116102_instructions,1 %in% random_vector,"Please, rate the importance of the following values as a life-guiding principle for the SPEAKER of the lyrics. Use the slider in which 100 indicates that the value is of supreme importance for them, and -100 indicates that the value is completely opposed to their principles. ",,,,,,,,,,,,,
+template,A,7,analogue_rating_scale,"rating_button 1,20,1",,L_4116102_1,1 %in% random_vector,"POWER (social power, authority, wealth)",opposed to thier values,of supreme importance,,,,,,,,,,,
+template,A,8,analogue_rating_scale,"rating_button 1,20,1",,L_4116102_2,1 %in% random_vector,"ACHIEVEMENT (success, capability, ambition, influence on people and events)",opposed to thier values,of supreme importance,,,,,,,,,,,
+template,A,9,analogue_rating_scale,"rating_button 1,20,1",,L_4116102_3,1 %in% random_vector,"HEDONISM (gratification of desires, enjoyment in life, self- indulgence)",opposed to thier values,of supreme importance,,,,,,,,,,,
+template,A,10,analogue_rating_scale,"rating_button 1,20,1",,L_4116102_4,1 %in% random_vector,"STIMULATION (daring, a varied and challenging life, an exciting life)",opposed to thier values,of supreme importance,,,,,,,,,,,
+template,A,11,analogue_rating_scale,"rating_button 1,20,1",,L_4116102_5,1 %in% random_vector,"SELF-DIRECTION (creativity, freedom, curiosity, independence, choosing one's own goals)",opposed to thier values,of supreme importance,,,,,,,,,,,
+template,A,12,analogue_rating_scale,"rating_button 1,20,1",,L_4116102_6,1 %in% random_vector,"UNIVERSALISM (broad-mindedness, beauty of nature and arts, social justice, a world at peace, equality, wisdom, unity with nature, environmental protection)",opposed to thier values,of supreme importance,,,,,,,,,,,
+template,A,13,analogue_rating_scale,"rating_button 1,20,1",,L_4116102_7,1 %in% random_vector,"BENEVOLENCE (helpfulness, honesty, forgiveness, loyalty, responsibility)",opposed to thier values,of supreme importance,,,,,,,,,,,
+template,A,14,analogue_rating_scale,"rating_button 1,20,1",,L_4116102_8,1 %in% random_vector,"TRADITION (respect for tradition, humbleness, accepting one's portion in life, devotion, modesty)",opposed to thier values,of supreme importance,,,,,,,,,,,
+template,A,15,analogue_rating_scale,"rating_button 1,20,1",,L_4116102_9,1 %in% random_vector,"CONFORMITY (obedience, honoring parents and elders, self- discipline, politeness)",opposed to thier values,of supreme importance,,,,,,,,,,,
+template,A,16,analogue_rating_scale,"rating_button 1,20,1",,L_4116102_10,1 %in% random_vector,"SECURITY (national security, family security, social order, cleanliness, reciprocation of favors)",opposed to thier values,of supreme importance,,,,,,,,,,,
+template,A,17,analogue_rating_scale,"rating_button 1,20,1",,L_4116102_c,1 %in% random_vector,How confident are you in your ratings of these lyrics?,extremely unconfident,extremely confident,,,,,,,,,,,
+template,A,18,,text,*,L_4116102_r,1 %in% random_vector,"Was there anything specific about the lyrics that makde you unconfident in your ratings? (Optional)   e.g. they containted words or slang that you didn't know, the words in the lyrics were incorrect, or they were too poetic or abstract to interpret",,,,,,,,,,,,,
+template,A,19,,submit,,L_4116102_submit_2,1 %in% random_vector,Continue:,,,,,,,,,,,,,
+subjectiveness,,,analogue_rating_scale,"rating_button 1,20,1",,subjectiveness,,"Something is subjective if it is influenced by personal feelings, tastes or opinions. On the other hand, something is objective if it is not influenced by personal feelings, tastes or opinions. 
+
+You were asked to read lyrics and rate them in terms of the values that were present. How subjective do you think this task was?",completely objective,completely subjective,,,,,,,,,,,
+subjectiveness,,,,submit,,subjectiveness_submit,,Continue:,,,,,,,,,,,,,
+debrief,,,,note,,debrief,,"Thanks for completing the survey! 
+ 
+Our research group is interested in perceived personal values in song lyrics. Some people might have a strong preference for song lyrics, or pay more attention to them when they listen. We asked a number of questions about your song lyric preferences.
+
+Personal values are defined as abstract concepts or beliefs. They are related to our behaviors and goals at the most abstract level, above an beyond any specific situation. According to Shalom Schwartz, there are 10 main values that all people share, and each person has their own ranking of these values. In more recent work, these are broken up further into 19 values; we used an older 10-item questionnaire. 
+ 
+This study is helping us learn how to gather data from people about the values that they think song lyrics express. This questionnaire is based on one that was a part of the European Social Survey. However, in that version, individuals were responding about themselves and not song lyrics. We will investigate whether this questionnaire is also useful for gathering information on song lyrics. 
+ 
+",,,,,,,,,,,,,

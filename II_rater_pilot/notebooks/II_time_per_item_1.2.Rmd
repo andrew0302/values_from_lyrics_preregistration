@@ -1,0 +1,308 @@
+---
+title: "time_per_item"
+author: "andrew demetriou"
+date: "11/29/2021"
+---
+
+#AIM
+
+The aim of this notebook is to examine how long it took to answer the items on the lyrics questionnaire, and to complete each set of questions for each song lyric. 
+
+
+```{r setup, include=FALSE}
+library('here')       # file logistics
+library('data.table') # data manipulation
+library('dplyr')      # data manipulation
+library('ggplot2')    # data visualization
+library('gridExtra')  # data visualization
+library('shiny')      # interactive visualization
+library('DT')         # interactive visualization
+```
+
+```{r}
+# path with the actual data
+data_file_path <- here("II_rater_pilot", "response_data")
+
+# create a list with all of the files
+data_files <- list.files(data_file_path)
+
+# name specific files
+## note: PROLIFIC DATA NOT ON GITHUB
+qualtrics_file <- "annotation_number_estimation _2.2_November 28, 2021_07.51.csv"
+prolific_file  <- "prolific_export_619f3c47f6b78ee67274583e.csv"
+
+# read in qualtrics data file
+responses_dt <- fread(here(data_file_path, qualtrics_file)) %>%
+  #remove junk on first two rows
+  .[3:.N]
+
+# get question wording:
+#questions <- colnames(fread(here(data_file_path, qualtrics_file), skip=1))
+
+# read in prolific data file
+demogs_dt <- fread(here(data_file_path, prolific_file))
+
+#filter out incomplete responses
+demogs_dt <- demogs_dt %>%
+  .[, PROLIFIC_PID := participant_id] %>%
+  .[!is.na(demogs_dt$completed_date_time),]
+
+# merge datasets: PROLIFIC DATA NOT ON GITHUB
+responses_dt <- responses_dt[demogs_dt, on=.(PROLIFIC_PID)]
+
+# dataframe of only participants that have agreed to participate
+responses_dt <- responses_dt[`Participant Consent`=='agree', ]
+
+rm(data_file_path, data_files, prolific_file, qualtrics_file)
+```
+
+Both prolific and qualtrics have their own measures of time taken for the entire survey. Here I take a look at each of them. 
+
+```{r}
+#rename qualtrics duration column
+responses_dt$duration <- as.numeric(responses_dt$`Duration (in seconds)`) 
+
+#define columns to plot
+columns <- c("duration", "PROLIFIC_PID", "time_taken", "Sex", "age")
+
+#plot survey duration according to qualtrics
+duration_plot <- responses_dt %>% select(columns) %>%
+  ggplot(., aes(x=duration, y=age, color=Sex)) +
+  geom_point() +
+  xlab("Time (in seconds): Qualtrics") +
+  scale_x_continuous(limits = c(1000, 7000))
+
+#plot survey duration according to prolific
+time_taken_plot <- responses_dt[!Sex=='CONSENT REVOKED'] %>% .[time_taken < 100000] %>%select(columns) %>%
+  ggplot(., aes(x=time_taken, y=age, color=Sex)) +
+  geom_point() +
+  xlab("Time (in seconds): Prolific") +
+  scale_x_continuous(limits = c(1000, 7000))
+
+grid.arrange(duration_plot, time_taken_plot, ncol=2)
+
+rm(duration_plot, time_taken_plot, columns)
+```
+
+```{r}
+outliers_dt <- responses_dt[, c("PROLIFIC_PID", "time_taken", "duration")]
+outliers_dt[time_taken>50000 | duration>5000]
+
+rm(outliers_dt)
+```
+Here I select rows that have the timing information for each of the questions. Specifically, I select rows with that contain a) the first click on the page, and b) the last click on the page. I then subtract the first click time from the last click time to get the time spent on the page. 
+
+According to: https://www.qualtrics.com/support/survey-platform/survey-module/editing-questions/question-types-guide/advanced/timing/, the time is in seconds. 
+
+```{r}
+# logical vector of matches to: 
+# 1) either first or last click for a question
+# 2) participant ID
+clicks <- grepl("First.Click|Last.Click|PROLIFIC_PID", colnames(responses_dt)) 
+
+#subset data based on clicks vector
+clicks_dt <- responses_dt[, ..clicks]
+
+#pivot to a long format
+clicks_dt <- melt(clicks_dt, id.vars=c("PROLIFIC_PID"))
+
+## separate long dt into two shorter dts:
+
+# dt with only rows with "Last Click"
+last <- clicks_dt[variable %like% "Last Click"]
+# remove 'Last.Click'
+last$variable <- last$variable %>% gsub("Last.Click", "", .)
+# change name of column
+setnames(last, "value", "last_click")
+# make column numeric
+last$last_click <- as.numeric(last$last_click)
+  
+# dt with only rows with "First Click"
+first <- clicks_dt[variable %like% "First Click"] 
+# remove 'First.Click'
+first$variable <- first$variable %>% gsub("First.Click", "", .)
+# change name of column 
+setnames(first, "value", "first_click")
+# make column numeric
+first$first_click <- as.numeric(first$first_click)
+
+#merge two smaller dts
+both <- first[last, on = .(PROLIFIC_PID, variable)]
+
+#compute difference
+both[, diff := (last_click - first_click)]
+
+rm(first, last, clicks_dt, clicks, responses_dt)
+```
+
+Here I plot the time taken in seconds for each question block. 
+Two observations appear to be clear outliers. 
+
+One observation took 9000+ seconds - it may be a timeout issue, or perhaps the person managed to stay logged in while away from the computer. 
+
+```{r}
+time_per_song_plot <- both %>% 
+  ggplot(., aes(x=diff, y=variable, color = variable)) +
+  geom_boxplot(show.legend=FALSE) +
+  theme_minimal() +
+  xlab("Time taken (In seconds)")
+
+time_per_song_plot
+
+time_per_song_plot |>
+  saveRDS(here("II_rater_pilot", "intermediary_data", "time_per_song_plot.RDS"))
+```
+Here I table the time taken per observation in descending order:
+
+```{r}
+both[order(-diff),]
+```
+
+Here I filter out the initial lyrics questionnaire and estimate central tendency of the time taken per lyric. 
+
+```{r}
+no_outliers_removed <- both |>
+  filter(variable != "Lyric_questions_time_") |>
+  summarize(mean = mean(diff), median = median(diff), sd = sd(diff))
+
+outliers_less_than_900 <- both[diff<900] |>
+  filter(variable != "Lyric_questions_time_") |>
+  summarize(mean = mean(diff), median=median(diff), sd = sd(diff))
+
+central_tendency <- rbind(no_outliers_removed, outliers_less_than_900)
+central_tendency$outliers <- c("no outliers removed", "outliers set at < 900")
+central_tendency <- central_tendency |> select(outliers, everything())
+central_tendency
+
+central_tendency |>
+  saveRDS(
+    here("II_rater_pilot", "intermediary_data", "time_taken_per_song_sumary_table.RDS")
+  )
+
+rm(no_outliers_removed, outliers_less_than_900, central_tendency)
+```
+
+
+```{r}
+#these look like outliers. when removed the values look more normal
+both[variable=='55713838-m_',][diff<9000] %>%
+  summarize(mean = mean(diff), sd = sd(diff))
+
+both[variable=='2241308-m_',][diff<2000] %>%
+  summarize(mean = mean(diff), sd = sd(diff))
+
+both[variable=='205113268-m_',][diff<900]  %>%
+  summarize(mean = mean(diff), sd = sd(diff))
+```
+
+To more closely examine whether older people take more time, I plot the time taken variable against age:
+
+```{r}
+both <- both[demogs_dt[, c("Sex", "age", "PROLIFIC_PID")], on=.(PROLIFIC_PID)]
+
+both[diff<1000] |>
+  filter(variable != "Lyric_questions_time_") |>
+  ggplot(aes(x=diff, y=age, color=Sex)) +
+  geom_point()
+
+rm(demogs_dt)
+```
+
+Although there's no reason to expect sex differences I plot them anyway:
+```{r}
+both[diff<900] %>% ggplot(aes(x=diff, color=Sex, fill=Sex)) +
+  geom_histogram() +
+  facet_wrap(~Sex)
+
+both[diff<900] %>% ggplot(aes(x=diff)) +
+  geom_histogram(bins = 30) +
+  geom_vline(aes(xintercept = median(diff)), color="red") +
+  annotate(geom="text", x=200, y=4000, label="Median = 31.8") +
+  xlab("Time (in seconds")
+```
+
+Here I build a data table of the mean time taken per question block, excluding outliers defined as > 900 seconds. 
+
+```{r}
+summary_dt <- both %>% group_by(variable) %>% summarize(mean = mean(diff), sd = sd(diff)) %>% ungroup()
+
+#compute mean and sd seconds per lyric stimulus
+summary_dt[1:20,] %>% summarize(mean = mean(mean), sd=mean(sd))
+
+#create summary statistics dt by questionnaire section
+summary_dt <- both[diff<900] %>% group_by(variable) %>% summarize(mean = mean(diff), sd = sd(diff)) %>% ungroup()
+
+#make data table
+setDT(summary_dt)
+
+summary_dt
+```
+
+Song # 151085454
+
+"I think cancers gonna kill me 
+'Cause I got a real bad sunburn when I was 13
+ Couldn't sit in a classroom chair for at least a week
+ Maybe I shouldn't have fallen asleep
+ In that hot, hot sun without a little bit of sunscreen
+ Don't let this reflect too badly on my character
+ I think a car is gonna kill me 'cause
+ I Ride my bike consistently throughout the city
+ And we all know, it's only so long before you get hit"
+ 
+
+Song # 99567690
+
+"Hey guy - you're the one for me 
+ Your face - the sweetest thing I've ever seen 
+ Stop by - dedicate to me 
+ Your time - your time 
+ At night - it really gets to me 
+ I find nobody is here with me 
+ Stop by - say you'll stay with me 
+ You're the one I really miss 
+ Every single day - single hour 
+ I can see your face - single day"
+
+
+A conservative estimate for the time it takes to complete the lyrics block is 190 seconds (M=105.47, SD=84).
+
+The lyrics items look rather uniform in terms of time taken. I display the two with the highest values above. 
+ 
+```{r}
+summary_dt[order(-mean),]
+summary_dt[order(-sd),]
+```
+
+More interactive visualization below:
+
+```{r}
+ui <- fluidPage(
+  titlePanel("Time Taken by Song (in seconds)"),
+  
+  #plot this thing called 'alpha_plot'
+  plotOutput('both_plot'),
+  
+  #tableOutput('alpha_table')
+  DT::DTOutput('both')
+)
+
+server <- function(input, output, session){
+  
+  # render the plots; alpha distribution by n
+  output$both_plot <- renderPlot({
+    both[diff > 0 & diff < 900,] %>% 
+    ggplot(., aes(x=diff, y=variable, color = variable)) +
+    geom_boxplot(show.legend=FALSE) +
+    theme_minimal() +
+    #this adds the label to the title
+    labs(title=paste("Time Taken by Song (in seconds)"))
+  })
+  
+  # render the table of minimum n alpha summaries
+  output$both <- renderDataTable(both[diff > 0 & diff < 900,])
+}
+shinyApp(ui=ui, server=server)
+```
+
+

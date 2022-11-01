@@ -1,0 +1,134 @@
+---
+title: "confirm_responses"
+author: "andrew demetriou"
+date: "11/29/2021"
+---
+
+#AIM
+
+This notebook is a first look at the responses, confirming if they're legitimate.
+Prolific.co data is referenced in the notebook, but is not on Github. 
+
+This notebook first examines the time it took participants to complete the questionnaire, using data from both Prolific and Qualtrics. Responses were closely examined when their durations were substantially longer than others, or if they had sent a message on the Prolific platform, indicating that something appeared to have gone wrong during the data collection process. 
+
+Responses were examined qualitatively within this notebook, but also on the Prolific and Qualtrics platforms. 
+
+```{r setup, include=FALSE}
+library('data.table') # data manipulation
+library('here')       # file logistics
+library("ggplot2")    # visualization
+library('dplyr')      # data manipulation
+```
+
+```{r}
+# path with the actual data
+data_file_path <- here("II_rater_pilot", "response_data")
+
+# create a list with all of the files
+data_files <- list.files(data_file_path)
+
+# read in qualtrics data file
+responses_dt <- fread(here(data_file_path, "annotation_number_estimation _2.2_November 28, 2021_07.51.csv"))
+
+# remove junk on first two rows
+responses_dt <- responses_dt[3:.N]
+
+# read in prolific data file
+demogs_dt <- fread(here(data_file_path, "prolific_export_619f3c47f6b78ee67274583e.csv"))
+demogs_dt[, PROLIFIC_PID := participant_id]
+
+# merge datasets: PROLIFIC DATA NOT ON GITHUB
+all_dt <- responses_dt[demogs_dt, on=.(PROLIFIC_PID)]
+complete_dt <- responses_dt[demogs_dt, on=.(PROLIFIC_PID), nomatch=0]
+
+# get question wording:
+questions <- colnames(fread(here(data_file_path, data_files[1]), skip=1))
+
+rm(data_file_path, data_files, demogs_dt, responses_dt, complete_dt)
+```
+
+```{r}
+#create a dataframe to work with
+#506 participants finished
+finished_dt <- all_dt[Finished=='True', ]
+
+# 8 participants finished, and timed out
+# //this now shows 0 participants finished and timed out
+finished_timed_out_dt <- all_dt[status=='TIMED-OUT' & Finished=='True', ]
+
+# 9 participants did not finish, and timed out - perhaps found in partial responses
+unfinished_timed_out_dt <- all_dt[is.na(Finished) & status=='TIMED-OUT', ]
+
+rm(finished_timed_out_dt, unfinished_timed_out_dt)
+```
+
+```{r}
+#looking at the difference between Qualtrics time estimation and prolific
+finished_dt$duration  <- as.numeric(finished_dt$`Duration (in seconds)`) 
+finished_dt$time_diff <- finished_dt$time_taken - finished_dt$duration
+
+#note columns to select
+columns <- c("duration", "PROLIFIC_PID", "time_taken", "Sex", "age")
+
+#plot duration by age, separated by sex
+duration_plot <- finished_dt %>% select(columns) %>%
+  ggplot(., aes(x=duration, y=age, color=Sex)) +
+  geom_point()
+duration_plot
+```
+
+
+```{r}
+#two observations took longer than 9000 seconds - responses look legit
+#5fbc7c8b02bb0c14bfbe08ef
+#5fd15934025b991384ef1116
+finished_dt[duration > 9000,]
+rm(duration_plot)
+```
+
+```{r}
+time_taken_plot <- finished_dt %>% select(columns) %>%
+  ggplot(., aes(x=time_taken, y=age, color=Sex)) +
+  geom_point()
+
+time_taken_plot
+```
+
+```{r}
+#looks like it is returned after a very long time once it times out
+finished_dt[time_taken > 7000,]
+
+path <- here("II_rater_pilot", "intermediary_data", "time_taken_table.RDS")
+
+finished_dt <- finished_dt |> select(duration, time_taken, Sex, age) 
+colnames(finished_dt) <- c("Qualtrics", "Prolific", "Sex", "Age")
+
+finished_dt |> saveRDS(file = path)
+```
+
+```{r}
+summary_stats <- c(mean(finished_dt$duration)/60, sd(finished_dt$duration)/60)
+summary_stats
+```
+
+
+```{r}
+#these had long stretches with the same value, but they look legit
+suspicious_rows <- c(38, 72, 123, 132, 162, 176, 427, 479, 485)
+suspicious_dt <- all_dt[suspicious_rows, ]
+suspicious_dt
+
+# this one that was revoked on the prolific platform
+all_dt[57, ]
+```
+
+
+```{r}
+# these responses left messages on the prolific platform
+
+messages <- c("5f3e5e066dfaa70464615447", "61164fcd0209fe50694212f2", "55bb74f1fdf99b1519ef4762", "5fd15934025b991384ef1116", "5bf412a805d7260001f5247f", "5de7c6d448241d73d36ceaef", "5c6f1e080b99a000018cc53b", "5dde21012a30acd8ada645ec", "6158591c0aface73c971cd2b", "614ee4836d0150e0a1865e6e", "6155b46b4b82aa7811ffaabd")
+
+#messages <- c("5bf412a805d7260001f5247f ")
+
+messages_dt <- all_dt[all_dt$PROLIFIC_PID %in% messages]
+```
