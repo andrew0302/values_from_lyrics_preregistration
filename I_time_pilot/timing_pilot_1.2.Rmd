@@ -132,8 +132,8 @@ lyrics_preferences_dt |>
       number.cex = 1)
 
 #save data for further analysis
-path <- here("I_time_pilot", "intermediary_data", "lyrics_preferences.csv")
-write.csv(lyrics_preferences_dt, path)
+path <- here("I_time_pilot", "intermediary_data", "lyrics_preferences.RDS")
+saveRDS(lyrics_preferences_dt, path)
 
 rm(lyrics_preferences_dt, partial_lyrics_preferences_dt, partial_responses_dt, lyrics_questions, to_numbers, questions, path)
 ```
@@ -220,7 +220,7 @@ zero_dt <- zero_dt[, .(
 #bind to summary data table
 summary_dt <- rbind(summary_dt, zero_dt) 
 
-colnames(summary_dt) <- c("lyric_preferences", "song_1", "song_2", "song_3", "song_4", "statistic")
+colnames(summary_dt) <- c("lyric preferences", "song 1", "song 2", "song 3", "song 4", "statistic")
 summary_dt <- summary_dt |> select(statistic, everything())
 ```
 
