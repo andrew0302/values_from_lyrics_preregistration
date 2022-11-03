@@ -3,7 +3,7 @@ title: "Values from Lyrics: Pre-Registration"
 bibliography: references.bib
 author: "Andrew M. Demetriou"
 format: 
-   pdf:
+   html:
     toc: true
 crossref:
   fig-title: '**Figure**'
@@ -21,17 +21,19 @@ Contributors: Andrew M. Demetriou, Jaehun Kim, Sandy Manolios, Cynthia C.S. Liem
 
 ### Overview
 
-We aim to extend work that used natural language processing (NLP) to estimate psychological values (e.g. [@schwartz2001extending]) in social-media text [@ponizovskiy2020development]. Our aim is to explore the potential to automate the rating of perceived values in song lyrics.
+We aim to extend work that used natural language processing (NLP) to estimate psychological values (e.g. [@schwartz2001extending]) in social-media text [@ponizovskiy2020development]. Our aim is to explore the potential to estimate the perceived psychological values in song lyrics.
 
 We will gather ratings of song lyrics from participants using an online survey. Participants will respond to a psychometric instrument that we have adapted for this purpose. We will then use NLP models to estimate scores for each of the personal values. Lastly, we will examine how well the scores from the NLP resemble human ratings.
 
+As in [@ponizovskiy2020development], we estimate convergent validity of the grouped NLP models by estimating correlations with related constructs measured using the Linguistic Inquiry Word Count ([LIWC](https://liwc.app)) dictionary (see [@boyd2022development] for psychometric details).
+
 ### Contributions
 
-We extend existing work in two ways: Firstly, we compare semantic distance (the degree to which words are related) measured using NLP models to the results of word counting. Prior studies have counted the number of times specific words from a fixed lexicon were used in a given body of text as a means of measuring psychological constructs: [@ponizovskiy2020development] validated such a lexicon of words for measuring a set of 10 personal values in social-media text. However, song lyrics may not contain those exact words, and may instead use synonymous or otherwise meaningfully similar words, or even slang and metaphors. Our method allows for more word coverage: rather than count words from a fixed lexicon, we will estimate the semantic distance between the words in the lexicon that represent each personal value, and the song lyrics in order to derive a score for each value.
+We extend existing work primarily in two ways: Firstly, we compare semantic distance (the degree to which words are related) measured using NLP models to the results of word counting. Prior studies have counted the number of times specific words from a fixed lexicon were used in a given body of text as a means of measuring psychological constructs: [@ponizovskiy2020development] validated such a lexicon of words for measuring a set of 10 personal values in social-media text. However, song lyrics may not contain those exact words, and may instead use synonymous or otherwise meaningfully similar words, or even slang and metaphors. Our method allows for more word coverage: rather than count words from a fixed lexicon, we will estimate the semantic distance between the words in the lexicon that represent each personal value, and the song lyrics in order to derive a score for each value.
 
 Secondly, we linearly combine the output of multiple NLP models into a single latent variable, to represent the shared variance of the machine ratings: as each NLP model is developed using 1) an algorithm trained on 2) a corpus, each algorithm/corpus combination will estimate the semantic distance between two words differently. This loosely parallels how human participants may rate each set of lyrics differently. [@beaty2021automating] showed that this latent variable of semantic distance estimations resulted in overlap with a latent variable of human ratings as high as r = .9, albeit in a different domain. This approach further allows us to estimate the contribution of each algorithm / corpus setup to the shared variance.
 
-As in [@ponizovskiy2020development], we estimate convergent validity of the grouped NLP models by estimating correlations with related constructs measured using the Linguistic Inquiry Word Count ([LIWC](https://liwc.app)) dictionary (see [@boyd2022development] for psychometric details).
+We further contribute two assets: firstly, we provide containerized, API-reachable interface to the models that we used to estimate semantic similarity, housed on [Replicate.com](https://replicate.com/eldrin/text-concept-similarity). Secondly, we share the beginnings of a psychometric scale for assessing lyric preference intensity and expertise (@sec-lyricquestions).
 
 ### Hypotheses
 
@@ -51,7 +53,11 @@ The main survey will be implemented a version of the [formR.org](https://formR.o
 
 We experienced issues testing our surveys when the number of lyric stimuli in the survey was greater than 60. Thus, our stimulus set will be separated into otherwise identical survey files on the formR server, with no more than 60 lyrics in each survey file. Participants will be randomly assigned to one of the surveys, which will in turn randomly select a subset of stimuli to have rated by participants.
 
-The majority of items require a Likert-type response. In order to gather a more continuous measure, we used a sort of slider with no obvious starting point: the `rating button` option in formR shows a horizontal gray bar with two labeled poles (e.g. agree - disagree). Participants can then be instructed to indicate on the bar the degree to which they agree or disagree, as they might with a slider. However, the gray bar has no visible slider, thus no starting value. The gray bar shows no divisions on it and appears continuous, although it contains 20 subdivisions.
+The majority of items require a Likert-type response. In order to gather a more continuous measure, we used a sort of slider with no obvious starting point: the `rating button` option in formR shows a horizontal gray bar with two labeled poles (e.g. agree - disagree).
+
+![](screenshots/formR.png)
+
+Participants can then be instructed to indicate on the bar the degree to which they agree or disagree, as they might with a slider. However, the gray bar has no visible slider, thus no starting value. The gray bar shows no divisions on it and appears continuous, although it contains 20 subdivisions.
 
 ### Survey Meausures:
 
@@ -61,7 +67,7 @@ Prior research (e.g. [@schwartz2001extending]) has shown evidence for the presen
 
 #### Lyric Preferences:
 
-To assess whether a preference for lyrical content has an effect on the ratings given, we created an ad-hoc scale consisting of 16 items, partially inspired by the Preference Intensity scale in [@schafer2009functions]. Our original ad-hoc scale consisted of 11 items. Participants in our pilot studies were asked to respond to the 10 items, and to an additional 'open response' format item that asked: "Can you think of any other activities or indications that someone has an affinity for song lyrics? If so, please enter them here:", from which we drew an additional 5 items.
+To assess whether expertise in lyrics or a preference for lyrical content has an effect on the ratings given, we have begun developing a scale, partially inspired by the Preference Intensity scale in [@schafer2009functions]. Our original ad-hoc scale consisted of 10 Likert-type items. Participants in @sec-pilot2 were asked to respond to the 10 items, and to an additional 'open response' format item that asked: "Can you think of any other activities or indications that someone has an affinity for song lyrics? If so, please enter them here:". We removed poorly performing items, and added additional 5 items based on participant responses to the open format question. We will continue examining the usefulness of items using factor analysis and item response theory techniques, and adding items .
 
 #### Study Type:
 
@@ -71,7 +77,7 @@ Observational study - Data is collected from study participants that are not ran
 
 No blinding is involved in this study
 
-# Appendix
+# Appendix {.appendix}
 
 ## a) number of ratings per stimulus
 
@@ -93,11 +99,8 @@ time_pilot_summary <- readRDS(here(path, "time_pilot_summary.RDS"))
 # plot table
 library(kableExtra)
 time_pilot_summary[1:2, ] |>
-  kable(
-    format = "latex",
-    booktabs = TRUE, 
-    longtable = TRUE
-  ) |>
+  kable() |>
+  kable_styling() |>
   footnote(
     general = "Time in minutes determined by subtracting time at the first click in a block of questions from the last click, and dividing by 60.", 
     threeparttable = TRUE,
@@ -120,24 +123,37 @@ On average participants took `r mean_time_per_song` minutes per song. However, @
 
 ### Pilot 2 {#sec-pilot2}
 
-Following @sec-pilot1, we aimed to gather responses from 500 participants on 20 lyric stimuli to estimate the number of raters necessary to achieve sufficient inter-rater reliability. We recruited a representative sample of the United States on the Prolific recruitment platform (prolific.co) <https://www.prolific.co>.
+Following our first pilot (@sec-pilot1), we aimed to estimate the smallest number of ratings necessary to achieve a satisfactory inter-rater reliability using the procedure described in @debruine2018determining. We gathered responses from 500 participants on 20 lyric stimuli. We then randomly subsampled different numbers of raters and estimated
+
+We recruited a representative sample of the United States on the [Prolific.co](https://www.prolific.co) participant recruitment platform.
 
 ## b) hypothesized magnitudes
 
-### LIWC
+-   LIWC
+    -   liwc insight with self-direction, .43
+    -   liwc sexuality with hedonism, .13
+    -   liwc achievement with achievement .47
+    -   liwc power with power, .19
+    -   liwc power with conformity, .16
+    -   liwc risk with security, .32
+    -   liwc religion with traditionalism, .79
+    -   liwc family with benevolence, .57
 
-liwc insight with self-direction, .43
+## c) lyric preference and expertise questionnaire {#sec-lyricquestions}
 
-liwc sexuality with hedonism, .13
-
-liwc achievement with achievement .47
-
-liwc power with power, .19
-
-liwc power with conformity, .16
-
-liwc risk with security, .32
-
-liwc religion with traditionalism, .79
-
-liwc family with benevolence, .57
+1.  I prefer music that contains lyrics, as opposed to music that does not
+2.  I only pay attention to the lyrics of songs or artists that I like
+3.  I always pay attention to the lyrics of a song, if the song has them
+4.  I enjoy learning about song lyrics and their meaning, for example by reading blogs and forums or listening to artist interviews
+5.  If a song has lyrics that I don't like for any reason, I don't listen to it
+6.  If I am not sure about the lyrics of a song, I look them up
+7.  I contribute to online resources on lyrics (e.g. on forums, or on platforms where I can contribute lyric transcriptions)
+8.  I memorize the lyrics to the songs I listen to
+9.  I write my own song lyrics
+10. I post excerpts of song lyrics online, e.g. on social media
+11. I discuss song lyrics with my friends
+12. I come up with alternate versions of song lyrics that I find entertaining, i.e. song parodies
+13. I ponder the meaning of lyrics
+14. I quote lyrics in conversation
+15. I read and/or write poetry
+16. What percentage of your music library do you think contains songs with lyrics?
