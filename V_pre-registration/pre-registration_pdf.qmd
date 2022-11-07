@@ -3,7 +3,7 @@ title: "Values from Lyrics: Pre-Registration"
 bibliography: references.bib
 author: "Andrew M. Demetriou"
 format: 
-   html:
+   pdf:
     toc: true
 crossref:
   fig-title: '**Figure**'
@@ -194,7 +194,7 @@ It is necessary to aggregate word vectors from each lyric into a single lyric ve
 
 ### Analytic approach
 
-Our primary hypothesis is that we will observe a correlation in ratings between participants and output from Natural Language Processing (see @sec-hypotheses and @sec-magnitudes). 
+Our primary hypothesis is that we will observe a correlation in ratings between participants and output from Natural Language Processing (see @sec-hypotheses and @sec-magnitudes).
 
 Estimating a 'ground truth' for each lyric stimulus from participant ratings is non-trivial. Specifically, participants will use our survey instrument differently (e.g. some will give overall more extreme scores, whereas some will more consistently give scores close to the middle of the slider bar). We therefore aim to estimate scores for stimuli while statistically controlling for the effect of participant's tendency to use the survey.
 
@@ -214,6 +214,7 @@ flowchart RL
   style intercepts fill:#8080, stroke:#333, color:#FFFFFF
   style observed fill:#8080, stroke:#333, color:#FFFFFF
 ```
+
 We take a cross-classified approach, whereby we attempt to explicitly model the tendency of participant use of the survey by estimating a `participant intercept` for each one. Our primary analysis involves correlating the `stimuli intercept`[^3] with output for automated systems.
 
 [^3]: we refer to this as the item intercept in our notebooks
@@ -240,7 +241,9 @@ flowchart LR
   style NLP_models fill:#8080, stroke:#333, color:#FFFFFF
 ```
 
-We will use Mplus to estimate the models we will use^[We built our models using simulated data. See `III_simulation_study` folder]. 
+We will use Mplus to estimate the models we will use[^4].
+
+[^4]: We built our models using simulated data. See `III_simulation_study` folder
 
 ### Contributions
 
@@ -254,7 +257,7 @@ We further contribute three assets: firstly, we provide containerized, API-reach
 
 ## a) hypothesized magnitudes {#sec-magnitudes}
 
--   LIWC correlations with participant ratings of Personal Values [^4]:
+-   LIWC correlations with participant ratings of Personal Values [^5]:
 
     -   liwc insight with self-direction, .43
     -   liwc sexuality with hedonism, .13
@@ -265,11 +268,11 @@ We further contribute three assets: firstly, we provide containerized, API-reach
     -   liwc religion with traditionalism, .79
     -   liwc family with benevolence, .57
 
-[^4]: see table 2 in @ponizovskiy2020development
+[^5]: see table 2 in @ponizovskiy2020development
 
 <!-- -->
 
--   Correlations of self ratings of Personal Values with automated estimates from essays [^5]:
+-   Correlations of self ratings of Personal Values with automated estimates from essays [^6]:
 
     -   self-direction: .23
     -   stimulation: .12
@@ -282,7 +285,7 @@ We further contribute three assets: firstly, we provide containerized, API-reach
     -   benevolence: .18
     -   universalism: .29
 
-[^5]: see table 4 in @ponizovskiy2020development
+[^6]: see table 4 in @ponizovskiy2020development
 
 ## b) number of ratings per stimulus
 
@@ -405,17 +408,17 @@ This procedure will guarantee that any length of slice of *B* approximately foll
 
 ## e) Manual Screening Procedure: {#sec-manualscreening}
 
-Lyrics of the stimulus set were then manually screened to see if they were a match to the actual song [^6] and for suitability.
+Lyrics of the stimulus set were then manually screened to see if they were a match to the actual song [^7] and for suitability.
 
-[^6]: see `I_lyric_checker*.Rmd` in the `IV_survey_builder` folder
+[^7]: see `I_lyric_checker*.Rmd` in the `IV_survey_builder` folder
 
 Three members of the research team (Sandy Manolios, Jaehun Kim, Andrew M. Demetriou) then examined each set of lyrics, selecting appropriate candidates and resolving disagreements via discussion.
 
 Songs were removed if they were: 1. were not in English 2. completely onomatopoetic 3. repetitions of single words or a single phrase 4. if the three members felt there were too few words
 
-Specifically, researchers examined whether the lyrics were indeed English songs, as our automated screening methods to determine song language are imperfect (e.g. some of the lyrics sets were English translations of the original songs). Selected songs were manually adjusted if the artist name or other additional information was present, or if non-English characters were present [^7]. Lyrics that did not match the title were also marked, but not changed or excluded. This was coordinated via a shared spreadsheet on google sheets.
+Specifically, researchers examined whether the lyrics were indeed English songs, as our automated screening methods to determine song language are imperfect (e.g. some of the lyrics sets were English translations of the original songs). Selected songs were manually adjusted if the artist name or other additional information was present, or if non-English characters were present [^8]. Lyrics that did not match the title were also marked, but not changed or excluded. This was coordinated via a shared spreadsheet on google sheets.
 
-[^7]: see `II_manual_lyric_adjustment*.Rmd` in the `IV_survey_builder` folder
+[^8]: see `II_manual_lyric_adjustment*.Rmd` in the `IV_survey_builder` folder
 
 ## f) simulation for number of participants {#sec-participantsimulation}
 
@@ -438,6 +441,6 @@ We write a simple program that simulates the survey process;
     a)  median number of rated items from empirical distribution of *A*
     b)  estimated cost for the campaign using the statistics from the pilot survey
 
-Then we compute this simulation for a range of participants \[20, 1000\] and lyric stimuli\[20, 1000\] while keeping the number of stimuli per survey fixed. Based on our second pilot study, we estimated 30 minutes is sufficient time for participants to complete 18 stimuli. Thus our budget limit allows for the rating of 360 items, which we aim to have rated 25 times, in 18-item surveys, from an estimated `r n_participants` participants, who spend approximately 30 minutes on task. [^8]
+Then we compute this simulation for a range of participants \[20, 1000\] and lyric stimuli\[20, 1000\] while keeping the number of stimuli per survey fixed. Based on our second pilot study, we estimated 30 minutes is sufficient time for participants to complete 18 stimuli. Thus our budget limit allows for the rating of 360 items, which we aim to have rated 25 times, in 18-item surveys, from an estimated `r n_participants` participants, who spend approximately 30 minutes on task. [^9]
 
-[^8]: See `IX_participation_estimation.ipynb` notebook in `II_rater_pilot` folder for further details
+[^9]: See `IX_participation_estimation.ipynb` notebook in `II_rater_pilot` folder for further details
