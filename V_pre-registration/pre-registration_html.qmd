@@ -23,17 +23,17 @@ Contributors: Andrew M. Demetriou, Jaehun Kim, Sandy Manolios, Cynthia C.S. Liem
 
 We aim to extend work that used natural language processing (NLP) to estimate psychological values (e.g. [@schwartz2001extending]) in social-media text [@ponizovskiy2020development]. Our aim is to explore the potential to estimate the perceived psychological values in song lyrics.
 
-We will gather ratings of song lyrics from participants using an online survey. Participants will respond to a psychometric instrument that we have adapted for this purpose. We will then use NLP models to estimate scores for each of the personal values. Lastly, we will examine how well the scores from the NLP resemble human ratings.
+We will gather ratings of song lyrics from participants using an online survey. Participants will respond to a psychometric instrument that we have adapted for this purpose. We will then use NLP systems to estimate scores for each of the personal values. Lastly, we will examine how well the scores from the NLP resemble human ratings.
 
-As in [@ponizovskiy2020development], we estimate convergent validity of the grouped NLP models by estimating correlations with related constructs measured using the Linguistic Inquiry Word Count ([LIWC](https://liwc.app)) dictionary (see [@boyd2022development] for psychometric details).
+As in [@ponizovskiy2020development], we estimate convergent validity of the grouped NLP systems by estimating correlations with related constructs measured using the Linguistic Inquiry Word Count ([LIWC](https://liwc.app)) dictionary (see [@boyd2022development] for psychometric details).
 
 ### Hypotheses {#sec-hypotheses}
 
 As this is an initial study our hypotheses are not severe:
 
-**Primary Hypothesis**: Grouped NLP models show a statistically significant correlation with grouped **a)** participant ratings across all 10 personal values, and **b)** with related LIWC constructs - in the same or greater magnitude as shown in [@ponizovskiy2020development].
+**Primary Hypothesis**: Grouped NLP systems show a statistically significant correlation with grouped **a)** participant ratings across all 10 personal values, and **b)** with related LIWC constructs - in the same or greater magnitude as shown in [@ponizovskiy2020development].
 
-**Null Hypothesis**: Grouped NLP models show no evidence of a correlation with participant ratings across all 10 personal values.
+**Null Hypothesis**: Grouped NLP systems show no evidence of a correlation with participant ratings across all 10 personal values.
 
 ### Study Type:
 
@@ -71,7 +71,7 @@ Prior research (e.g. [@schwartz2001extending]) has shown evidence for the presen
 
 #### Lyric Preferences:
 
-To assess whether expertise in lyrics or a preference for lyrical content has an effect on the ratings given, we have begun developing a scale, partially inspired by the Preference Intensity scale in [@schafer2009functions]. Our original ad-hoc scale consisted of 10 Likert-type items. Participants in our second pilot (see @sec-pilot2) were asked to respond to the 10 items, and to an additional 'open response' format item that asked: "Can you think of any other activities or indications that someone has an affinity for song lyrics? If so, please enter them here:". We removed poorly performing items, and added 5 items based on participant responses to the open format question. We will continue adding and removing items using factor analysis and item response theory techniques.
+To assess whether expertise in lyrics or a preference for lyrical content has an effect on the ratings given, we have begun developing a scale, partially inspired by the Preference Intensity scale in [@schafer2009functions]. Our original ad-hoc scale consisted of 10 Likert-type items. Participants in our second pilot (see @sec-pilot2) were asked to respond to the 10 items, and to an additional 'open response' format item that asked: "Can you think of any other activities or indications that someone has an affinity for song lyrics? If so, please enter them here:". We removed poorly performing items, and added 5 items based on participant responses to the open format question. As this instrument has yet to show satisfactory reliability or validity, we will continue adding and removing items using factor analysis and item response theory techniques as we progress.
 
 #### Additional Measures:
 
@@ -103,9 +103,9 @@ confidence_plot + labs(y = "Song ID")
 
 #### Lyric Stimulus Set:
 
-We aim to annotate a total of 360 lyric stimuli drawn from a pool of 2200, with approximately 25 ratings for each. This is not intended to be a fully representative sample, but rather a sufficiently large sample with which to build a ground-truthing procedure, to demonstrate its potential. Size limits were determined by estimating the smallest sample size to demonstrate the viability of our procedure, taking into account time and budgetary constraints of the research team.
+We aim to annotate a total of 360 lyric stimuli drawn from a pool of 2200, with approximately 25 ratings for each. This is not intended to be a fully representative sample, but rather a sufficiently large sample with which to examine its potential. Size limits were determined by estimating the smallest sample size to demonstrate the viability of our procedure, taking into account time and budgetary constraints of the research team.
 
-Our 360 stimulus set was derived using stratified random sampling (see @sec-stratifiedsampling for details), and then a final manual screening by the research teamv(see @sec-manualscreening).
+Our 360 stimulus set was derived using stratified random sampling (see @sec-stratifiedsampling for details), and then a final manual screening by the research team (see @sec-manualscreening).
 
 The overall population of song lyrics was derived from the Spotify Million Playlist Dataset [MPD](https://aicrowd.com/challenges/spotify-million-playlist-dataset-challenge) which contains 1 million Spotify user-generated playlists, chosen because of its size, and its recency vs. other similar datasets.
 
@@ -165,7 +165,7 @@ path <- (here("II_rater_pilot", "intermediary_data", "optimal_line.csv"))
 n_participants <- read.csv(path) |> filter(n_total_items == "360") |> select(n_participants) |> pull()
 ```
 
-Given the total of 360 lyric stimuli and the time taken per stimulus, estimated the number of participants necessary to receive approximately 25 ratings per stimuli using simulation [^2]. We thus expect to collect data for `r`n_participants\` participants. See @sec-participantsimulation for further details.
+Given the total of 360 lyric stimuli and the time taken per stimulus, estimated the number of participants necessary to receive approximately 25 ratings per stimuli using simulation [^2]. We thus expect to collect data for `r n_participants` participants. See @sec-participantsimulation for further details.
 
 [^2]: see `IX_participation_estimation.ipynb` notebook in `II_rater_pilot` folder
 
@@ -186,15 +186,13 @@ We will also consider word embedding models directly trained from the lyrics cor
 1.  loss function on the hold-out data set and
 2.  English word similarity judgment data employed from @faruqui2014community.
 
-We select two final models that score best on each criterion to hold the generality.
-
 #### Word-vector aggregation:
 
 It is necessary to aggregate word vectors from each lyric into a single lyric vector to be compared to the target group of words belonging to each value. We consider two methods: 1) uniform average and 2) weighted sum. In particular, weighted sum employs the inverse-document-frequency for weighting each word vector within the lyrics @de2016representation.
 
 ### Analytic approach
 
-Our primary hypothesis is that we will observe a correlation in ratings between participants and output from Natural Language Processing (see @sec-hypotheses and @sec-magnitudes). 
+Our primary hypothesis is that we will observe a correlation in ratings between participants and output from NLP systems (see @sec-hypotheses and @sec-magnitudes).
 
 Estimating a 'ground truth' for each lyric stimulus from participant ratings is non-trivial. Specifically, participants will use our survey instrument differently (e.g. some will give overall more extreme scores, whereas some will more consistently give scores close to the middle of the slider bar). We therefore aim to estimate scores for stimuli while statistically controlling for the effect of participant's tendency to use the survey.
 
@@ -214,15 +212,16 @@ flowchart RL
   style intercepts fill:#8080, stroke:#333, color:#FFFFFF
   style observed fill:#8080, stroke:#333, color:#FFFFFF
 ```
+
 We take a cross-classified approach, whereby we attempt to explicitly model the tendency of participant use of the survey by estimating a `participant intercept` for each one. Our primary analysis involves correlating the `stimuli intercept`[^3] with output for automated systems.
 
 [^3]: we refer to this as the item intercept in our notebooks
 
-Similar to @beaty2021automating, the ratings from different NLP model / corpus setups will be linearly combined into a latent variable for each value. These are then correlated to the `stimuli intercepts`.
+Similar to @beaty2021automating, the ratings from different NLP systems will be linearly combined into a latent variable for each value. These are then correlated to the `stimuli intercepts`.
 
 ```{mermaid}
 %%| label: fig-5
-%%| fig-cap: "Latent variable representing ratings from multiple NLP model / corpus setups"
+%%| fig-cap: "Latent variable representing ratings from multiple NLP Systems"
 
 flowchart LR
   subgraph intercepts
@@ -240,13 +239,15 @@ flowchart LR
   style NLP_models fill:#8080, stroke:#333, color:#FFFFFF
 ```
 
-We will use Mplus to estimate the models we will use^[We built our models using simulated data. See `III_simulation_study` folder]. 
+We will use the proprietary software, [Mplus](https://www.statmodel.com) to estimate the models we will use[^4].
+
+[^4]: We built our analysis models using simulated data. See `III_simulation_study` folder
 
 ### Contributions
 
-We extend existing work primarily in two ways: Firstly, we compare semantic distance (the degree to which words are related) measured using NLP models to the results of word counting. Prior studies have counted the number of times specific words from a fixed lexicon were used in a given body of text as a means of measuring psychological constructs: [@ponizovskiy2020development] showed some validity for such a lexicon of words for measuring a set of 10 personal values in social-media text. However, song lyrics may not contain those exact words, and may instead use synonymous or otherwise meaningfully similar words, or even slang and metaphors. Our method allows for more word coverage: rather than count words from a fixed lexicon, we will estimate the semantic distance between the words in the lexicon that represent each personal value, and the song lyrics in order to derive a score for each value.
+We extend existing work primarily in two ways: Firstly, we compare semantic distance (the degree to which words are related) estimated using NLP systems to the results of word counting. Prior studies have counted the number of times specific words from a fixed lexicon were used in a given body of text as a means of measuring psychological constructs: [@ponizovskiy2020development] showed some validity for such a lexicon of words for measuring a set of 10 personal values in social-media text. However, song lyrics may not contain those exact words, and may instead use synonymous or otherwise meaningfully similar words, or even slang and metaphors. Our method allows for more word coverage: rather than count words from a fixed lexicon, we will estimate the semantic distance between the words in the lexicon that represent each personal value, and the song lyrics in order to derive a score for each value.
 
-Secondly, we linearly combine the output of multiple NLP models into a single latent variable, to represent the shared variance of the machine ratings: as each NLP model is developed using 1) an algorithm trained on 2) a corpus, each algorithm/corpus combination will estimate the semantic distance between two words differently. This loosely parallels how human participants may rate each set of lyrics differently. [@beaty2021automating] showed that this latent variable of semantic distance estimations resulted in overlap with a latent variable of human ratings as high as r = .9, albeit in a different domain. This approach further allows us to estimate the contribution of each algorithm / corpus setup to the shared variance.
+Secondly, we linearly combine the output of multiple NLP systems into a single latent variable, to represent the shared variance of the machine ratings: as each NLP system is developed using 1) an algorithm trained on 2) a corpus, each algorithm/corpus combination will estimate the semantic distance between two words differently. This loosely parallels how human participants may rate each set of lyrics differently. [@beaty2021automating] showed that this latent variable of semantic distance estimations resulted in overlap with a latent variable of human ratings as high as r = .9, albeit in a different domain. This approach further allows us to estimate the contribution of each algorithm / corpus setup to the shared variance.
 
 We further contribute three assets: firstly, we provide containerized, API-reachable interface to the models that we used to estimate semantic similarity, housed on [Replicate.com](https://replicate.com/eldrin/text-concept-similarity). Secondly, we share code notebooks written with the intention of allowing for reproducibility, replication, and extension of our work. Thirdly, we share the beginnings of a psychometric scale for assessing lyric preference intensity and expertise (@sec-lyricquestions).
 
@@ -254,7 +255,7 @@ We further contribute three assets: firstly, we provide containerized, API-reach
 
 ## a) hypothesized magnitudes {#sec-magnitudes}
 
--   LIWC correlations with participant ratings of Personal Values [^4]:
+-   LIWC correlations with participant ratings of Personal Values [^5]:
 
     -   liwc insight with self-direction, .43
     -   liwc sexuality with hedonism, .13
@@ -265,11 +266,11 @@ We further contribute three assets: firstly, we provide containerized, API-reach
     -   liwc religion with traditionalism, .79
     -   liwc family with benevolence, .57
 
-[^4]: see table 2 in @ponizovskiy2020development
+[^5]: see table 2 in @ponizovskiy2020development
 
 <!-- -->
 
--   Correlations of self ratings of Personal Values with automated estimates from essays [^5]:
+-   Correlations of self ratings of Personal Values with automated estimates from essays [^6]:
 
     -   self-direction: .23
     -   stimulation: .12
@@ -282,7 +283,7 @@ We further contribute three assets: firstly, we provide containerized, API-reach
     -   benevolence: .18
     -   universalism: .29
 
-[^5]: see table 4 in @ponizovskiy2020development
+[^6]: see table 4 in @ponizovskiy2020development
 
 ## b) number of ratings per stimulus
 
@@ -395,27 +396,27 @@ Further, we select the samples as a dynamic search process rather than a typical
 1.  Set "reference distribution" for each stratum, and an empty dataset to populate:
     a)  each reference distribution is the original distribution compensated by MAP with alpha = 40,000
     b)  set the total number of samples (*N*=2200) to be found
-    c)  define *B* as ta currently empty set of lyrics which we will populate
+    c)  define *B* as a currently empty set of lyrics which we will populate
 2.  Repeat the following until the number of samples in B reaches N:
     a)  select a stratum uniformly randomly
     b)  select a song such that the distribution of samples in *B* most closely resembles reference distribution
     c)  add song to *B*
 
-This procedure will guarantee that any length of slice of *B* approximately follows the reference distribution for each stratum from the very first sample selected. We expect that this procedure can be useful 1) when the first few items must follow the reference distribution and 2) when there is the possibility of continuing the annotation project at a later time, and thus the sampling procedure must be continued rather than starting anew.
+From the very first lyric stimulus selected, this procedure will allow for any length of slice of *B* to approximately follow the reference distribution for each stratum. We expect that this procedure can be useful 1) when the first few items must follow the reference distribution and 2) when there is the possibility of continuing the annotation project at a later time, and thus the sampling procedure must be continued rather than starting anew.
 
 ## e) Manual Screening Procedure: {#sec-manualscreening}
 
-Lyrics of the stimulus set were then manually screened to see if they were a match to the actual song [^6] and for suitability.
+Lyrics of the stimulus set were then manually screened to see if they were a match to the actual song [^7] and for suitability.
 
-[^6]: see `I_lyric_checker*.Rmd` in the `IV_survey_builder` folder
+[^7]: see `I_lyric_checker*.Rmd` in the `IV_survey_builder` folder
 
 Three members of the research team (Sandy Manolios, Jaehun Kim, Andrew M. Demetriou) then examined each set of lyrics, selecting appropriate candidates and resolving disagreements via discussion.
 
 Songs were removed if they were: 1. were not in English 2. completely onomatopoetic 3. repetitions of single words or a single phrase 4. if the three members felt there were too few words
 
-Specifically, researchers examined whether the lyrics were indeed English songs, as our automated screening methods to determine song language are imperfect (e.g. some of the lyrics sets were English translations of the original songs). Selected songs were manually adjusted if the artist name or other additional information was present, or if non-English characters were present [^7]. Lyrics that did not match the title were also marked, but not changed or excluded. This was coordinated via a shared spreadsheet on google sheets.
+Specifically, researchers examined whether the lyrics were indeed English songs, as our automated screening methods to determine song language are imperfect (e.g. some of the lyrics sets were English translations of the original songs). Selected songs were manually adjusted if the artist name or other additional information was present, or if non-English characters were present [^8]. Lyrics that did not match the title were also marked, but not changed or excluded. This was coordinated via a shared spreadsheet on google sheets.
 
-[^7]: see `II_manual_lyric_adjustment*.Rmd` in the `IV_survey_builder` folder
+[^8]: see `II_manual_lyric_adjustment*.Rmd` in the `IV_survey_builder` folder
 
 ## f) simulation for number of participants {#sec-participantsimulation}
 
@@ -438,6 +439,6 @@ We write a simple program that simulates the survey process;
     a)  median number of rated items from empirical distribution of *A*
     b)  estimated cost for the campaign using the statistics from the pilot survey
 
-Then we compute this simulation for a range of participants \[20, 1000\] and lyric stimuli\[20, 1000\] while keeping the number of stimuli per survey fixed. Based on our second pilot study, we estimated 30 minutes is sufficient time for participants to complete 18 stimuli. Thus our budget limit allows for the rating of 360 items, which we aim to have rated 25 times, in 18-item surveys, from an estimated `r n_participants` participants, who spend approximately 30 minutes on task. [^8]
+Then we compute this simulation for a range of participants \[20, 1000\] and lyric stimuli\[20, 1000\] while keeping the number of stimuli per survey fixed. Based on our second pilot study, we estimated 30 minutes is sufficient time for participants to complete 18 stimuli. Thus our budget limit allows for the rating of 360 items, which we aim to have rated 25 times, in 18-item surveys, from an estimated `r n_participants` participants, who spend approximately 30 minutes on task. [^9]
 
-[^8]: See `IX_participation_estimation.ipynb` notebook in `II_rater_pilot` folder for further details
+[^9]: See `IX_participation_estimation.ipynb` notebook in `II_rater_pilot` folder for further details
