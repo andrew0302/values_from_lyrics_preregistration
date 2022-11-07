@@ -15,6 +15,13 @@ execute:
 editor: visual
 ---
 
+```{r}
+library(tidyverse)    # data logistics
+library(here)         # file logistics
+library(ggplot2)      # plotting and visualization
+library(kableExtra)   # table visualization
+```
+
 ## Study Information
 
 Contributors: Andrew M. Demetriou, Jaehun Kim, Sandy Manolios, Cynthia C.S. Liem
@@ -89,13 +96,8 @@ Our pilot study (@sec-pilot2) of 20 lyric stimuli suggests participants are 'Som
 #| label: fig-1
 #| fig-cap: "Participant self-ratings of Confidence in own responses for 20 lyric stimuli"
 
-# file logistics
-library(here)
-# visualization
-library(ggplot2)
 path <- here("II_rater_pilot", "intermediary_data")
 confidence_plot <- readRDS(here(path, "confidence_plot.RDS"))
-
 confidence_plot + labs(y = "Song ID")
 ```
 
@@ -137,11 +139,7 @@ We estimated how long it would take a participant to complete our lyrics questio
 #| label: tbl-2
 #| tbl-cap: "Time in seconds per lyric stimulus"
 
-library(kableExtra)
 path <- here("II_rater_pilot", "intermediary_data")
-#time_per_song_plot <- readRDS(here(path, "time_per_song_plot.RDS"))
-#time_per_song_plot
-
 time_taken_table <- readRDS(here(path, "time_taken_per_song_sumary_table.RDS"))
 time_taken_table |>
   kable() |>
@@ -160,7 +158,6 @@ number_of_items_per_survey <- round(((30 * 60) - 240) / 85)
 We aimed for a 30-minute survey. We estimated conservatively that it would take approximately 85 seconds to complete each lyric stimulus item, and approximately 3 minutes (240 seconds) to complete the other items in the survey. Thus we had room for `r number_of_items_per_survey` lyric stimulus items.
 
 ```{r}
-library("tidyverse")
 path <- (here("II_rater_pilot", "intermediary_data", "optimal_line.csv"))
 n_participants <- read.csv(path) |> filter(n_total_items == "360") |> select(n_participants) |> pull()
 ```
@@ -297,13 +294,9 @@ Our first pilot study aimed to gather an tentative estimate of the time it would
 #| label: tbl-1
 #| tbl-cap: "Time in minutes to complete task."
 
-# file logistics
-library(here)
 path <- here("I_time_pilot", "intermediary_data")
 time_pilot_summary <- readRDS(here(path, "time_pilot_summary.RDS"))
 
-# plot table
-library(kableExtra)
 time_pilot_summary[1:2, ] |>
   kable() |>
   kable_styling() |>
@@ -313,7 +306,6 @@ time_pilot_summary[1:2, ] |>
     footnote_as_chunk = TRUE
   )
 
-library(tidyverse)
 mean_time_per_song <- time_pilot_summary[1, ] |> 
   select(starts_with("song"))|>
   rowMeans() |>
@@ -337,9 +329,6 @@ The distributions of Cronbach's Alpha estimates for the value of Stimulation are
 #| label: fig-3
 #| fig-cap: "Distribution of Cronbach's Alpha estimates for the value of Stimulation, by sub-sample size"
 
-# file logistics
-library(here)
-library(ggplot2)
 path <- here("II_rater_pilot", "intermediary_data")
 list_of_alpha_plots <- readRDS(here(path, "list_of_alpha_plots.RDS"))
 
