@@ -36,11 +36,11 @@ Contributors: Andrew M. Demetriou, Jaehun Kim, Sandy Manolios, Cynthia C.S. Liem
 
 ### Overview
 
-We aim to extend work that used natural language processing (NLP) to estimate psychological values (e.g. [@schwartz2001extending]) in social-media text [@ponizovskiy2020development]. Specifically we will explore the potential to estimate the perceived psychological values in song lyrics.
+We aim to extend work that used natural language processing (NLP) to estimate psychological values (e.g. [@schwartz_extending_2001]) in social-media text [@ponizovskiy_development_2020]. Specifically we will explore the potential to estimate the perceived psychological values in song lyrics.
 
 Our study primarily consists of comparisons between what people indicate, and what NLP systems estimate, are the psychological values expressed in song lyrics. We will gather responses from people using an online survey. We will also use NLP systems to estimate the scores and compare them to those from people.
 
-As in [@ponizovskiy2020development], we estimate convergent validity of the grouped NLP systems and our queztionnaire by estimating correlations with related constructs measured using Linguistic Inquiry Word Count ([LIWC](https://liwc.app); [@boyd2022development]). We will also compare the performance of word counting methods used in @ponizovskiy2020development with semantic distance methods similar to those used in e.g. @beaty2021automating.
+As in @ponizovskiy_development_2020 we estimate convergent validity of the grouped NLP systems and our queztionnaire by estimating correlations with related constructs measured using Linguistic Inquiry Word Count ([LIWC](https://liwc.app); @boyd_development_2022). We will also compare the performance of word counting methods used in @ponizovskiy_development_2020 with semantic distance methods similar to those used in e.g. @beaty_automating_2021.
 
 People who are exceptionally familiar or who have a strong preference for song lyrics may give different ratings than others. To examine this in the future, we also begin development of a psychometric questionnaire aimed at measuring lyric preference intensity and expertise.
 
@@ -50,7 +50,7 @@ Lastly, we aim to make artifacts of this project reproducible. Thus, reusable in
 
 As this is an initial study, our hypotheses are not severe:
 
-**Primary Hypothesis**: Grouped NLP systems show a statistically significant correlation with grouped **a)** participant ratings across all 10 personal values, and **b)** with related LIWC constructs - in the same or greater magnitude as shown in [@ponizovskiy2020development].
+**Primary Hypothesis**: Grouped NLP systems show a statistically significant correlation with grouped **a)** participant ratings across all 10 personal values, and **b)** with related LIWC constructs - in the same or greater magnitude as shown in @ponizovskiy_development_2020.
 
 **Primary Null Hypothesis**: Grouped NLP systems show no evidence of a correlation with participant ratings across all 10 personal values, or LIWC constructs.
 
@@ -79,11 +79,10 @@ Our primary measure is the perceived presence of personal values in song lyrics.
 The survey will be implemented on an instance of [formR.org](https://formR.org) hosted on the servers of [Delft University of Technology](https://www.tudelft.nl/) to ensure GDPR compliance. A test version of the survey can be found [here](https://testmysurvey.formr.org/). The `.csv` survey files used as input to formR were constructed in R[^1]. The main component of the survey involves showing participants the lyrics to a number of songs, one at a time. For each song they are asked to respond to set of questions designed to assess the presence of values in the lyrics.
 
 [^1]: see `survey_builder_*.Rmd` notebook in the `IV_survey_builder` folder of this repository.
- 
- 
+
 The majority of items require a Likert-type response. In order to gather a more continuous measure, we used a slider with no starting point: the `rating button` option in formR shows a horizontal gray bar with two labeled poles (e.g. agree - disagree). For each value there is a brief description, followed by the slider labelled ("opposed to their values" - "of supreme importance").
 
-![](screenshots/formR.png) 
+![](screenshots/formR.png)
 
 Participants are instructed to indicate on the bar the degree to which they e.g. agree or disagree, as they might with a slider. However, the gray bar has no visible slider, thus no starting value. Although it shows no divisions it contains 20 subdivisions. To ensure that participants understand the use of this method, we include a 'training and explanation' page at the beginning of our [survey](https://testmysurvey.formr.org/).
 
@@ -95,11 +94,11 @@ Participants are randomly assigned 18 lyric stimuli to rate. We experienced issu
 
 #### Personal Values:
 
-Prior research (e.g. [@schwartz2001extending]) has shown evidence for the presence of personal values as guiding principles in the lives of people. Participants will indicate the degree to which they think 10 values are present for each set of lyrics that they are shown. We chose to use the Short Schwarz's Value Survey [@lindeman2005measuring] as it is the briefest instrument whose reliability and validity has been shown to be adequate, to our knowledge. The original instrument displays a brief definition of each of the ten values in the Schwartz inventory, (e.g. "POWER (social power, authority, wealth)") and asks participants to indicate on a Likert scale (0= Opposed to my principles, 8 = Of supreme importance) the degree of importance of the value to them. In our version, participants will indicate on a solid gray bar as described above. As our participants will be rating a stimulus that is not themselves, we adjusted the wording slightly: e.g. "Please, rate the importance of the following values as a life-guiding principle for the SPEAKER of the lyrics."
+Prior research (e.g. @schwartz_extending_2001) has shown evidence for the presence of personal values as guiding principles in the lives of people. Participants will indicate the degree to which they think 10 values are present for each set of lyrics that they are shown. We chose to use the Short Schwarz's Value Survey @lindeman_measuring_2005 as it is the briefest instrument whose reliability and validity has been shown to be adequate, to our knowledge. The original instrument displays a brief definition of each of the ten values in the Schwartz inventory, (e.g. "POWER (social power, authority, wealth)") and asks participants to indicate on a Likert scale (0= Opposed to my principles, 8 = Of supreme importance) the degree of importance of the value to them. In our version, participants will indicate on a solid gray bar as described above. As our participants will be rating a stimulus that is not themselves, we adjusted the wording slightly: e.g. "Please, rate the importance of the following values as a life-guiding principle for the SPEAKER of the lyrics."
 
 #### Lyric Preferences:
 
-To assess whether expertise in lyrics or a preference for lyrical content has an effect on the ratings given, we have begun developing a scale, partially inspired by the Preference Intensity scale in [@schafer2009functions]. Our original ad-hoc scale consisted of 10 Likert-type items. Participants in our second pilot (see @sec-pilot2) were asked to respond to the 10 items, and to an additional 'open response' format item that asked: "Can you think of any other activities or indications that someone has an affinity for song lyrics? If so, please enter them here:". We removed poorly performing items, and added 5 items based on participant responses to the open format question. As this instrument has yet to show satisfactory reliability or validity, we will continue adding and removing items using factor analysis and item response theory techniques as we progress.
+To assess whether expertise in lyrics or a preference for lyrical content has an effect on the ratings given, we have begun developing a scale, partially inspired by the Preference Intensity scale in @schafer_functions_2009. Our original ad-hoc scale consisted of 10 Likert-type items. Participants in our second pilot (see @sec-pilot2) were asked to respond to the 10 items, and to an additional 'open response' format item that asked: "Can you think of any other activities or indications that someone has an affinity for song lyrics? If so, please enter them here:". We removed poorly performing items, and added 5 items based on participant responses to the open format question. As this instrument has yet to show satisfactory reliability or validity, we will continue adding and removing items using factor analysis and item response theory techniques as we progress.
 
 #### Additional Measures:
 
@@ -109,7 +108,7 @@ To control for familiarity of the lyrics, we will ask participants to indicate (
 
 ##### Rating Confidence
 
-It has been suggested that a rater's confidence in their annotation is a relevant indicator of reliability (although possibly orthogonal to accuracy; see @cabitza2020). For each set of lyrics, we will ask participants to indicate the degree to which they are confident in their ratings on a solid bar ranging from 'Extremely unconfident' to 'Extremely confident').
+It has been suggested that a rater's confidence in their annotation is a relevant indicator of reliability (although possibly orthogonal to accuracy; see @cabitza_as_2020). For each set of lyrics, we will ask participants to indicate the degree to which they are confident in their ratings on a solid bar ranging from 'Extremely unconfident' to 'Extremely confident').
 
 Our pilot study (@sec-pilot2) of 20 lyric stimuli suggests participants are overall 'Somewhat confident' in their responses, which provides some initial evidence of self-perceived intra-rater reliability of our procedure.
 
@@ -150,7 +149,7 @@ subjectivity_plot <- readRDS(here(path, "subjectivity_plot.RDS"))
 subjectivity_plot
 ```
 
-We followed a procedure inspired by @debruine2018determining to determine the number of ratings per lyric stimulus. Specifically, we chose a small subset of 20 lyric samples, and had approximately 500 participants rate them all. We then randomly sub-sampled from the pool of 500 raters in increments ranging from 5 to 50 raters, and estimated Cronbach's alpha for each subsample. Our conclusions suggested conservative estimates of 25 raters per lyric stimulus. See @sec-pilot2 for details.
+We followed a procedure inspired by @debruine_determining_2018 to determine the number of ratings per lyric stimulus. Specifically, we chose a small subset of 20 lyric samples, and had approximately 500 participants rate them all. We then randomly sub-sampled from the pool of 500 raters in increments ranging from 5 to 50 raters, and estimated Cronbach's alpha for each subsample. Our conclusions suggested conservative estimates of 25 raters per lyric stimulus. See @sec-pilot2 for details.
 
 #### Number of Participants
 
@@ -191,22 +190,22 @@ Given the total of 360 lyric stimuli and the time taken per stimulus, we estimat
 
 #### Lexicon:
 
-We will use the `Refined_dictionary.txt` file, included in the supplementary materials of @ponizovskiy2020development stored on the [Open Science Framework](https://osf.io/vy475/).
+We will use the `Refined_dictionary.txt` file, included in the supplementary materials of @ponizovskiy_development_2020 stored on the [Open Science Framework](https://osf.io/vy475/).
 
 #### Pre-trained models:
 
-We consider two commonly used pre-trained word-embedding models: `word2vec-google-news` is trained on a corpus of online news articles, including about 100 billion words. It is based on the work of @mikolov2013distributed. `GloVe-common-crawl-840B` is trained with the model suggested by @pennington2014glove using crawled large-scale web pages, including about 840 billion words.
+We consider two commonly used pre-trained word-embedding models: `word2vec-google-news` is trained on a corpus of online news articles, including about 100 billion words. It is based on the work of @mikolov_distributed_2013. `GloVe-common-crawl-840B` is trained with the model suggested by @pennington_glove_2014 using crawled large-scale web pages, including about 840 billion words.
 
 #### Models we trained:
 
-We will also consider word embedding models directly trained from the lyrics corpus, based on @pennington2014glove. We select models on two sets of off-line criteria:
+We will also consider word embedding models directly trained from the lyrics corpus, based on @pennington_glove_2014. We select models on two sets of off-line criteria:
 
 1.  loss function on the hold-out data set and
-2.  English word similarity judgment data employed from @faruqui2014community.
+2.  English word similarity judgment data employed from @faruqui_community_2014.
 
 #### Word-vector aggregation:
 
-It is necessary to aggregate word vectors from each lyric into a single lyric vector, which is then compared to sets of words belonging to each value. We consider two methods: 1) uniform average and 2) weighted sum. In particular, weighted sum employs the inverse-document-frequency for weighting each word vector within the lyrics @de2016representation.
+It is necessary to aggregate word vectors from each lyric into a single lyric vector, which is then compared to sets of words belonging to each value. We consider two methods: 1) uniform average and 2) weighted sum. In particular, weighted sum employs the inverse-document-frequency for weighting each word vector within the lyrics @de_boom_representation_2016.
 
 ### Analytic approach
 
@@ -235,7 +234,7 @@ We take a cross-classified approach, whereby we attempt to explicitly model the 
 
 [^3]: We refer to this as the "item intercept" in our notebooks. See folder `III_simulation_study` for further details.
 
-Similar to @beaty2021automating, the ratings from different NLP systems will be linearly combined into a latent variable for each value. These are then correlated to the `stimuli intercepts`.
+Similar to @beaty_automating_2021, the ratings from different NLP systems will be linearly combined into a latent variable for each value. These are then correlated to the `stimuli intercepts`.
 
 ```{mermaid}
 %%| label: fig-5
@@ -263,13 +262,13 @@ We will use the proprietary software, [Mplus](https://www.statmodel.com) to esti
 
 ### Contributions
 
-We extend existing work primarily in three ways: Firstly, we examine whether the work in [@ponizovskiy2020development] can be extended to song lyrics: [@ponizovskiy2020development] showed evidence of validity for a lexicon of words for measuring a set of 10 personal values in social-media text.
+We extend existing work primarily in three ways: Firstly, we examine whether the work in @ponizovskiy_development_2020 can be extended to song lyrics: @ponizovskiy_development_2020 showed evidence of validity for a lexicon of words for measuring a set of 10 personal values in social-media text.
 
-Secondly, we compare semantic distance (the degree to which words are related) estimated using NLP systems to the results of word counting. Prior studies have counted the number of times specific words from a fixed lexicon were used in a given body of text as a means of measuring psychological constructs [@ponizovskiy2020development]. However, song lyrics may not contain those exact words, and may instead use synonymous or otherwise meaningfully similar words, or even slang and metaphors. Our method allows for more word coverage: rather than count words from a fixed lexicon, we will estimate the semantic distance between the words in the lexicon that represent each personal value, and the song lyrics in order to derive a score for each value.
+Secondly, we compare semantic distance (the degree to which words are related) estimated using NLP systems to the results of word counting. Prior studies have counted the number of times specific words from a fixed lexicon were used in a given body of text as a means of measuring psychological constructs @ponizovskiy_development_2020. However, song lyrics may not contain those exact words, and may instead use synonymous or otherwise meaningfully similar words, or even slang and metaphors. Our method allows for more word coverage: rather than count words from a fixed lexicon, we will estimate the semantic distance between the words in the lexicon that represent each personal value, and the song lyrics in order to derive a score for each value.
 
-Thirdly, we linearly combine the output of multiple NLP systems into a single latent variable, to represent the shared variance of the machine ratings: as each NLP system is developed using 1) an algorithm trained on 2) a corpus, each algorithm/corpus combination will estimate the semantic distance between two words differently. This loosely parallels how human participants may rate each set of lyrics differently. [@beaty2021automating] showed that this latent variable of semantic distance estimations resulted in overlap with a latent variable of human ratings as high as r = .9, albeit in a different domain. This approach further allows us to estimate the contribution of each algorithm / corpus setup to the shared variance.
+Thirdly, we linearly combine the output of multiple NLP systems into a single latent variable, to represent the shared variance of the machine ratings: as each NLP system is developed using 1) an algorithm trained on 2) a corpus, each algorithm/corpus combination will estimate the semantic distance between two words differently. This loosely parallels how human participants may rate each set of lyrics differently. @beaty_automating_2021 showed that this latent variable of semantic distance estimations resulted in overlap with a latent variable of human ratings as high as r = .9, albeit in a different domain. This approach further allows us to estimate the contribution of each algorithm / corpus setup to the shared variance.
 
-We further contribute three assets: firstly, we provide containerized, API-reachable interface to the models that we used to estimate semantic similarity, housed on [Replicate.com](https://replicate.com/eldrin/text-concept-similarity). Secondly, we share code notebooks written with the intention of allowing for reproducibility, replication, and extension of our work. Thirdly, we share the beginnings of a psychometric scale for assessing lyric preference intensity and expertise (@sec-lyricquestions).
+We further contribute three assets: firstly, we provide containerized, API-reachable interface to the models that we used to estimate semantic similarity, housed on [Replicate](https://replicate.com/eldrin/text-concept-similarity). Secondly, we share code notebooks written with the intention of allowing for reproducibility, replication, and extension of our work. Thirdly, we share the beginnings of a psychometric scale for assessing lyric preference intensity and expertise (@sec-lyricquestions).
 
 # Appendix {.appendix}
 
@@ -286,7 +285,7 @@ We further contribute three assets: firstly, we provide containerized, API-reach
     -   liwc religion with traditionalism, .79
     -   liwc family with benevolence, .57
 
-[^5]: see table 2 in @ponizovskiy2020development
+[^5]: see table 2 in @ponizovskiy_development_2020
 
 <!-- -->
 
@@ -303,7 +302,7 @@ We further contribute three assets: firstly, we provide containerized, API-reach
     -   benevolence: .18
     -   universalism: .29
 
-[^6]: see table 4 in @ponizovskiy2020development
+[^6]: see table 4 in @ponizovskiy_development_2020
 
 ## b) number of ratings per stimulus
 
@@ -344,7 +343,7 @@ On average participants took `r mean_time_per_song` minutes per song. However, @
 
 ### Pilot 2 {#sec-pilot2}
 
-Following our first pilot (@sec-pilot1), we aimed to estimate the smallest number of ratings necessary to achieve a satisfactory inter-rater reliability. We recruited in proportions for a representative sample of the United States on the [Prolific.co](https://www.prolific.co) participant recruitment platform.We gathered responses from 500 participants on 20 lyric stimuli, and the followed a similar procedure as described in @debruine2018determining. For each of the 10 values, we estimated Cronbach's alpha for a range of subsample sizes, ranging from 5 to 50 participants in increments of 5. This procedure was repeated 10 times per increment, separately for each of the 10 values. We then examined the distribution of Cronbach's Alpha for each of the 10 personal values to determine the frequency with which it exceeded a threshold of .7, commonly considered to be an acceptable level of reliability.
+Following our first pilot (@sec-pilot1), we aimed to estimate the smallest number of ratings necessary to achieve a satisfactory inter-rater reliability. We recruited in proportions for a representative sample of the United States on the [Prolific.co](https://www.prolific.co) participant recruitment platform.We gathered responses from 500 participants on 20 lyric stimuli, and the followed a similar procedure as described in @debruine_determining_2018. For each of the 10 values, we estimated Cronbach's alpha for a range of subsample sizes, ranging from 5 to 50 participants in increments of 5. This procedure was repeated 10 times per increment, separately for each of the 10 values. We then examined the distribution of Cronbach's Alpha for each of the 10 personal values to determine the frequency with which it exceeded a threshold of .7, commonly considered to be an acceptable level of reliability.
 
 The distributions of Cronbach's Alpha estimates for the value of Stimulation are shown in @fig-3, and suggested the need for more than 25 raters to consistently achieve a Cronbach's Alpha greater than .7. We thus conclude that a conservative estimate for the number of ratings is 25.
 
@@ -397,7 +396,7 @@ We then consider four aspects of lyric data as strata for random sampling:
 
 Estimated genre and lyric topic resulted in categorical groupings. Popularity and Release date were divided into equally spaced sub-ranges; e.g. we divided release year into decades (60s, 70s, 80s, and so on).
 
-### Bias Correction
+### bias correction
 
 We expect our dataset will lean towards songs that are a) recent, and b) popular. Specifically, our continuous strata variables are separated into bins, and we expect that some bins in the defined strata will result in very few songs. Thus, we compensate by oversampling the less populated bins. To do so, we employ the maximum-a-posteriori (MAP) estimate of the parameter of the categorical distribution for each stratum: this inflates the probability that songs from the less populated bins will be selected. The procedure is controlled by a free parameter "alpha," which determines the degree to which we inflate the bins. However, we do not know any prior study that suggests an appropriate alpha that suits our study context. Thus, we heuristically set the parameter to 40,000, which implies that songs in the lesser bins will comprise 5 - 10% of the resulting pool.
 
@@ -416,7 +415,7 @@ Further, we select the samples as a dynamic search process rather than a typical
 
 From the very first lyric stimulus selected, this procedure will allow for any length of slice of *B* to approximately follow the reference distribution for each stratum. We expect that this procedure can be useful 1) when the first few items must follow the reference distribution and 2) when there is the possibility of continuing the annotation project at a later time, and thus the sampling procedure must be continued rather than starting anew.
 
-## e) Manual Screening Procedure: {#sec-manualscreening}
+## e) manual screening procedure: {#sec-manualscreening}
 
 Lyrics of the stimulus set were then manually screened to see if they were a match to the actual song [^7] and for suitability.
 
