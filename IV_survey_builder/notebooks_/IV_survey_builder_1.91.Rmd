@@ -153,6 +153,9 @@ template_dt$name <- gsub("4116102", "%1$s", template_dt$name)
 template_dt$label[1] <- 'Between the quotation marks below are some song lyrics. Please take a moment to read them and think about the SPEAKER the lyrics. Please remember that this SPEAKER might be a the AUTHOR themselves, or someone or something else: \n \n  "%1$s"'
 template_dt$label[5] <- template_dt$label[1]
 
+# we adjusted the slider to not have anchor points, so we adjust the text here:
+template_dt$label[6] <- "Please, rate the importance of the following values as a life-guiding principle for the SPEAKER of the lyrics by clicking on the grey bar. The closer you click to the left, the more you indicate that the value is opposed to their values, and clicking further to the right indicates that the value is of supreme importance to their principles."
+
 #block order is the block id used by formR to determine which questions belong in a block
 #we assign them to each set of questions, that are asked of each set of lyrics
 template_dt$block_order <- "%1$s"
@@ -178,8 +181,7 @@ selected_dt_test <- data.frame(
   mxm_id = "123456", 
   Keep = "O", 
   block_id = "AA", 
-  lyrics_body = "
-  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", 
+  lyrics_body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", 
   showif_id = "1")
 ```
 
@@ -293,7 +295,18 @@ Thus chunk will produce a single-lyric survey .csv file that can be uploaded to 
 
 ```{r}
 test_survey <- assemble_survey(selected_dt_test)
-write.csv(test_survey, here("IV_survey_builder", "survey_files_", "test_survey.csv"))
+
+# the first row gathers the id from prolific, I remove it for this test
+# the second row generates a random number to select lyrics for participants to rate
+# I remove them for this test
+test_survey <- test_survey[3:59] 
+
+# this column is used in combination with the random number above
+# we empty the column for this test so all items are shown
+test_survey$showif <- NA
+
+write.csv(test_survey, here("IV_survey_builder", "survey_files_", "test_survey.csv"), 
+          na="", row.names = FALSE)
 ```
 
 
