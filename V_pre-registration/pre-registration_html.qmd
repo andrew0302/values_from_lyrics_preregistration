@@ -56,7 +56,7 @@ As this is an initial study, our hypotheses are not severe:
 
 **Secondary Hypothesis**: Magnitude of these correlations will be lower with word-counting methods than with semantic distance methods.
 
-**Secondary Null Hypothesis**: Magnitide of these correlations show no difference.
+**Secondary Null Hypothesis**: Magnitude of these correlations show no difference.
 
 ### Study Type:
 
@@ -228,7 +228,7 @@ flowchart RL
 
 We take a cross-classified approach, whereby we attempt to explicitly model the tendency of participant use of the survey by estimating a `participant intercept` for each one. Our primary analysis involves correlating the `stimuli intercept`[^3] with output for automated systems.
 
-[^3]: We refer to this as the "item intercept" in our notebooks. See folder `III_simulation_study` for further details. 
+[^3]: We refer to this as the "item intercept" in our notebooks. See folder `III_simulation_study` for further details.
 
 Similar to @beaty2021automating, the ratings from different NLP systems will be linearly combined into a latent variable for each value. These are then correlated to the `stimuli intercepts`.
 
@@ -258,7 +258,7 @@ We will use the proprietary software, [Mplus](https://www.statmodel.com) to esti
 
 ### Contributions
 
-We extend existing work primarily in three ways: Firstly, we examine whether the work in [@ponizovskiy2020development] can be extended to song lyrics: [@ponizovskiy2020development] showed evidence of validity for a lexicon of words for measuring a set of 10 personal values in social-media text.  
+We extend existing work primarily in three ways: Firstly, we examine whether the work in [@ponizovskiy2020development] can be extended to song lyrics: [@ponizovskiy2020development] showed evidence of validity for a lexicon of words for measuring a set of 10 personal values in social-media text.
 
 Secondly, we compare semantic distance (the degree to which words are related) estimated using NLP systems to the results of word counting. Prior studies have counted the number of times specific words from a fixed lexicon were used in a given body of text as a means of measuring psychological constructs [@ponizovskiy2020development]. However, song lyrics may not contain those exact words, and may instead use synonymous or otherwise meaningfully similar words, or even slang and metaphors. Our method allows for more word coverage: rather than count words from a fixed lexicon, we will estimate the semantic distance between the words in the lexicon that represent each personal value, and the song lyrics in order to derive a score for each value.
 
