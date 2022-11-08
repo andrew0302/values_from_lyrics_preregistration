@@ -44,7 +44,7 @@ As in [@ponizovskiy2020development], we estimate convergent validity of the grou
 
 People who are exceptionally familiar or who have a strong preference for song lyrics may give different ratings than others. To examine this in the future, we also begin development of a psychometric questionnaire aimed at measuring lyric preference intensity and expertise.
 
-Lastly, we aim to make artifacts of this project reproducible. Thus, reusable instances of the NLP systems will be available on [Replicate.com](https://replicate.com/eldrin/text-concept-similarity), de-identified data from respondents and notebooks documenting our process will be available on the [Open Science Framework](https://osf.io), including the files we used to make our [formR.org](https://formR.org) survey.
+Lastly, we aim to make artifacts of this project reproducible. Thus, reusable instances of the NLP systems will be available on [Replicate.com](https://replicate.com/eldrin/text-concept-similarity), codebases and notebooks documenting our work will be available on [Github](https://https://github.com/andrew0302/values_from_lyrics), as well as [Open Science Framework](https://osf.io/h87mz/) which will also include de-identified responses from participants. These repositories will also contain the files we used to make our  [formR.org](https://formR.org) survey, a test version of which can be found [here](https://testmysurvey.formr.org/).
 
 ### Hypotheses {#sec-hypotheses}
 
@@ -76,14 +76,15 @@ We will recruit a U.S. representative sample of participants from [Prolific.co](
 
 Our primary measure is the perceived presence of personal values in song lyrics. Song lyrics may be written from the perspective of the author, but also from the perspective of someone or something else - sometimes referred to as the 'speaker'. As we are measuring the presence of values as suggested in the lyrics themselves, we explicitly ask participants to respond with the perspective of the *speaker* in mind, and not the author.
 
-The survey will be implemented on an instance of [formR.org](https://formR.org) hosted on the servers of [Delft University of Technology](https://www.tudelft.nl/) to ensure GDPR compliance. The `.csv` survey files used as input to formR were constructed in R [^1]. The main component of the survey involves showing participants the lyrics to a number of songs, one at a time. For each song they are asked to respond to set of questions designed to assess the presence of values in the lyrics.
+The survey will be implemented on an instance of [formR.org](https://formR.org) hosted on the servers of [Delft University of Technology](https://www.tudelft.nl/) to ensure GDPR compliance. A test version of the survey can be found [here](https://testmysurvey.formr.org/). The `.csv` survey files used as input to formR were constructed in R[^1]. The main component of the survey involves showing participants the lyrics to a number of songs, one at a time. For each song they are asked to respond to set of questions designed to assess the presence of values in the lyrics.
 
-[^1]: see `survey_builder_*.Rmd` notebook in the `IV_survey_builder` folder of this repository. We experienced issues testing our surveys when the number of lyric stimuli in the survey was greater than 60. Thus, our stimulus set will be separated into otherwise identical survey files on the formR server, with no more than 60 lyrics in each survey file. Participants will be randomly assigned to one of the surveys, which will in turn randomly select a subset of stimuli to have rated by participants.
+Participants are randomly assigned 18 lyric stimuli to rate. We experienced issues with the formR platform when the number of lyric stimuli in the survey was greater than 60. Thus, our stimulus set will be separated into otherwise identical survey files on the formR server, with no more than 60 lyrics in each survey file. Participants will be randomly assigned to one of the surveys, which will in turn randomly select a subset of stimuli to be rated.
+
+[^1]: see `survey_builder_*.Rmd` notebook in the `IV_survey_builder` folder of this repository. 
 
 The majority of items require a Likert-type response. In order to gather a more continuous measure, we used a slider with no starting point: the `rating button` option in formR shows a horizontal gray bar with two labeled poles (e.g. agree - disagree). For each value there is a brief description, followed by the slider labelled ("opposed to their values" - "of supreme importance").
 
 ![](screenshots/formR.png)
-
 Participants can then be instructed to indicate on the bar the degree to which they e.g. agree or disagree, as they might with a slider. However, the gray bar has no visible slider, thus no starting value. The gray bar shows no divisions on it and appears continuous, although it contains 20 subdivisions. To ensure that participants understand the use of this method, we include a 'training and explanation' page at the beginning of our survey.
 
 ### Survey Measures:
