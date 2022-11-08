@@ -126,20 +126,30 @@ div.csl-indent {
 
 </header>
 
+<div class="cell">
+
+</div>
 <section id="study-information" class="level2">
 <h2 class="anchored" data-anchor-id="study-information">Study Information</h2>
 <p>Contributors: Andrew M. Demetriou, Jaehun Kim, Sandy Manolios, Cynthia C.S. Liem</p>
+<div class="cell">
+
+</div>
 <section id="overview" class="level3">
 <h3 class="anchored" data-anchor-id="overview">Overview</h3>
-<p>We aim to extend work that used natural language processing (NLP) to estimate psychological values (e.g. <span class="citation" data-cites="schwartz2001extending">(<a href="#ref-schwartz2001extending" role="doc-biblioref">Schwartz et al. 2001</a>)</span>) in social-media text <span class="citation" data-cites="ponizovskiy2020development">(<a href="#ref-ponizovskiy2020development" role="doc-biblioref">Ponizovskiy et al. 2020</a>)</span>. Our aim is to explore the potential to estimate the perceived psychological values in song lyrics.</p>
-<p>We will gather ratings of song lyrics from participants using an online survey. Participants will respond to a psychometric instrument that we have adapted for this purpose. We will then use NLP models to estimate scores for each of the personal values. Lastly, we will examine how well the scores from the NLP resemble human ratings.</p>
-<p>As in <span class="citation" data-cites="ponizovskiy2020development">(<a href="#ref-ponizovskiy2020development" role="doc-biblioref">Ponizovskiy et al. 2020</a>)</span>, we estimate convergent validity of the grouped NLP models by estimating correlations with related constructs measured using the Linguistic Inquiry Word Count (<a href="https://liwc.app">LIWC</a>) dictionary (see <span class="citation" data-cites="boyd2022development">(<a href="#ref-boyd2022development" role="doc-biblioref">Boyd et al. 2022</a>)</span> for psychometric details).</p>
+<p>We aim to extend work that used natural language processing (NLP) to estimate psychological values (e.g. <span class="citation" data-cites="schwartz2001extending">(<a href="#ref-schwartz2001extending" role="doc-biblioref">Schwartz et al. 2001</a>)</span>) in social-media text <span class="citation" data-cites="ponizovskiy2020development">(<a href="#ref-ponizovskiy2020development" role="doc-biblioref">Ponizovskiy et al. 2020</a>)</span>. Specifically we will explore the potential to estimate the perceived psychological values in song lyrics.</p>
+<p>Our study primarily consists of comparisons between what people indicate, and what NLP systems estimate, are the psychological values expressed in song lyrics. We will gather responses from people using an online survey. We will also use NLP systems to estimate the scores and compare them to those from people.</p>
+<p>As in <span class="citation" data-cites="ponizovskiy2020development">(<a href="#ref-ponizovskiy2020development" role="doc-biblioref">Ponizovskiy et al. 2020</a>)</span>, we estimate convergent validity of the grouped NLP systems and our queztionnaire by estimating correlations with related constructs measured using Linguistic Inquiry Word Count (<a href="https://liwc.app">LIWC</a>; <span class="citation" data-cites="boyd2022development">(<a href="#ref-boyd2022development" role="doc-biblioref">Boyd et al. 2022</a>)</span>). We will also compare the performance of word counting methods used in <span class="citation" data-cites="ponizovskiy2020development">Ponizovskiy et al. (<a href="#ref-ponizovskiy2020development" role="doc-biblioref">2020</a>)</span> with semantic distance methods similar to those used in e.g. <span class="citation" data-cites="beaty2021automating">Beaty and Johnson (<a href="#ref-beaty2021automating" role="doc-biblioref">2021</a>)</span>.</p>
+<p>People who are exceptionally familiar or who have a strong preference for song lyrics may give different ratings than others. To examine this in the future, we also begin development of a psychometric questionnaire aimed at measuring lyric preference intensity and expertise.</p>
+<p>Lastly, we aim to make artifacts of this project reproducible. Thus, reusable instances of the NLP systems will be available on <a href="https://replicate.com">Replicate</a>, de-identified data from respondents and notebooks documenting our process will be available on the <a href="https://osf.io">Open Science Framework</a>, including the files we used to make our <a href="https://formR.org">formR.org</a> survey.</p>
 </section>
 <section id="sec-hypotheses" class="level3">
 <h3 class="anchored" data-anchor-id="sec-hypotheses">Hypotheses</h3>
-<p>As this is an initial study our hypotheses are not severe:</p>
-<p><strong>Primary Hypothesis</strong>: Grouped NLP models show a statistically significant correlation with grouped <strong>a)</strong> participant ratings across all 10 personal values, and <strong>b)</strong> with related LIWC constructs - in the same or greater magnitude as shown in <span class="citation" data-cites="ponizovskiy2020development">(<a href="#ref-ponizovskiy2020development" role="doc-biblioref">Ponizovskiy et al. 2020</a>)</span>.</p>
-<p><strong>Null Hypothesis</strong>: Grouped NLP models show no evidence of a correlation with participant ratings across all 10 personal values.</p>
+<p>As this is an initial study, our hypotheses are not severe:</p>
+<p><strong>Primary Hypothesis</strong>: Grouped NLP systems show a statistically significant correlation with grouped <strong>a)</strong> participant ratings across all 10 personal values, and <strong>b)</strong> with related LIWC constructs - in the same or greater magnitude as shown in <span class="citation" data-cites="ponizovskiy2020development">(<a href="#ref-ponizovskiy2020development" role="doc-biblioref">Ponizovskiy et al. 2020</a>)</span>.</p>
+<p><strong>Primary Null Hypothesis</strong>: Grouped NLP systems show no evidence of a correlation with participant ratings across all 10 personal values, or LIWC constructs.</p>
+<p><strong>Secondary Hypothesis</strong>: Magnitude of these correlations will be lower with word-counting methods than with semantic distance methods.</p>
+<p><strong>Secondary Null Hypothesis</strong>: Magnitide of these correlations show no difference.</p>
 </section>
 <section id="study-type" class="level3">
 <h3 class="anchored" data-anchor-id="study-type">Study Type:</h3>
@@ -158,11 +168,11 @@ div.csl-indent {
 </section>
 <section id="survey-platform" class="level3">
 <h3 class="anchored" data-anchor-id="survey-platform">Survey Platform:</h3>
-<p>Our primary measure is the perceived presence of personal values in song lyrics. Song lyrics may be written from the perspective of the author, but also from the perspective of someone or something else - sometimes referred to as the ‘speaker’. As we are measuring the presence of values as suggested in the lyrics themselves, we explicitly ask participants to respond with the perspective of the speaker in mind, and not the author.</p>
+<p>Our primary measure is the perceived presence of personal values in song lyrics. Song lyrics may be written from the perspective of the author, but also from the perspective of someone or something else - sometimes referred to as the ‘speaker’. As we are measuring the presence of values as suggested in the lyrics themselves, we explicitly ask participants to respond with the perspective of the <em>speaker</em> in mind, and not the author.</p>
 <p>The survey will be implemented on an instance of <a href="https://formR.org">formR.org</a> hosted on the servers of <a href="https://www.tudelft.nl/">Delft University of Technology</a> to ensure GDPR compliance. The <code>.csv</code> survey files used as input to formR were constructed in R <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. The main component of the survey involves showing participants the lyrics to a number of songs, one at a time. For each song they are asked to respond to set of questions designed to assess the presence of values in the lyrics.</p>
-<p>The majority of items require a Likert-type response. In order to gather a more continuous measure, we used a sort of slider with no obvious starting point: the <code>rating button</code> option in formR shows a horizontal gray bar with two labeled poles (e.g.&nbsp;agree - disagree).</p>
+<p>The majority of items require a Likert-type response. In order to gather a more continuous measure, we used a slider with no starting point: the <code>rating button</code> option in formR shows a horizontal gray bar with two labeled poles (e.g.&nbsp;agree - disagree). For each value there is a brief description, followed by the slider labelled (“opposed to their values” - “of supreme importance”).</p>
 <p><img src="screenshots/formR.png" class="img-fluid"></p>
-<p>Participants can then be instructed to indicate on the bar the degree to which they agree or disagree, as they might with a slider. However, the gray bar has no visible slider, thus no starting value. The gray bar shows no divisions on it and appears continuous, although it contains 20 subdivisions. To ensure that participants understand the use of this method, we include a ‘training and explanation’ page at the beginning of our survey.</p>
+<p>Participants can then be instructed to indicate on the bar the degree to which they e.g.&nbsp;agree or disagree, as they might with a slider. However, the gray bar has no visible slider, thus no starting value. The gray bar shows no divisions on it and appears continuous, although it contains 20 subdivisions. To ensure that participants understand the use of this method, we include a ‘training and explanation’ page at the beginning of our survey.</p>
 </section>
 <section id="survey-measures" class="level3">
 <h3 class="anchored" data-anchor-id="survey-measures">Survey Measures:</h3>
@@ -172,7 +182,7 @@ div.csl-indent {
 </section>
 <section id="lyric-preferences" class="level4">
 <h4 class="anchored" data-anchor-id="lyric-preferences">Lyric Preferences:</h4>
-<p>To assess whether expertise in lyrics or a preference for lyrical content has an effect on the ratings given, we have begun developing a scale, partially inspired by the Preference Intensity scale in <span class="citation" data-cites="schafer2009functions">(<a href="#ref-schafer2009functions" role="doc-biblioref">Schäfer and Sedlmeier 2009</a>)</span>. Our original ad-hoc scale consisted of 10 Likert-type items. Participants in our second pilot (see <a href="#sec-pilot2">Section&nbsp;1.2.2</a>) were asked to respond to the 10 items, and to an additional ‘open response’ format item that asked: “Can you think of any other activities or indications that someone has an affinity for song lyrics? If so, please enter them here:”. We removed poorly performing items, and added 5 items based on participant responses to the open format question. We will continue adding and removing items using factor analysis and item response theory techniques.</p>
+<p>To assess whether expertise in lyrics or a preference for lyrical content has an effect on the ratings given, we have begun developing a scale, partially inspired by the Preference Intensity scale in <span class="citation" data-cites="schafer2009functions">(<a href="#ref-schafer2009functions" role="doc-biblioref">Schäfer and Sedlmeier 2009</a>)</span>. Our original ad-hoc scale consisted of 10 Likert-type items. Participants in our second pilot (see <a href="#sec-pilot2">Section&nbsp;1.2.2</a>) were asked to respond to the 10 items, and to an additional ‘open response’ format item that asked: “Can you think of any other activities or indications that someone has an affinity for song lyrics? If so, please enter them here:”. We removed poorly performing items, and added 5 items based on participant responses to the open format question. As this instrument has yet to show satisfactory reliability or validity, we will continue adding and removing items using factor analysis and item response theory techniques as we progress.</p>
 </section>
 <section id="additional-measures" class="level4">
 <h4 class="anchored" data-anchor-id="additional-measures">Additional Measures:</h4>
@@ -182,8 +192,8 @@ div.csl-indent {
 </section>
 <section id="rating-confidence" class="level5">
 <h5 class="anchored" data-anchor-id="rating-confidence">Rating Confidence</h5>
-<p>It has been suggested that a rater’s confidence in their annotation is a relevant indicator of reliability (although possibly orthogonal to accuracy; see <span class="citation" data-cites="cabitza2020">Cabitza, Campagner, and Sconfienza (<a href="#ref-cabitza2020" role="doc-biblioref">2020</a>)</span> ). For each set of lyrics, we will ask participants to indicate the degree to which they are confident in their ratings on a solid bar ranging from ‘Extremely unconfident’ to ‘Extremely confident’).</p>
-<p>Our pilot study (<a href="#sec-pilot2">Section&nbsp;1.2.2</a>) of 20 lyric stimuli suggests participants are ‘Somewhat confident’ in their responses, which provides some initial evidence of self-perceived intra-rater reliability of our procedure.</p>
+<p>It has been suggested that a rater’s confidence in their annotation is a relevant indicator of reliability (although possibly orthogonal to accuracy; see <span class="citation" data-cites="cabitza2020">Cabitza, Campagner, and Sconfienza (<a href="#ref-cabitza2020" role="doc-biblioref">2020</a>)</span>). For each set of lyrics, we will ask participants to indicate the degree to which they are confident in their ratings on a solid bar ranging from ‘Extremely unconfident’ to ‘Extremely confident’).</p>
+<p>Our pilot study (<a href="#sec-pilot2">Section&nbsp;1.2.2</a>) of 20 lyric stimuli suggests participants are overall ‘Somewhat confident’ in their responses, which provides some initial evidence of self-perceived intra-rater reliability of our procedure.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-1" class="quarto-figure quarto-figure-center anchored">
@@ -201,16 +211,16 @@ div.csl-indent {
 <h3 class="anchored" data-anchor-id="sec-sampling">Sampling Procedures:</h3>
 <section id="lyric-stimulus-set" class="level4">
 <h4 class="anchored" data-anchor-id="lyric-stimulus-set">Lyric Stimulus Set:</h4>
-<p>We aim to annotate a total of 360 lyric stimuli drawn from a pool of 2200, with approximately 25 ratings for each. This is not intended to be a fully representative sample, but rather a sufficiently large sample with which to build a ground-truthing procedure, to demonstrate its potential. Size limits were determined by estimating the smallest sample size to demonstrate the viability of our procedure, taking into account time and budgetary constraints of the research team.</p>
-<p>Our 360 stimulus set was derived using stratified random sampling (see <a href="#sec-stratifiedsampling">Section&nbsp;1.4</a> for details), and then a final manual screening by the research teamv(see <a href="#sec-manualscreening">Section&nbsp;1.5</a>).</p>
-<p>The overall population of song lyrics was derived from the Spotify Million Playlist Dataset <a href="https://aicrowd.com/challenges/spotify-million-playlist-dataset-challenge">MPD</a> which contains 1 million Spotify user-generated playlists, chosen because of its size, and its recency vs.&nbsp;other similar datasets.</p>
+<p>We aim to annotate a total of 360 lyric stimuli drawn from a pool of 2200, with approximately 25 ratings for each. This is not intended to be a fully representative sample, but rather a sufficiently large sample with which to examine the potential of our procedure. Size limits were determined by estimating the smallest sample size to demonstrate the viability of our procedure, taking into account time and budgetary constraints of the research team.</p>
+<p>Our 360 stimulus set was derived using stratified random sampling (see <a href="#sec-stratifiedsampling">Section&nbsp;1.4</a> for details), and then a final manual screening by the research team (see <a href="#sec-manualscreening">Section&nbsp;1.5</a>).</p>
+<p>The overall population of song lyrics was derived from the Spotify Million Playlist Dataset <a href="https://aicrowd.com/challenges/spotify-million-playlist-dataset-challenge">MPD</a> which contains 1 million Spotify user-generated playlists, chosen because of its size and its recency vs.&nbsp;other similar datasets.</p>
 <p>The lyric stimuli were drawn from the database of <a href="https://musixmatch.com">musiXmatch</a> using their API, which provides approximately 30% of the lyrics of each song.</p>
 </section>
 <section id="number-of-ratings" class="level4">
 <h4 class="anchored" data-anchor-id="number-of-ratings">Number of ratings:</h4>
 <section id="task-subjectivity" class="level5">
 <h5 class="anchored" data-anchor-id="task-subjectivity">Task Subjectivity</h5>
-<p>It may be the case that the number of raters required to reach a satisfactory inter-rater reliability increases with the degree to which the task is subjective. Thus, at the very end of the survey we will ask participants to indicate the degree to which they found the task to be subjective on a solid bar ranging from ‘Extremely unconfident’ to ‘Extremely confident’). The mode of responses in our pilot study (see <a href="#sec-pilot2">Section&nbsp;1.2.2</a>) suggests that we will need a relatively large number of responses per lyric stimulus.</p>
+<p>It may be the case that the number of raters required to reach a satisfactory inter-rater reliability increases with the degree to which the task is subjective. Thus, at the very end of the survey we will ask participants to indicate the degree to which they found the task to be subjective on a solid bar ranging from ‘Completely subjective’ to ‘Completely objective’). The mode of responses in our pilot study (see <a href="#sec-pilot2">Section&nbsp;1.2.2</a>) suggests participants find the task to be ‘Very Subjective’. Thus we expect we will need a relatively large number of raterings per lyric stimulus for our study.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-2" class="quarto-figure quarto-figure-center anchored">
@@ -221,12 +231,12 @@ div.csl-indent {
 </div>
 </div>
 </div>
-<p>We followed a procedure inspired by <span class="citation" data-cites="debruine2018determining">DeBruine and Jones (<a href="#ref-debruine2018determining" role="doc-biblioref">2018</a>)</span> to determine the number of ratings per stimuli. Specifically, we chose a small subset of 20 lyric samples, and had approximately 500 participants rate them all. We then randomly sub-sampled from the pool of 500 raters in increments ranging from 5 to 50 raters, and estimated Cronbach’s alpha for each subsample. Our conclusions suggested conservative estimates of 25 raters per lyric stimulus. See <a href="#sec-pilot2">Section&nbsp;1.2.2</a> for details.</p>
+<p>We followed a procedure inspired by <span class="citation" data-cites="debruine2018determining">DeBruine and Jones (<a href="#ref-debruine2018determining" role="doc-biblioref">2018</a>)</span> to determine the number of ratings per lyric stimulus. Specifically, we chose a small subset of 20 lyric samples, and had approximately 500 participants rate them all. We then randomly sub-sampled from the pool of 500 raters in increments ranging from 5 to 50 raters, and estimated Cronbach’s alpha for each subsample. Our conclusions suggested conservative estimates of 25 raters per lyric stimulus. See <a href="#sec-pilot2">Section&nbsp;1.2.2</a> for details.</p>
 </section>
 </section>
 <section id="number-of-participants" class="level4">
 <h4 class="anchored" data-anchor-id="number-of-participants">Number of Participants</h4>
-<p>We estimated how long it would take a participant to complete our lyrics questionnaire, and the time it would take to complete all questions for a single lyric stimulus on average. Data were collected during data collection for our second pilot (see <a href="#sec-pilot2">Section&nbsp;1.2.2</a>).</p>
+<p>We estimated how long it would take a participant to complete our lyrics questionnaire, and the time it would take to complete all questions for a single lyric stimulus on average. Data were collected during our second pilot (see <a href="#sec-pilot2">Section&nbsp;1.2.2</a>).</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="tbl-2" class="anchored">
@@ -268,7 +278,7 @@ div.csl-indent {
 <div class="cell">
 
 </div>
-<p>Given the total of 360 lyric stimuli and the time taken per stimulus, estimated the number of participants necessary to receive approximately 25 ratings per stimuli using simulation <a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. We thus expect to collect data for <code>r</code>n_participants` participants. See <a href="#sec-participantsimulation">Section&nbsp;1.6</a> for further details.</p>
+<p>Given the total of 360 lyric stimuli and the time taken per stimulus, we estimated the number of participants necessary to receive approximately 25 ratings per stimuli using simulation <a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. We thus expect to collect data for 530 participants. See <a href="#sec-participantsimulation">Section&nbsp;1.6</a> for further details.</p>
 </section>
 </section>
 <section id="natural-language-processing" class="level3">
@@ -288,7 +298,6 @@ div.csl-indent {
 <li>loss function on the hold-out data set and</li>
 <li>English word similarity judgment data employed from <span class="citation" data-cites="faruqui2014community">Faruqui and Dyer (<a href="#ref-faruqui2014community" role="doc-biblioref">2014</a>)</span>.</li>
 </ol>
-<p>We select two final models that score best on each criterion to hold the generality.</p>
 </section>
 <section id="word-vector-aggregation" class="level4">
 <h4 class="anchored" data-anchor-id="word-vector-aggregation">Word-vector aggregation:</h4>
@@ -297,7 +306,7 @@ div.csl-indent {
 </section>
 <section id="analytic-approach" class="level3">
 <h3 class="anchored" data-anchor-id="analytic-approach">Analytic approach</h3>
-<p>Our primary hypothesis is that we will observe a correlation in ratings between participants and output from Natural Language Processing (see <a href="#sec-hypotheses">Section&nbsp;0.1.2</a> and <a href="#sec-magnitudes">Section&nbsp;1.1</a>).</p>
+<p>Our primary hypothesis is that we will observe a correlation in ratings between participants and output from NLP systems (see <a href="#sec-hypotheses">Section&nbsp;0.1.2</a> and <a href="#sec-magnitudes">Section&nbsp;1.1</a>).</p>
 <p>Estimating a ‘ground truth’ for each lyric stimulus from participant ratings is non-trivial. Specifically, participants will use our survey instrument differently (e.g.&nbsp;some will give overall more extreme scores, whereas some will more consistently give scores close to the middle of the slider bar). We therefore aim to estimate scores for stimuli while statistically controlling for the effect of participant’s tendency to use the survey.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -326,7 +335,7 @@ div.csl-indent {
 </div>
 </div>
 <p>We take a cross-classified approach, whereby we attempt to explicitly model the tendency of participant use of the survey by estimating a <code>participant intercept</code> for each one. Our primary analysis involves correlating the <code>stimuli intercept</code><a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> with output for automated systems.</p>
-<p>Similar to <span class="citation" data-cites="beaty2021automating">Beaty and Johnson (<a href="#ref-beaty2021automating" role="doc-biblioref">2021</a>)</span>, the ratings from different NLP model / corpus setups will be linearly combined into a latent variable for each value. These are then correlated to the <code>stimuli intercepts</code>.</p>
+<p>Similar to <span class="citation" data-cites="beaty2021automating">Beaty and Johnson (<a href="#ref-beaty2021automating" role="doc-biblioref">2021</a>)</span>, the ratings from different NLP systems will be linearly combined into a latent variable for each value. These are then correlated to the <code>stimuli intercepts</code>.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-5" class="quarto-figure quarto-figure-center anchored">
@@ -351,17 +360,17 @@ div.csl-indent {
 
 </div>
 <p></p>
-<p></p><figcaption aria-hidden="true" class="figure-caption"><strong>Figure</strong> 4<strong>.</strong> Latent variable representing ratings from multiple NLP model / corpus setups</figcaption><p></p>
+<p></p><figcaption aria-hidden="true" class="figure-caption"><strong>Figure</strong> 4<strong>.</strong> Latent variable representing ratings from multiple NLP Systems</figcaption><p></p>
 </figure>
 </div>
 </div>
 </div>
-<p>We will use Mplus to estimate the models we will use<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>.</p>
+<p>We will use the proprietary software, <a href="https://www.statmodel.com">Mplus</a> to estimate the models we will use<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>.</p>
 </section>
 <section id="contributions" class="level3">
 <h3 class="anchored" data-anchor-id="contributions">Contributions</h3>
-<p>We extend existing work primarily in two ways: Firstly, we compare semantic distance (the degree to which words are related) measured using NLP models to the results of word counting. Prior studies have counted the number of times specific words from a fixed lexicon were used in a given body of text as a means of measuring psychological constructs: <span class="citation" data-cites="ponizovskiy2020development">(<a href="#ref-ponizovskiy2020development" role="doc-biblioref">Ponizovskiy et al. 2020</a>)</span> showed some validity for such a lexicon of words for measuring a set of 10 personal values in social-media text. However, song lyrics may not contain those exact words, and may instead use synonymous or otherwise meaningfully similar words, or even slang and metaphors. Our method allows for more word coverage: rather than count words from a fixed lexicon, we will estimate the semantic distance between the words in the lexicon that represent each personal value, and the song lyrics in order to derive a score for each value.</p>
-<p>Secondly, we linearly combine the output of multiple NLP models into a single latent variable, to represent the shared variance of the machine ratings: as each NLP model is developed using 1) an algorithm trained on 2) a corpus, each algorithm/corpus combination will estimate the semantic distance between two words differently. This loosely parallels how human participants may rate each set of lyrics differently. <span class="citation" data-cites="beaty2021automating">(<a href="#ref-beaty2021automating" role="doc-biblioref">Beaty and Johnson 2021</a>)</span> showed that this latent variable of semantic distance estimations resulted in overlap with a latent variable of human ratings as high as r = .9, albeit in a different domain. This approach further allows us to estimate the contribution of each algorithm / corpus setup to the shared variance.</p>
+<p>We extend existing work primarily in two ways: Firstly, we compare semantic distance (the degree to which words are related) estimated using NLP systems to the results of word counting. Prior studies have counted the number of times specific words from a fixed lexicon were used in a given body of text as a means of measuring psychological constructs: <span class="citation" data-cites="ponizovskiy2020development">(<a href="#ref-ponizovskiy2020development" role="doc-biblioref">Ponizovskiy et al. 2020</a>)</span> showed some validity for such a lexicon of words for measuring a set of 10 personal values in social-media text. However, song lyrics may not contain those exact words, and may instead use synonymous or otherwise meaningfully similar words, or even slang and metaphors. Our method allows for more word coverage: rather than count words from a fixed lexicon, we will estimate the semantic distance between the words in the lexicon that represent each personal value, and the song lyrics in order to derive a score for each value.</p>
+<p>Secondly, we linearly combine the output of multiple NLP systems into a single latent variable, to represent the shared variance of the machine ratings: as each NLP system is developed using 1) an algorithm trained on 2) a corpus, each algorithm/corpus combination will estimate the semantic distance between two words differently. This loosely parallels how human participants may rate each set of lyrics differently. <span class="citation" data-cites="beaty2021automating">(<a href="#ref-beaty2021automating" role="doc-biblioref">Beaty and Johnson 2021</a>)</span> showed that this latent variable of semantic distance estimations resulted in overlap with a latent variable of human ratings as high as r = .9, albeit in a different domain. This approach further allows us to estimate the contribution of each algorithm / corpus setup to the shared variance.</p>
 <p>We further contribute three assets: firstly, we provide containerized, API-reachable interface to the models that we used to estimate semantic similarity, housed on <a href="https://replicate.com/eldrin/text-concept-similarity">Replicate.com</a>. Secondly, we share code notebooks written with the intention of allowing for reproducibility, replication, and extension of our work. Thirdly, we share the beginnings of a psychometric scale for assessing lyric preference intensity and expertise (<a href="#sec-lyricquestions">Section&nbsp;1.3</a>).</p>
 </section>
 </section>
@@ -513,7 +522,7 @@ div.csl-indent {
 <ol type="a">
 <li>each reference distribution is the original distribution compensated by MAP with alpha = 40,000</li>
 <li>set the total number of samples (<em>N</em>=2200) to be found</li>
-<li>define <em>B</em> as ta currently empty set of lyrics which we will populate</li>
+<li>define <em>B</em> as a currently empty set of lyrics which we will populate</li>
 </ol></li>
 <li>Repeat the following until the number of samples in B reaches N:
 <ol type="a">
@@ -522,7 +531,7 @@ div.csl-indent {
 <li>add song to <em>B</em></li>
 </ol></li>
 </ol>
-<p>This procedure will guarantee that any length of slice of <em>B</em> approximately follows the reference distribution for each stratum from the very first sample selected. We expect that this procedure can be useful 1) when the first few items must follow the reference distribution and 2) when there is the possibility of continuing the annotation project at a later time, and thus the sampling procedure must be continued rather than starting anew.</p>
+<p>From the very first lyric stimulus selected, this procedure will allow for any length of slice of <em>B</em> to approximately follow the reference distribution for each stratum. We expect that this procedure can be useful 1) when the first few items must follow the reference distribution and 2) when there is the possibility of continuing the annotation project at a later time, and thus the sampling procedure must be continued rather than starting anew.</p>
 </section>
 </section>
 <section id="sec-manualscreening" class="level2">
@@ -605,7 +614,7 @@ Schwartz, Shalom H, Gila Melech, Arielle Lehmann, Steven Burgess, Mari Harris, a
 <li id="fn1" role="doc-endnote"><p>see <code>survey_builder_*.Rmd</code> notebook in the <code>IV_survey_builder</code> folder of this repository. We experienced issues testing our surveys when the number of lyric stimuli in the survey was greater than 60. Thus, our stimulus set will be separated into otherwise identical survey files on the formR server, with no more than 60 lyrics in each survey file. Participants will be randomly assigned to one of the surveys, which will in turn randomly select a subset of stimuli to have rated by participants.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn2" role="doc-endnote"><p>see <code>IX_participation_estimation.ipynb</code> notebook in <code>II_rater_pilot</code> folder<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn3" role="doc-endnote"><p>we refer to this as the item intercept in our notebooks<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn4" role="doc-endnote"><p>We built our models using simulated data. See <code>III_simulation_study</code> folder<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4" role="doc-endnote"><p>We built our analysis models using simulated data. See <code>III_simulation_study</code> folder<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn5" role="doc-endnote"><p>see table 2 in <span class="citation" data-cites="ponizovskiy2020development">Ponizovskiy et al. (<a href="#ref-ponizovskiy2020development" role="doc-biblioref">2020</a>)</span><a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn6" role="doc-endnote"><p>see table 4 in <span class="citation" data-cites="ponizovskiy2020development">Ponizovskiy et al. (<a href="#ref-ponizovskiy2020development" role="doc-biblioref">2020</a>)</span><a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn7" role="doc-endnote"><p>see <code>I_lyric_checker*.Rmd</code> in the <code>IV_survey_builder</code> folder<a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
