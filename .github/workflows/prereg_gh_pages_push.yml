@@ -1,0 +1,37 @@
+name: prereg_gh_pages_push 
+ 
+# execute this workflow automatically when a we push to master
+on:
+  push:
+    branches: [ main ]
+ 
+jobs:
+ 
+  build_docs_job:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+ 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.3.4
+
+      - name: Init new repo in dist folder and commit generated files
+        run: |
+          cd V_pre-registration/
+          # this makes the pre-reg html as the index page
+          cp pre-registration_html.html index.html
+          git init
+          touch .nojekyll
+          git add -A
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m 'deploy'
+
+      - name: Force push to destination branch
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          force: true
+          directory: ./V_pre-registration/
