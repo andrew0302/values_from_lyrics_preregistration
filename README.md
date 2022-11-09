@@ -1,16 +1,12 @@
-# values_from_lyrics
+# Towards Automated Estimation of Psychological Values from Song Lyrics
 
-In this project, we develop a procedure for ground-truthing a personal values extractor for lyric text. 
+The aim of this project is to propose a protocol for collecting and evaluating annotations of psychological values for lyric text, which will then be compared to the output of NLP systems. 
 
-It will function first as the pre-registration repository, and later as the completed project repository for its eventual submission. The pre-registration will be located o the open science framework. 
-
-
-
+This repository will function first as part of the pre-registration of the main study on the [Open Science Framework](https://osf.io/h87mz/), and later as part of the completed project prior to submission for publication.  
 
 ## reproducibility
 
-For R version control, we used renv: https://rstudio.github.io/renv/articles/renv.html
-
+For R version control, we used [renv](https://rstudio.github.io/renv/articles/renv.html). 
 Type `renv::restore()` to restore environment. 
 
-For python version control, we exported requirements in a file called `IX_participant_estimation_conda_pip_requirements.txt`. 
+For python version control, we exported requirements: see `IX_participant_estimation_conda_pip_requirements.txt`. 
