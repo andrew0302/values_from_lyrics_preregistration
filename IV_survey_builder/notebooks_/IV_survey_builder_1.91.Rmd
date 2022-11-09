@@ -114,13 +114,22 @@ This chunk also defines a string in a cell that will be used to randomly select 
 
 ```{r create_header_footer}
 # set survey 'header' and 'footer' are the parts that stay the same
-#header_dt <- complete_survey_dt %>% .[1:37]
 header_dt <- complete_survey_dt[explanations == "header"]
 
 # adjustment based on: https://groups.google.com/g/formr/c/p6xDx57r5Iw/m/THo2s2yoDAAJ
-header_dt$value[2] <- 'paste0(sample(size = 5, 1:%1$s), collapse = ",")'
+header_dt$value[2] <- 'paste0(sample(size = 18, 1:%1$s), collapse = ",")'
 
-#footer_dt <- complete_survey_dt %>% .[57:59]
+# edit general instructions for clicking on the response bar
+header_dt[10]$label <- "#### The further you click to the left, the more you show that you agree with the statement; the further you click to the right, the more you show you disagree with the statement."
+
+# edit specfic instructions for labelling each lyric stimulus
+header_dt[36]$label <- "
+###__Instructions:__ \n
+#### Thanks!\n#### You will now be shown lyrics from songs, and asked to complete some questions about how you perceive them. \n
+#### IMPORTANT: Lyrics can be written from different perspectives, some of which are not the same as the writer of the lyrics. In other words, the AUTHOR of the lyrics may choose a SPEAKER for their lyrics that is not themselves. \n \n
+#### The SPEAKER of the lyrics could be could be a fictional character, a real person from history or the present, or even an imaginary object.  And of course it could be the AUTHOR themselves. Please answer the questions while thinking about the SPEAKER.\n \n 
+### WARNING: These lyrics are drawn from popular music, some of which use offensive language or describe offensive situations. Also, questions may sometimes take a few seconds to load. Thank you for your patience! \n"
+
 footer_dt <- complete_survey_dt[explanations == "footer"]
 ```
 
@@ -141,7 +150,6 @@ Variables defined in the template are:
 ```{r create_template}
 # the template is a block of questions to be applied to each song lyric
 # i.e. the questions are the same, but the variables related to each stimulus change
-#template_dt <- complete_survey_dt %>% .[30:48]
 template_dt <- complete_survey_dt[explanations == "template"]
 
 # set strings for substitution:
@@ -307,6 +315,8 @@ test_survey$showif <- NA
 
 write.csv(test_survey, here("IV_survey_builder", "survey_files_", "test_survey.csv"), 
           na="", row.names = FALSE)
+
+rm(selected_dt_test, test_survey)
 ```
 
 
@@ -355,7 +365,7 @@ formatted_surveys <- lapply(subtables, assemble_survey) %>%
   #format surveys
   lapply(., function (survey){
     #insert string for replacement
-    survey$value[2] <- 'paste0(sample(size = 17, 1:%1$s), collapse = ",")'
+    survey$value[2] <- 'paste0(sample(size = 18, 1:%1$s), collapse = ",")'
   
     ##get number of rows
     #extract references to numbers
@@ -422,5 +432,3 @@ export_survey(survey_dt_4, name = "annotation_run_1_set_")
 export_survey(survey_dt_5, name = "annotation_run_1_set_")
 export_survey(survey_dt_6, name = "annotation_run_1_set_")
 ```
-
-To estimate the number of participants necessary to get 25 ratings per stimulus we used this notebook: <https://colab.research.google.com/drive/1-gp0lTBTVe0lmHBJEz1K5HHg6dmNpUEE#scrollTo=wDufvH0ErcCo>

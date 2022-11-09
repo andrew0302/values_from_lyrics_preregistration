@@ -67,13 +67,13 @@ We anticipate that your participation in this study will require about 30 minute
 "header","",,"","text","*","lyric_activities_4",,"","","","",,,,,,,,,,""
 "header","",,"","text","*","lyric_activities_5",,"","","","",,,,,,,,,,""
 "header","",,"","submit","","submit_lyrics",,"Continue:","","","",,,,,,,,,,""
-"header","",,"","note","","annotation_instructions_1",,"### __Instructions:__ 
+"header","",,"","note","","annotation_instructions_1",,"###__Instructions:__ 
 #### Thanks!
 #### You will now be shown lyrics from songs, and asked to complete some questions about how you perceive them. 
-#### TRIGGER WARNING: These lyrics are drawn from popular music, some of which use offensive language or describe offensive situations.
-#### IMPORTANT: yrics can be written from different perspectives, some of which are not the same as the writer of the lyrics. In other words, the AUTHOR of the lyrics may choose a SPEAKER for their lyrics that is not themselves. 
+#### IMPORTANT: Lyrics can be written from different perspectives, some of which are not the same as the writer of the lyrics. In other words, the AUTHOR of the lyrics may choose a SPEAKER for their lyrics that is not themselves. 
  
-#### The SPEAKER of the lyrics could be could be a fictional character, a real person from history or the present, or even an imaginary object.  And of course it could be the AUTHOR themselves. Please answer the questions while thinking about the SPEAKER. ","","","",,,,,,,,,,""
+#### The SPEAKER of the lyrics could be could be a fictional character, a real person from history or the present, or even an imaginary object.  And of course it could be the AUTHOR themselves. Please answer the questions while thinking about the SPEAKER. WARNING: These lyrics are drawn from popular music, some of which use offensive language or describe offensive situations. Also, questions may sometimes take a few seconds to load. Thank you for your patience! 
+#### ","","","",,,,,,,,,,""
 "header","",,"","submit","","submit_annotation_instructions",,"Continue:","","","",,,,,,,,,,""
 "template","AA",1,"","note","","L_123456_t_1",,"Between the quotation marks below are some song lyrics. Please take a moment to read them and think about the SPEAKER the lyrics. Please remember that this SPEAKER might be a the AUTHOR themselves, or someone or something else: 
  
