@@ -451,13 +451,12 @@ Then we compute this simulation for a range of participants \[20, 1000\] and lyr
 
 [^9]: See `IX_participation_estimation.ipynb` notebook in `II_rater_pilot` folder for further details. Though we will not be actively maintaining it, a live version may still be available on this [collab notebook](https://colab.research.google.com/drive/1-gp0lTBTVe0lmHBJEz1K5HHg6dmNpUEE#scrollTo=nMSiUmCX2oEY)
 
-## g) Contributor Roles Taxonomy {#sec-contributions}
+## g) Team Member Contributions {#sec-contributions}
 
-We present details of research team contributions according to the For [Contributor Roles Taxonomy](https://www.kent.ac.uk/guides/credit-contributor-roles-taxonomy#:~:text=CRediT%20(Contributor%20Roles%20Taxonomy)%20is,contribution%20to%20the%20scholarly%20output.). 
 
 ```{r}
 #| label: tbl-3
-#| tbl-cap: "Contributor Roles Taxonomy"
+#| tbl-cap: "Contributions by Research Team Member"
 
 credit_df <- read.csv(here("V_pre-registration", "intermediary_data", "CRedit.csv"))
 
@@ -482,8 +481,13 @@ for(i in 1:ncol(credit_df)){
 }
 
 # format and print table
-credit_df |> kable(escape = FALSE) |> 
+credit_df |> 
+  kable(
+    escape = FALSE, 
+    align = c("r", "c", "c", "c", "c")
+      ) |> 
   kable_styling(
+    position = "left",
     full_width = FALSE, 
     fixed_thead = TRUE,
     "striped") |>
@@ -493,3 +497,5 @@ credit_df |> kable(escape = FALSE) |>
     footnote_as_chunk = TRUE
   )
 ```
+
+Roles determined by the [Contributor Roles Taxonomy](https://www.kent.ac.uk/guides/credit-contributor-roles-taxonomy#:~:text=CRediT%20(Contributor%20Roles%20Taxonomy)%20is,contribution%20to%20the%20scholarly%20output.). 
