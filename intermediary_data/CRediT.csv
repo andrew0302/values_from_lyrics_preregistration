@@ -1,0 +1,16 @@
+r,Andrew M. Demetriou,Jaehun Kim,Sandy Manolios,Cynthia C. S. Liem,"https://www.kent.ac.uk/guides/credit-contributor-roles-taxonomy#:~:text=CRediT%20(Contributor%20Roles%20Taxonomy)%20is,contribution%20to%20the%20scholarly%20output."
+"conceptualization,",O,O,O,O,Ideas; formulation or evolution of overarching research goals and aims.
+"data curation,",O,O,O,X,"Management activities to annotate (produce metadata), scrub data and maintain research data (including software code, where it is necessary for interpreting the data itself) for initial use and later re-use."
+"formal analysis,",O,X,X,X,"Application of statistical, mathematical, computational, or other formal techniques to analyze or synthesize study data."
+"funding acquisition,",X,X,X,O,Acquisition of the financial support for the project leading to this publication.
+"investigation,",O,O,X,X,"Conducting a research and investigation process, specifically performing the experiments, or data/evidence collection."
+"methodology,",O,X,O,X,Development or design of methodology; creation of models.
+"project administration,",O,X,X,O,Management and coordination responsibility for the research activity planning and execution.
+"resources,",X,O,X,X,"Provision of study materials, reagents, materials, patients, laboratory samples, animals, instrumentation, computing resources, or other analysis tools."
+"software,",O,O,X,X,"Programming, software development; designing computer programs; implementation of the computer code and supporting algorithms; testing of existing code components."
+"supervision,",X,X,X,O,"Oversight and leadership responsibility for the research activity planning and execution, including mentorship external to the core team."
+"validation,",O,O,X,X,"Verification, whether as a part of the activity or separate, of the overall replication/reproducibility of results/experiments and other research outputs."
+"visualization,",X,X,X,X,"Preparation, creation and/or presentation of the published work, specifically visualization/data presentation."
+"writing - original draft,",O,O,O,X,"original draft – ​Preparation, creation and/or presentation of the published work, specifically writing the initial draft (including substantive translation)."
+writing - review and editing,X,O,X,O,"Preparation, creation and/or presentation of the published work by those from the original research group, specifically critical review, commentary or revision – including pre- or post-publication stages."
+,"YES = ""O""","NO = ""X""",,,
