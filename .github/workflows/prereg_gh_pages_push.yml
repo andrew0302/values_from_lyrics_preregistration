@@ -3,7 +3,7 @@ name: prereg_gh_pages_push
 # execute this workflow automatically when a we push to master
 on:
   push:
-    branches: [ master ]
+    branches: [ pre-registration ]
  
 jobs:
  
