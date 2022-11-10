@@ -26,13 +26,8 @@ library(kableExtra)   # table visualization
 
 Contributors: Andrew M. Demetriou, Jaehun Kim, Sandy Manolios, Cynthia C.S. Liem
 
-```{r}
-#contributors <- c("Andrew M. Demetriou", "Jaehun Kim", "Sandy Manolios", "Cynthia C. S. Liem")
+See @sec-contributions for details of individual contributions according to the [Contributor Roles Taxonomy](https://www.kent.ac.uk/guides/credit-contributor-roles-taxonomy#:~:text=CRediT%20(Contributor%20Roles%20Taxonomy)%20is,contribution%20to%20the%20scholarly%20output.).  
 
-#roles <- c("conceptualization", "data curation", "formal analysis", "funding acquisition", "investigation", "methodology", "project administration", "resources", "software", "supervision", "validation", "visualization", "writing - original draft", "writing - review and editing")
-
-#[CRediT](https://www.kent.ac.uk/guides/credit-contributor-roles-taxonomy#:~:text=CRediT%20(Contributor%20Roles%20Taxonomy)%20is,contribution%20to%20the%20scholarly%20output.)
-```
 
 ### Overview
 
@@ -455,3 +450,46 @@ We write a simple program that simulates the survey process;
 Then we compute this simulation for a range of participants \[20, 1000\] and lyric stimuli\[20, 1000\] while keeping the number of stimuli per survey fixed. Based on our second pilot study, we estimated 30 minutes is sufficient time for participants to complete 18 stimuli. Thus our budget limit allows for the rating of 360 items, which we aim to have rated 25 times, in 18-item surveys, from an estimated `r n_participants` participants, who spend approximately 30 minutes on task. [^9]
 
 [^9]: See `IX_participation_estimation.ipynb` notebook in `II_rater_pilot` folder for further details. Though we will not be actively maintaining it, a live version may still be available on this [collab notebook](https://colab.research.google.com/drive/1-gp0lTBTVe0lmHBJEz1K5HHg6dmNpUEE#scrollTo=nMSiUmCX2oEY)
+
+## g) Contributor Roles Taxonomy {#sec-contributions}
+
+We present details of research team contributions according to the For [Contributor Roles Taxonomy](https://www.kent.ac.uk/guides/credit-contributor-roles-taxonomy#:~:text=CRediT%20(Contributor%20Roles%20Taxonomy)%20is,contribution%20to%20the%20scholarly%20output.). 
+
+```{r}
+#| label: tbl-3
+#| tbl-cap: "Contributor Roles Taxonomy"
+
+credit_df <- read.csv(here("V_pre-registration", "intermediary_data", "CRedit.csv"))
+
+# remove the row that was used to instruct us
+credit_df <- credit_df[1:14, 1:5]
+
+# use shorter names to fit in a table
+colnames(credit_df) <- c("Role", "Andrew*", "Jaehun", "Sandy", "Cynthia")
+# remove commas
+credit_df$Role <- gsub(",", "", credit_df$Role)
+
+# function color the "O"s red
+color_cells <- function(column){
+  cell_spec(
+    column, 
+    color = ifelse(column == "O", "red", "black")
+)}
+
+# iterate over columns
+for(i in 1:ncol(credit_df)){
+  credit_df[,i] <- color_cells(credit_df[,i])
+}
+
+# format and print table
+credit_df |> kable(escape = FALSE) |> 
+  kable_styling(
+    full_width = FALSE, 
+    fixed_thead = TRUE,
+    "striped") |>
+    footnote(
+    general = "* Corresponding Author", 
+    threeparttable = TRUE,
+    footnote_as_chunk = TRUE
+  )
+```
