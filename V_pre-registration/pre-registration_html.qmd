@@ -24,10 +24,11 @@ library(kableExtra)   # table visualization
 
 ## Study Information
 
-Contributors: Andrew M. Demetriou, Jaehun Kim, Sandy Manolios, Cynthia C.S. Liem
+**Contributors**: Andrew M. Demetriou, Jaehun Kim, Sandy Manolios, Cynthia C.S. Liem
 
+<font size="2">
 See @sec-contributions for details of individual contributions according to the [Contributor Roles Taxonomy](https://www.kent.ac.uk/guides/credit-contributor-roles-taxonomy#:~:text=CRediT%20(Contributor%20Roles%20Taxonomy)%20is,contribution%20to%20the%20scholarly%20output.).  
-
+</font> 
 
 ### Overview
 
