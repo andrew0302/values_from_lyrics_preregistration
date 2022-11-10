@@ -2,9 +2,7 @@
 title: "Values from Lyrics: Pre-Registration"
 bibliography: references.bib
 author: "Andrew M. Demetriou"
-format: 
-  html:
-    toc: true
+format: pdf
 crossref:
   fig-title: '**Figure**'
   fig-labels: arabic
