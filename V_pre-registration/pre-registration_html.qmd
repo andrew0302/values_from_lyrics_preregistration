@@ -1,5 +1,5 @@
 ---
-title: "Values from Lyrics: Pre-Registration"
+title: "Towards Automated Estimation of Psychological Values from Song Lyrics: Pre-Registration"
 bibliography: references.bib
 author: "Andrew M. Demetriou"
 format: 
