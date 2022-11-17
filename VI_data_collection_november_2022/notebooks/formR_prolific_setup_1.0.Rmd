@@ -1,5 +1,5 @@
 ---
-title: "data collection setup"
+title: "formR / prolific setup"
 author: "Andrew M. Demetriou"
 date: '2022-11-15'
 output: html_document
