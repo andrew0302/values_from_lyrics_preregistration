@@ -40,7 +40,7 @@ rm(all_lyrics_dt, lyrics_file, primary_data_file_path, template_file_path, selec
 ```
 
 ```{r}
-row_number <- 71
+row_number <- 242
 
 kable(selected_dt[row_number,2])
 
