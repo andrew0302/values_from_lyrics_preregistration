@@ -52,6 +52,12 @@ column_names_df$column[5819:5822] <- c(
   "189822176-m_Page Submit", "189822176-m_Click Count"
 )
 
+# manual adjustment of '-c' labels
+column_names_df$column[1558] <- "31308410-r"
+column_names_df$column[2695:2704] <- gsub("-c", "-1", column_names_df$column[2695:2704])
+column_names_df$column[2767:2776] <- gsub("-c", "-1", column_names_df$column[2767:2776])
+column_names_df$column[3073:3082] <- gsub("-c", "-1", column_names_df$column[3073:3082])
+
 # confidence question
 column_names_df$column <- column_names_df$column %>%
   gsub("\\-c_.*", "-c", .)
