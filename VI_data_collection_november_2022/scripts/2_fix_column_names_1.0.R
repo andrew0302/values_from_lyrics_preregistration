@@ -52,6 +52,10 @@ column_names_df$column[5819:5822] <- c(
   "189822176-m_Page Submit", "189822176-m_Click Count"
 )
 
+# confidence question
+column_names_df$column <- column_names_df$column %>%
+  gsub("\\-c_.*", "-c", .)
+
 # assign column names 
 colnames(all_dt) <- column_names_df$column
 rm(column_names_df)

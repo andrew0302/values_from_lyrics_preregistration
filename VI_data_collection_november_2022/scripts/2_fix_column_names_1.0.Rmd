@@ -9,6 +9,7 @@ output: html_document
 library('data.table')   # read in .csv with fread
 library('here')         # file logistics
 library('dplyr')        # code logistics
+library("stringr")
 ```
 
 ```{r}
@@ -80,6 +81,11 @@ column_names_df$column[5819:5822] <- c(
 which(duplicated(names(all_dt)))
 ```
 
+```{r}
+# confidence question
+column_names_df$column <- column_names_df$column %>%
+  gsub("\\-c_.*", "-c", .)
+```
 
 ```{r}
 colnames(all_dt) <- column_names_df$column
