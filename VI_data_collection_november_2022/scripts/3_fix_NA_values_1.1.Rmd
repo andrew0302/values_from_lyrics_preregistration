@@ -1,0 +1,140 @@
+---
+title: "3_fix_NA_values"
+author: "Andrew M. Demetriou"
+date: "2023-04-06"
+output: html_document
+---
+
+```{r}
+library('here')
+library('data.table')
+library('dplyr')
+library('stringr')
+library('tidyr')
+#library('janitor')
+
+source(here("VI_data_collection_november_2022", 'scripts', '2_fix_column_names_1.0.R'))
+```
+
+```{r}
+#make a bigger temp dataframe
+ids <- all_dt[, ResponseId]
+temp_df <- all_dt[, 29:244]
+#temp_df$PROLIFIC_PID <- ids
+temp_df$ResponseId <- ids
+#temp_df <- temp_df |> select(PROLIFIC_PID, everything())
+temp_df <- temp_df |> select(ResponseId, everything())
+rm(ids)
+```
+
+```{r}
+which(duplicated(names(all_dt)))
+
+
+#duplicates <- all_dt |>
+#  filter(PROLIFIC_PID == "639dc966f953a42bc397c24b")
+
+dupe <- all_dt[PROLIFIC_PID == "639dc966f953a42bc397c24b"]
+```
+
+```{r}
+# character vector of relevant column names
+#cols <- temp_df |> select(contains(c(
+cols <- all_dt |> select(contains(c(  
+  "-w", "-f", "1_1", "1_2", "1_3", "1_4", "1_5", 
+  "1_6", "1_7", "1_8", "1_9", "1_10", "m_", "-c"
+  ))) |> colnames()
+
+# convert columns to numeric, blanks to NA
+#temp_df[,cols] <- lapply(cols, function(x)as.numeric(temp_df[[x]]))
+all_dt[,cols] <- lapply(cols, function(x)as.numeric(all_dt[[x]]))
+
+# convert free text column to NA
+all_dt <- all_dt |> 
+  #select(contains("-r")) |> 
+  mutate(across(where(is.character), ~na_if(., "")))
+```
+
+
+```{r}
+# for every row
+for(row in 1:nrow(temp_df)){
+  
+  # for every column
+  for(col in 1:ncol(temp_df)){
+    
+    # if the column contains '-w'
+    if(grepl("-w", colnames(temp_df[,..col]))==T){
+      
+      # if the column is not NA
+      if(is.na(temp_df[row, ..col])==F){
+       
+        # for the next 11 columns in that row, replace them with:
+        temp_df[row, seq(1,11)+col] <- setnafill(
+          
+          # the same values, but with the NA replaced with 0
+          temp_df[row, seq(1,11)+col, with=FALSE], fill=0)
+   }
+  }
+ }
+}
+```
+
+  names_to = c("song", "author", "familiar", 
+               "power", "achievement", "hedonism", 
+               "stimulation", "self_direction", 
+               "universalism", "benevolence", 
+               "tradition", "conformity", "security", 
+
+
+```{r}
+t <- temp_df |> 
+  
+  # pivot longer had an issue with mixed column types
+  # make everything a character vector
+  mutate(across(everything(), as.character)) |>
+  
+  # pivot to long format
+  pivot_longer(
+    
+    # range of columns
+    #cols = `828136-w`:`1027136-r`, 
+    cols = `828136-w`:`2107983-r`, 
+  
+    # two new columns: song and question
+    names_to = c('song', 'question'),
+  
+    # separate names by "-"
+    names_sep = "-", 
+  
+    # new columns for participant responses
+    values_to = "response", 
+  
+    # drop empty cells
+    values_drop_na = TRUE
+)
+
+```
+
+```{r}
+# check for duplicates
+  t %>%
+  #dplyr::group_by(PROLIFIC_PID, song, question) %>%
+  dplyr::group_by(ResponseId, song, question) %>%
+  dplyr::summarise(n = dplyr::n(), .groups = "drop") %>%
+  dplyr::filter(n > 1L)
+
+# 639dc966f953a42bc397c24b appears twice in the records
+```
+
+
+```{r}
+s <- t|> 
+  pivot_wider(
+    names_from = question, 
+    values_from = response
+  )
+```
+
+
+

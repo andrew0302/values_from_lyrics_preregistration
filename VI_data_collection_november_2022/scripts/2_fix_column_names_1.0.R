@@ -13,9 +13,10 @@ colnames(column_names_df) <- "column"
 
 
 # manual adjustments
+
 column_names_df$column[370] <- "2655079-r"
 
-column_names_df$column[mislabelled_columns[2,]] <- "49652179-w"
+column_names_df$column[2082] <- "49652179-f"
 
 column_names_df$column[3803] <- "86177534-m_First Click"
 column_names_df$column[3804] <- "86177534-m_Last Click"
@@ -23,9 +24,9 @@ column_names_df$column[3805] <- "86177534-m_Page Submit"
 column_names_df$column[3806] <- "86177534-m_Click Count"
 
 column_names_df$column[4271] <- "96457658-m_First Click"
-column_names_df$column[4272] <- "86177534-m_Last Click"
-column_names_df$column[4273] <- "86177534-m_Page Submit"
-column_names_df$column[4274] <- "86177534-m_Click Count"
+column_names_df$column[4272] <- "96457658-m_Last Click"
+column_names_df$column[4273] <- "96457658-m_Page Submit"
+column_names_df$column[4274] <- "96457658-m_Click Count"
 
 column_names_df$column[4419] <- "99092671-c"
 
@@ -53,3 +54,4 @@ column_names_df$column[5819:5822] <- c(
 
 # assign column names 
 colnames(all_dt) <- column_names_df$column
+rm(column_names_df)
