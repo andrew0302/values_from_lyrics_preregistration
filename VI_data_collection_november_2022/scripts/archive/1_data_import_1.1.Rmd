@@ -71,7 +71,7 @@ all_dt <- all_dt[, ! c(
   "ExternalReference", "DistributionChannel", 
   "UserLanguage", "Progress", "Participant Consent", 
   "Finished", 
-  "PROLIFIC_PID", "ResponseId",
+#  "PROLIFIC_PID", "ResponseId",
   "Participant id", "Prolific_ID", 
   "Status.y", "Completion code", "Archived at", 
   "Reviewed at", "Started at", "Completed at", 

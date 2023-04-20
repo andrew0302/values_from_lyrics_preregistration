@@ -9,11 +9,11 @@ output: html_document
 library('data.table')   # read in .csv with fread
 library('here')         # file logistics
 library('dplyr')        # code logistics
-library("stringr")
+library("stringr")      # string recognition
 ```
 
 ```{r}
-source(here("VI_data_collection_november_2022", 'scripts', '1_data_format_1.0.R'))
+source(here("VI_data_collection_november_2022", 'scripts', '1_data_import_1.1.R'))
 ``` 
 
 ```{r}

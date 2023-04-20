@@ -1,41 +1,18 @@
----
-title: "Data Export"
-author: "Andrew M. Demetriou"
-date: "2023-04-03"
-output: html_document
----
+# 2_fix_column_names_1.0
+# author: Andrew M. Demetriou
 
-```{r setup, include=FALSE}
 library('data.table')   # read in .csv with fread
 library('here')         # file logistics
 library('dplyr')        # code logistics
-library("stringr")
-```
+library('stringr')      # string manipulation
 
-```{r}
-source(here("VI_data_collection_november_2022", 'scripts', '1_data_format_1.0.R'))
-``` 
-
-```{r}
-#library(stringr)
-#mxm_id <- word(colname, 1, sep = "-")
-
-# 39 mislabelled columns
-# create df with the indexes of mislabels
-mislabelled_columns <- grep("Q", colnames(all_dt)) |> as.data.frame()
+source(here("VI_data_collection_november_2022", 'scripts', '1_data_import_1.1.R'))
 
 # create dataframe from column names
 column_names_df <- colnames(all_dt) |> as.data.frame()
 colnames(column_names_df) <- "column"
 
-# create labels for mislabels as column
-column_names_df <- column_names_df |>
-  mutate(is_mis = case_when(
-    startsWith(column, "Q") ~ "1"
-  ))
-```
 
-```{r}
 # manual adjustment of 'Q' labels
 
 column_names_df$column[370] <- "2655079-r"
@@ -61,12 +38,13 @@ column_names_df$column[5174] <- '124309479-m_Click Count'
 
 column_names_df$column[5266] <- '132344958-r'
 
-column_names_df$column[5321:5338] <-paste0("134307269-", 
-       c("w", "f", 
-         "1_1", "1_2", "1_3", "1_4", "1_5", "1_6", "1_7", "1_8", "1_9", "1_10", 
-         "m_First Click", "m_Last Click", 
-         "m_Page Submit", "m_Click Count", 
-         "c", "r"))
+column_names_df$column[5321:5338] <- paste0("134307269-", 
+                                           c("w", "f", 
+                                             "1_1", "1_2", "1_3", "1_4", "1_5", 
+                                             "1_6", "1_7", "1_8", "1_9", "1_10", 
+                                             "m_First Click", "m_Last Click", 
+                                             "m_Page Submit", "m_Click Count", 
+                                             "c", "r"))
 
 column_names_df$column[5447] <- "146653434-w"
 
@@ -74,57 +52,30 @@ column_names_df$column[5819:5822] <- c(
   "189822176-m_First Click", "189822176-m_Last Click",
   "189822176-m_Page Submit", "189822176-m_Click Count"
 )
-```
 
-```{r}
-# check for duplicates in the column names
-which(duplicated(names(all_dt)))
-```
-
-```{r}
 # manual adjustment of '-c' labels
 column_names_df$column[1558] <- "31308410-r"
 column_names_df$column[2695:2704] <- gsub("-c", "-1", column_names_df$column[2695:2704])
 column_names_df$column[2767:2776] <- gsub("-c", "-1", column_names_df$column[2767:2776])
 column_names_df$column[3073:3082] <- gsub("-c", "-1", column_names_df$column[3073:3082])
-```
 
-
-```{r}
 # confidence question
 column_names_df$column <- column_names_df$column %>%
   gsub("\\-c_.*", "-c", .)
-```
 
-```{r}
-# manual adjustment of '-r_' labels
-column_names_df |>
-    filter(grepl("-r_", column))
 
+# manual adjustment of '_r' labels
 column_names_df$column <- column_names_df$column %>%
   gsub("\\-r_", "-m_", .)
-```
-```{r}
-# manual adjustment of '-m' labels
 
-# choose columns with '-m', but no '_' using data.table syntax
+# manual adjustment of '-m' labels
 column_names_df$column[grepl("-m", column_names_df$column) & !grepl("_", column_names_df$column)] <- column_names_df$column[grepl("-m", column_names_df$column) & !grepl("_", column_names_df$column)] |> 
-  # in those columns, replace
   str_replace_all("-m", "-r")
 
-# check to see that other columns weren't also replaced
-column_names_df |>
-    filter(grepl("-r_", column))
-```
-```{r}
-# manual adjustment of "1_8.1" label
-
+# manual adjustment of '-1_8.1'
 column_names_df$column[grepl("1_8.1", column_names_df$column)] <- column_names_df$column[grepl("1_8.1", column_names_df$column)] |> 
   str_replace_all("-1_8.1", "-c")
-```
 
-
-```{r}
+# assign column names 
 colnames(all_dt) <- column_names_df$column
-```
-
+rm(column_names_df)

@@ -1,5 +1,5 @@
 ---
-title: "4_check_duplicates"
+title: "5_check_duplicates"
 author: "Andrew M. Demetriou"
 date: "2023-04-06"
 output: html_document
@@ -11,14 +11,14 @@ library('data.table')
 library('dplyr')
 library('stringr')
 library('tidyr')
-#library('janitor')
 
-source(here("VI_data_collection_november_2022", 'scripts', '2_fix_column_names_1.0.R'))
+source(here("VI_data_collection_november_2022", 'scripts', '4_remove_duplicates_1.0.R'))
 ```
 
 
 ```{r}
-t <- temp_df |> 
+# pivot raw data to long format
+de_dupe_long_df <- de_dupe_df |> 
   
   # pivot longer had an issue with mixed column types
   # make everything a character vector
@@ -29,7 +29,8 @@ t <- temp_df |>
     
     # range of columns
     #cols = `828136-w`:`1027136-r`, 
-    cols = `828136-w`:`2107983-r`, 
+    #cols = `828136-w`:`2107983-r`, 
+    cols = `828136-w`:`213759518-r`, 
   
     # two new columns: song and question
     names_to = c('song', 'question'),
@@ -43,23 +44,12 @@ t <- temp_df |>
     # drop empty cells
     values_drop_na = TRUE
 )
-
-```
-
-```{r}
-# check for duplicates
-  t %>%
-  #dplyr::group_by(PROLIFIC_PID, song, question) %>%
-  dplyr::group_by(ResponseId, song, question) %>%
-  dplyr::summarise(n = dplyr::n(), .groups = "drop") %>%
-  dplyr::filter(n > 1L)
-
-# 639dc966f953a42bc397c24b appears twice in the records
 ```
 
 
 ```{r}
-s <- t|> 
+# pivot schwartz value questions to wide format
+de_dupe_long_df <- de_dupe_long_df |> 
   pivot_wider(
     names_from = question, 
     values_from = response
@@ -67,19 +57,6 @@ s <- t|>
 ```
 
 ```{r}
-which(duplicated(names(all_dt)))
-
-all_dt[, 2082]
-all_dt[, 4272]
-all_dt[, 4273]
-all_dt[, 4274]
-
-dput( head( all_dt, 0 ) )
-
-
-#duplicates <- all_dt |>
-#  filter(PROLIFIC_PID == "639dc966f953a42bc397c24b")
-
-dupe <- all_dt[PROLIFIC_PID == "639dc966f953a42bc397c24b"]
+rm(de_dupe_df)
 ```
 

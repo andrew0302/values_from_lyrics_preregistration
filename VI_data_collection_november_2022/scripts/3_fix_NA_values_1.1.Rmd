@@ -11,20 +11,19 @@ library('data.table')
 library('dplyr')
 library('stringr')
 library('tidyr')
-#library('janitor')
 
 source(here("VI_data_collection_november_2022", 'scripts', '2_fix_column_names_1.0.R'))
 ```
 
 ```{r}
-#make a bigger temp dataframe
-ids <- all_dt[, ResponseId]
-temp_df <- all_dt[, 29:244]
+#make a temp dataframe
+#ids <- all_dt[, ResponseId]
+#temp_df <- all_dt[, 29:244]
 #temp_df$PROLIFIC_PID <- ids
-temp_df$ResponseId <- ids
+#temp_df$ResponseId <- ids
 #temp_df <- temp_df |> select(PROLIFIC_PID, everything())
-temp_df <- temp_df |> select(ResponseId, everything())
-rm(ids)
+#temp_df <- temp_df |> select(ResponseId, everything())
+#rm(ids)
 ```
 
 
@@ -45,7 +44,6 @@ all_dt <- all_dt |>
   #select(contains("-r")) |> 
   mutate(across(where(is.character), ~na_if(., "")))
 ```
-
 
 ```{r}
 # for every row
@@ -79,7 +77,8 @@ for(row in 1:nrow(all_dt)){
 
 
 ```{r}
-t <- all_dt |> 
+# pivot raw data to long format
+ all_dt_long <- all_dt |> 
   
   # pivot longer had an issue with mixed column types
   # make everything a character vector
@@ -110,12 +109,17 @@ t <- all_dt |>
 
 
 ```{r}
-s <- t|> 
+all_dt_long <- all_dt_long |> 
   pivot_wider(
     names_from = question, 
     values_from = response
   )
 ```
 
+```{r}
+s$participant_ID <- sapply(s$PROLIFIC_PID, digest::digest, algo = "md5") 
+
+s<- s %>% select(-PROLIFIC_PID, -ResponseId, -hash, participant_ID, everything())
+```
 
 

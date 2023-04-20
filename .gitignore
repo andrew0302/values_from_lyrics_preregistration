@@ -73,6 +73,10 @@ VI_data_collection_november_2022/response_data/annotation_run_1_April 5, 2023_06
 VI_data_collection_november_2022/response_data/annotation_run_1_April 5, 2023_06.23.csv
 VI_data_collection_november_2022/response_data/prolific_export_637357bf150585a4675a4b6b.csv
 
+# working data set
+VI_data_collection_november_2022/intermediary_data/all_dt.RDS
+
+
 # raw lyric data
 IV_survey_builder/primary_data_/
 IV_survey_builder/survey_files_/annotation_run_1_set_1.csv

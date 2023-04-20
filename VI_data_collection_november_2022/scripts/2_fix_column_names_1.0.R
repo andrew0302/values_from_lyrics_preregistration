@@ -4,6 +4,7 @@
 library('data.table')   # read in .csv with fread
 library('here')         # file logistics
 library('dplyr')        # code logistics
+library('stringr')      # string manipulation
 
 source(here("VI_data_collection_november_2022", 'scripts', '1_data_format_1.0.R'))
 
@@ -12,7 +13,7 @@ column_names_df <- colnames(all_dt) |> as.data.frame()
 colnames(column_names_df) <- "column"
 
 
-# manual adjustments
+# manual adjustment of 'Q' labels
 
 column_names_df$column[370] <- "2655079-r"
 
@@ -61,6 +62,19 @@ column_names_df$column[3073:3082] <- gsub("-c", "-1", column_names_df$column[307
 # confidence question
 column_names_df$column <- column_names_df$column %>%
   gsub("\\-c_.*", "-c", .)
+
+
+# manual adjustment of '_r' labels
+column_names_df$column <- column_names_df$column %>%
+  gsub("\\-r_", "-m_", .)
+
+# manual adjustment of '-m' labels
+column_names_df$column[grepl("-m", column_names_df$column) & !grepl("_", column_names_df$column)] <- column_names_df$column[grepl("-m", column_names_df$column) & !grepl("_", column_names_df$column)] |> 
+  str_replace_all("-m", "-r")
+
+# manual adjustment of '-1_8.1'
+column_names_df$column[grepl("1_8.1", column_names_df$column)] <- column_names_df$column[grepl("1_8.1", column_names_df$column)] |> 
+  str_replace_all("-1_8.1", "-c")
 
 # assign column names 
 colnames(all_dt) <- column_names_df$column

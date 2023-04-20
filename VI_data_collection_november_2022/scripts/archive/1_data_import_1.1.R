@@ -1,23 +1,15 @@
----
-title: "Data Export"
-author: "Andrew M. Demetriou"
-date: "2023-04-03"
-output: html_document
----
+# 1_data_import
+# author: Andrew M. Demetriou
 
-```{r setup, include=FALSE}
 library('data.table')   # read in .csv with fread
 library('here')         # file logistics
 library('dplyr')        # code logistics
-```
 
-```{r}
 # path with the raw data
 data_file_path <- here('VI_data_collection_november_2022', "response_data")
-```
 
 
-```{r}
+
 # Qualtrics data files:
 
 ## complete responses
@@ -42,9 +34,8 @@ colnames(responses_dt) <- responses_dt |>
   make.unique()
 
 rm(complete_responses_dt, partial_responses_dt)
-```
 
-```{r}
+
 # Prolific Data files
 
 demogs_dt <- fread(here(data_file_path, "prolific_export_637357bf150585a4675a4b6b.csv"))
@@ -54,14 +45,12 @@ demogs_dt[, PROLIFIC_PID := `Participant id`]
 all_dt <- merge.data.table(responses_dt, demogs_dt, by = 'PROLIFIC_PID', all.x = T)
 
 rm(data_file_path, demogs_dt, responses_dt)
-```
 
-```{r}
+
 # create anonymized participant_ID column using hash:
-all_dt$participant_ID <- sapply(all_dt$PROLIFIC_PID, digest::digest, algo = "md5") 
-```
+all_dt$participant_ID <- sapply(all_dt$PROLIFIC_PID, digest::digest, algo = "md5")
+                                
 
-```{r}
 # remove identifying columns
 all_dt <- all_dt[, ! c(
   "IPAddress", "RecipientLastName", 
@@ -71,19 +60,15 @@ all_dt <- all_dt[, ! c(
   "ExternalReference", "DistributionChannel", 
   "UserLanguage", "Progress", "Participant Consent", 
   "Finished", 
-  "PROLIFIC_PID", "ResponseId",
+#  "PROLIFIC_PID", "ResponseId",
   "Participant id", "Prolific_ID", 
   "Status.y", "Completion code", "Archived at", 
   "Reviewed at", "Started at", "Completed at", 
   "Submission id", 
   "overall_time_Click Count", "overall_time_First Click", 
   "overall_time_Last Click", "overall_time_Page Submit"), 
-                         with = FALSE]
-``` 
+  with = FALSE]
 
-```{r}
+
 # reorder columns
 all_dt <-all_dt |> select(participant_ID, everything())
-```
-
-
