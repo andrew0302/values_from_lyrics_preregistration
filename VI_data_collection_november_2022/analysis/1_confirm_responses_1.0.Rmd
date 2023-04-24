@@ -5,6 +5,10 @@ date: "2023-04-03"
 output: html_document
 ---
 
+#AIM
+
+This was an initial check of the response data prior to participant compensation. 
+
 ```{r setup, include=FALSE}
 library('tidyverse')    # code logistics
 library('data.table')   # read in .csv with fread
@@ -105,6 +109,7 @@ long_response_times_dt <- check_responses_dt[duration/60 > 90,]
 # these all look legit at first glance
 rm(long_response_times_dt)
 ```
+
 ```{r}
 # these responses left messages on the prolific platform
 
