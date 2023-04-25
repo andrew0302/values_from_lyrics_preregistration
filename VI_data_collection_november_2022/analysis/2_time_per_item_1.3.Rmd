@@ -16,22 +16,56 @@ library('dplyr')      # data manipulation
 library('ggplot2')    # data visualization
 library('gridExtra')  # data visualization
 library('naniar')     # visualizing missingness
+library('lubridate')  # minute / second functions
 library('forcats')    # ordering factors
+library('lme4')       # linear mixed effects model 
+library('lmerTest')   # p values for lme4
 library('shiny')      # interactive visualization
 library('DT')         # interactive visualization
+
+options(scipen=999)
 ```
 
 ```{r}
+# load dataset
 load(here("VI_data_collection_november_2022", "intermediary_data", "working_df.RDS"))
-responses_dt <- as.data.table(working_df)
-rm(working_df)
 
+# create a working dataset
+responses_dt <- as.data.table(working_df)
+
+rm(working_df)
+```
+
+```{r}
+# make missing data explicitly NA
+for(i in names(responses_dt[,participant_ID:Finished])) (set(responses_dt, which(responses_dt[[i]] == "DATA_EXPIRED"), i, NA))
+rm(i)
 # replace missing values with NA
-responses_dt[Age=="DATA_EXPIRED"] <- NA
+responses_dt[Sex=="CONSENT_REVOKED"] <- NA
 
 # not sure what this is meant to indicate
 # treat as missing
 responses_dt[Age=="1022"] <- NA
+```
+
+```{r}
+# examine missingess of variables
+missingness_dt <- responses_dt[,participant_ID:Finished] |> unique()
+
+# make a summary table
+missingness_dt |> 
+  select(-starts_with("Lyric")) |>
+  miss_var_summary()
+
+rm(missingness_dt)
+```
+
+Less than 20% of respondents left feedback. Respondents reside in the US according to Prolific. 
+
+```{r}
+responses_dt %>%
+  unique() %>%
+  count(., `Country of birth`)
 ```
 
 
@@ -41,7 +75,7 @@ responses_dt$Age <- as.numeric(responses_dt$Age)
 
 age_dt <- responses_dt |> 
   select(participant_ID, Age) |>
-  distinct(participant_ID, Age)
+  base::unique()
 
 # median age is 40
 median(age_dt$Age, na.rm=TRUE)
@@ -51,8 +85,8 @@ age_dt |>
   ggplot(aes(x=Age)) +
   geom_histogram(bins=50) +
   geom_vline(xintercept = 40, color="red") +
-  annotate(geom="text", x=45, y=30, label="Median = 40") +
-  xlab("respondent age") +
+  annotate(geom="text", x=46, y=30, label="Median = 40") +
+  xlab("Respondent Age") +
   ylab("") +
   theme_minimal()
 
@@ -64,35 +98,6 @@ Both prolific and qualtrics have their own measures of time taken for the entire
 ```{r}
 #rename qualtrics duration column
 responses_dt$duration <- as.numeric(responses_dt$`Duration (in seconds)`) 
-
-#define columns to plot
-columns <- c("duration", "participant_ID", "Time taken", "Sex", "Age")
-
-#plot survey duration according to qualtrics
-duration_plot <- responses_dt %>% select(columns) %>%
-  ggplot(., aes(x=duration, y=Age, color=Sex)) +
-  geom_point() +
-  xlab("Time (in seconds): Qualtrics") #+
-  #scale_x_continuous(limits = c(1000, 7000))
-
-#plot survey duration according to prolific
-responses_dt$`Time taken` <- as.numeric(responses_dt$`Time taken`)
-time_taken_plot <- responses_dt %>% 
-  select(columns) %>%
-  ggplot(., aes(x=`Time taken`, y=Age, color=Sex)) +
-  geom_point() +
-  xlab("Time (in seconds): Prolific") #+
-  #scale_x_continuous(limits = c(1000, 7000))
-
-grid.arrange(duration_plot, time_taken_plot, ncol=1)
-
-longest_time_taken <- max(responses_dt$duration, na.rm=T)
-
-rm(duration_plot, time_taken_plot, columns)
-```
-```{r}
-#rename qualtrics duration column
-responses_dt$duration <- as.numeric(responses_dt$`Duration (in seconds)`) 
 responses_dt$`Time taken` <- as.numeric(responses_dt$`Time taken`)
 
 #define columns to plot
@@ -100,57 +105,61 @@ columns <- c("duration", "participant_ID", "Time taken", "Sex", "Age", "Finished
 
 # create missingness matrix
 duration_dt <- responses_dt |> 
-  select(columns) |> bind_shadow()
+  select(all_of(columns)) |> 
+  base::unique() |>
+  bind_shadow()
 
+rm(columns)
+```
+
+Qualtrics recorded some very long durations; the longest is 100521 seconds. These appear to be unfinished surveys that are not reflected in the prolific data. 
+
+```{r}
 #plot survey duration according to qualtrics
 duration_plot <- duration_dt %>%
-  ggplot(., aes(x=duration, y=Age, color=Sex)) +
+  ggplot(., aes(x=duration, y=Age, color=Finished)) +
   geom_miss_point() +
   xlab("Time (in seconds): Qualtrics")
 
 #plot survey duration according to prolific
 time_taken_plot <- duration_dt %>% 
-  ggplot(., aes(x=`Time taken`, y=Age, color=Sex)) +
+  ggplot(., aes(x=`Time taken`, y=Age, color=Finished)) +
   geom_miss_point() +
-  xlab("Time (in seconds): Prolific") #+
-  #scale_x_continuous(limits = c(1000, 7000))
+  xlab("Time (in seconds): Prolific")
 
 grid.arrange(duration_plot, time_taken_plot, ncol=1)
 
-longest_time_taken <- max(responses_dt$duration, na.rm=T)
-
-rm(duration_plot, time_taken_plot, columns)
+rm(duration_dt, duration_plot, time_taken_plot)
 ```
-
-
-Qualtrics recorded some very long durations; the longest is 100521 seconds. 
-This observation is not shown in the plot because participant reported sex and age were not available on prolific. 
-
-When the scale of the x axis of the plot is set to limits that are at about 7k seconds, the plots look very similar. 
+Those that didn't finish the survey don't appear in the prolific data. 
+There doesn't seem to be a pattern that relates age to the time it took to complete the survey. 
 
 ```{r}
 # create df with single row for each participant
 time_taken_df <- responses_dt %>% 
-  group_by(participant_ID) %>%
-  summarize(`Time taken`, duration) %>%
-  unique() %>%
-  as.data.table()
+  select(participant_ID, `Time taken`) %>%
+  base::unique() 
 
-# values as high as 100k look like timeouts
+# create a readout with minutes and seconds
+time_taken_df <- time_taken_df |>
+  mutate(sec = `Time taken` %% 60, 
+         min = round(`Time taken` / 60), 
+         minsec = paste(min, sec), 
+         minsec = ms(minsec)) |>
+  select(-sec, -min)
 
-time_taken_hist <- time_taken_df %>% ggplot(aes(x=`Time taken`)) +
+median(time_taken_df$`Time taken`/60, na.rm=T)
+
+# plot time taken
+time_taken_df %>% ggplot(aes(x=`Time taken`/60)) +
   geom_histogram() +
-  xlab("Time (in seconds): Prolific") +
+  geom_vline(xintercept = 33.86667, color="red") +
+  annotate(geom="text", x=42, y=50, label="Median = 33.86") +
+  xlab("Time (in minutes): Prolific") +
+  ylab("") +
   theme_minimal()
 
-duration_hist <- time_taken_df[duration<10000,] %>% ggplot(aes(x=duration)) +
-  geom_histogram() +
-  xlab("Time (in seconds): Qualtrics") +
-  theme_minimal()
-
-grid.arrange(duration_hist, time_taken_hist, ncol=1)
-
-rm(time_taken_hist, duration_hist, time_taken_df)
+rm(time_taken_df)
 ```
 
 
@@ -181,11 +190,13 @@ clicks_dt <- responses_dt[, ..clicks]
 
 # time taken per song
 clicks_dt <- clicks_dt[, diff := (as.numeric(`m_Last Click`) - as.numeric(`m_First Click`))]
+
+rm(clicks)
 ```
 
 
 ```{r}
-# create a df of median time taken for songs
+# create a df of median time taken for each song
 time_taken_table <- clicks_dt |> 
   group_by(song) |>
   summarize(mean = mean(diff, na.rm=T), median = median(diff, na.rm=T), sd = sd(diff, na.rm=T)) |>
@@ -202,9 +213,25 @@ long_diff_dt %>%
   theme_minimal() +
   xlab("Time taken (In seconds)")
 
-rm(time_taken_table, songs, long_diff_dt)
+#rm(time_taken_table, songs, long_diff_dt)
 ```
 
+```{r}
+# an exploratory random effects model looking at age and time per question block
+lmer(diff ~ (1|song) + Age, data = clicks_dt) |>
+  summary()
+
+confint(model, level = 0.95)
+
+# even if significant, the effect appears to be very small
+# .21, (95%CI: .16, .26) seconds
+# age range 18 - 77
+```
+```{r}
+clicks_dt[diff<1000] |>
+  ggplot(aes(x=diff, y=Age, color=Sex)) +
+  geom_point()
+```
 
 Here I table the time taken per observation in descending order:
 
@@ -238,27 +265,25 @@ rm(no_outliers_removed, outliers_less_than_200, central_tendency)
 
 To more closely examine whether older people take more time, I plot the time taken variable against age:
 
-```{r}
-clicks_dt[diff<1000] |>
-  ggplot(aes(x=diff, y=Age, color=Sex)) +
-  geom_point()
-```
+
 
 Although there's no reason to expect sex differences I plot them anyway:
 ```{r}
-clicks_dt[Sex == "CONSENT_REVOKED"] <- NA
+#clicks_dt[Sex == "CONSENT_REVOKED"] <- NA
 
 clicks_dt[diff<900] %>% 
   filter(!is.na(Sex)) %>%
   ggplot(aes(x=diff, color=Sex, fill=Sex)) +
   geom_histogram() +
-  facet_wrap(~Sex)
+  facet_wrap(~Sex) +
+  theme_minimal()
 
 clicks_dt[diff<900] %>% ggplot(aes(x=diff)) +
   geom_histogram(bins = 30) +
   geom_vline(aes(xintercept = median(diff)), color="red") +
   annotate(geom="text", x=200, y=4000, label="Median = 31.8") +
-  xlab("Time (in seconds")
+  xlab("Time (in seconds") +
+  theme_minimal()
 ```
 
 Here I build a data table of the mean time taken per question block, excluding outliers defined as > 900 seconds. 
@@ -268,7 +293,8 @@ Here I build a data table of the mean time taken per question block, excluding o
 summary_dt <- clicks_dt %>% group_by(song) %>% summarize(mean = mean(diff), sd = sd(diff)) %>% ungroup()
 
 summary_dt |> ggplot(aes(mean)) +
-  geom_histogram()
+  geom_histogram() +
+  theme_minimal()
 
 #compute mean and sd seconds per lyric stimulus
 summary_dt %>% summarize(mean = mean(mean, na.rm=T), sd=mean(sd, na.rm=T))
