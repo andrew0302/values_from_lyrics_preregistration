@@ -43,3 +43,6 @@ for(row in 1:nrow(all_dt)){
   }
  }
 }
+
+# save intermediary data
+save(all_dt, file = here("VI_data_collection_november_2022", "intermediary_data", "all_dt.RDS"))

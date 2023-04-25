@@ -12,17 +12,8 @@ library('dplyr')
 library('stringr')
 library('tidyr')
 
-#source(here("VI_data_collection_november_2022", 'data_cleaning', '3_fix_NA_values_1.1.R'))
-```
-
-```{r}
-# intermediary working data
-#save(all_dt, file = here("VI_data_collection_november_2022", "intermediary_data", "all_dt.RDS"))
-
 load(file = here("VI_data_collection_november_2022", "intermediary_data", "all_dt.RDS"))
 ```
-
-
 
 ```{r}
 # pivot raw data to long format

@@ -69,6 +69,12 @@ for(row in 1:nrow(all_dt)){
 }
 ```
 
+```{r}
+# intermediary working data
+#save(all_dt, file = here("VI_data_collection_november_2022", "intermediary_data", "all_dt.RDS"))
+```
+
+
   names_to = c("song", "author", "familiar", 
                "power", "achievement", "hedonism", 
                "stimulation", "self_direction", 

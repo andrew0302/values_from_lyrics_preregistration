@@ -6,7 +6,7 @@ library('here')         # file logistics
 library('dplyr')        # code logistics
 library('stringr')      # string manipulation
 
-source(here("VI_data_collection_november_2022", 'data_cleaning', '1_data_format_1.0.R'))
+source(here("VI_data_collection_november_2022", 'data_cleaning', '1_data_format_1.1.R'))
 
 # create dataframe from column names
 column_names_df <- colnames(all_dt) |> as.data.frame()
