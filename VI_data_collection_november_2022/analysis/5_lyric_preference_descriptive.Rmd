@@ -1,0 +1,253 @@
+---
+title: "descriptives lyric preference intensity questionnaire"
+---
+
+```{r}
+library('data.table') # data manipulation
+library('dplyr')      # data manipulation
+library('tidyverse')  # data manipulation
+library('here')       # file logistics
+library('ggplot2')    # visualization
+library('corrplot')   # visualize correlations
+library('Hmisc')      # visualization
+library("tidytext")   # text logistics
+library('tm')         # text mining
+library('wordcloud')  # word clouds
+library('udpipe')     # part of speech tagging
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+```{r}
+# load dataset
+load(here("VI_data_collection_november_2022", "intermediary_data", "public_df.RDS"))
+
+# create a working dataset
+responses_dt <- as.data.table(public_df)
+
+rm(public_df)
+```
+
+
+```{r}
+# subset lyrics df
+lyric_preferences_dt <- responses_dt %>%
+  select(
+    participant_ID, 
+    subjective,
+    all_of(starts_with("Lyric"))) %>%
+  unique()
+
+# rename columns
+colnames(lyric_preferences_dt) <- gsub("yric_preferences", "", colnames(lyric_preferences_dt))
+names(lyric_preferences_dt)[names(lyric_preferences_dt) == 'Lyric_percentage_1'] <- 'L_16'
+
+rm(responses_dt)
+```
+
+
+```{r}
+# subset lyric preferences items
+lyrics_questionnaire <- lyric_preferences_dt[,3:18]
+
+#ensure that only complete cases are included
+lyrics_questionnaire <- lyrics_questionnaire[complete.cases(lyrics_questionnaire),]
+
+# convert all columns to numeric
+lyrics_questionnaire <- mutate_all(lyrics_questionnaire, function(x) as.numeric(as.character(x)))
+
+#print a histogram of each variable
+hist(lyrics_questionnaire[,1:9])
+hist(lyrics_questionnaire[,10:15])
+```
+
+```{r}
+questions <- c(
+  "I prefer music that contains lyrics, as opposed to music that does not",
+  "I only pay attention to the lyrics of songs or artists that I like.", 
+  "I always pay attention to the lyrics of a song, if the song has them", 
+  "I enjoy learning about song lyrics and their meaning, for example by reading  blogs and forums or listening to artist interviews", 
+  "If a song has lyrics that I don't like for any reason, I don't listen to it", 
+  "If I am not sure about the lyrics of a song, I search them on the internet", 
+  "I contribute to online resources on lyrics, for example forums, or on platforms where I can contribute lyric transcriptions", 
+  "I memorize the lyrics to the songs I listen to", 
+  "I write my own song lyrics", 
+  "I post excerpts of song lyrics online, e.g. on social media", 
+  "I discuss song lyrics with my friends", 
+  "I come up with alternate versions of song lyrics that I find entertaining, i.e. song parodies", 
+  "I ponder the meaning of song lyrics", 
+  "I quote lyrics often in conversation", 
+  "I read and/or write poetry", 
+  "What percentage of your music library do you think contains songs with lyrics?"
+)
+```
+
+
+```{r}
+# create a table of frequencies and proportions
+L_16_props <- lyrics_questionnaire$L_16 |> 
+  # make frequency table, then proportion table
+  table() |> prop.table() #|> as.data.frame()
+
+L_16_prop_table <- lyrics_questionnaire$L_16 |> 
+  # make frequency table
+  table() |> 
+  # convert to data table
+  as.data.frame() |> setDT() |> 
+  # rename response variable
+  rename(response = Var1)
+
+# assign as column
+L_16_prop_table$props <- L_16_props
+rm(L_16_props)
+
+# convert column to numeric
+L_16_prop_table$response <- L_16_prop_table$response |> 
+  as.character() |> as.numeric()
+
+
+# 74%
+L_16_prop_table[response >= 80]$props |> sum()
+# 54%
+L_16_prop_table[response >= 90]$props |> sum()
+# 32%
+L_16_prop_table[response >= 95]$props |> sum()
+# 14.5%
+L_16_prop_table[response >= 99]$props |> sum()
+# 10.4%
+L_16_prop_table[response >= 100]$props |> sum()
+
+rm(L_16_prop_table)
+```
+
+```{r}
+lyrics_questionnaire$L_16 |> quantile(na.rm=T)
+
+lyrics_questionnaire %>%
+  ggplot(aes(x=L_16)) +
+  geom_histogram(bins = 30, color = "black", fill="grey") +
+  geom_histogram(data=subset(lyrics_questionnaire, L_16>=80), bins=30, fill="red", alpha=.3) + 
+  #geom_histogram(data=subset(lyrics_questionnaire, L_16>=90), bins=30, fill="blue", alpha=.3) + 
+  geom_vline(xintercept = 90, color = 'red') +
+  ggplot2::annotate(geom = "text", x=80, y=85, label = "Median: 90") +
+  #ggplot2::annotate(geom = "text", x=100, y=85, label = "54% > 90") +
+  ggplot2::annotate(geom = "text", x=80, y=65, label = "74% >= 80") +
+  xlab("Percentage of Music Library that contains Lyrics") +
+  ylab("") 
+```
+
+```{r}
+lyrics_questionnaire %>%
+  ggplot(aes(L_1)) +
+  geom_histogram(bins = 5, color = "grey", fill="orange") +
+    #geom_histogram(data=subset(lyrics_questionnaire, L_1>=4), bins=5, fill="red", alpha=.2) + 
+    scale_x_continuous(
+       position = "top",
+       breaks = seq(1, 5, by = 1),
+       labels = c(
+       "Strongly disagree",
+       "Somewhat disagree", 
+       "Neither agree nor disagree", 
+       "Somewhat agree", 
+       "Strongly agree"
+       )) +
+    stat_bin(binwidth=1,geom='text', aes(label=..count..), 
+           position=position_stack(vjust=1)) +
+  coord_flip() +
+  xlab("") +
+  ylab("")
+```
+
+
+```{r}
+#estimate p values for each correlation in a matrix
+cor.mtest <- function(mat, ...) {
+    mat <- as.matrix(mat)
+    n <- ncol(mat)
+    p.mat<- matrix(NA, n, n)
+    diag(p.mat) <- 0
+    for (i in 1:(n - 1)) {
+        for (j in (i + 1):n) {
+            tmp <- cor.test(mat[, i], mat[, j], ...)
+            p.mat[i, j] <- p.mat[j, i] <- tmp$p.value
+        }
+    }
+  colnames(p.mat) <- rownames(p.mat) <- colnames(mat)
+  p.mat
+}
+```
+
+```{r}
+#estimate p values for all variables
+p.mat <- cor.mtest(lyrics_questionnaire)
+
+# correlation matrix
+cor(lyrics_questionnaire)
+
+# correlation plot
+corrplot(cor(lyrics_questionnaire), p.mat = p.mat, sig.level=0.05, type = "lower")
+#corrplot(cor(lyrics_questionnaire), p.mat = p.mat$p, sig.level=0.05, type = "lower")
+
+rm(cor.mtest, p.mat, lyrics_questionnaire, questions)
+```
+
+```{r}
+# load English ud_model
+ud_model <- udpipe_download_model(language = 'english', model_dir = here("VI_data_collection_november_2022", "intermediary_data"))
+ud_model <- udpipe_load_model(file = ud_model$file_model)
+```
+
+
+```{r}
+# subset lyric prefrence
+lyric_activities_columns <- paste0("Lyric Activities_", seq(1,5))
+lyric_activities <- lyric_preferences_dt[, ..lyric_activities_columns] |> setDT()
+
+# put all responses into a single column
+lyric_activities <- lyric_activities %>% 
+  pivot_longer(cols = lyric_activities_columns) %>% 
+  filter(!is.na(value)) %>%
+  unique() 
+
+# remove na values 
+tidy_open_responses <- lyric_activities %>% 
+  unnest_tokens(word, value) %>%
+  anti_join(get_stopwords()) %>% 
+  count(word, sort = TRUE) 
+
+# POS tagging
+POS_open_responses <- tidy_open_responses$word %>% 
+  udpipe_annotate(ud_model, .) %>% 
+  as.data.frame() %>%
+  rename(word = sentence)
+
+# merge into tidy open responses
+tidy_open_responses <- merge(tidy_open_responses, POS_open_responses, by='word', all=T)
+
+# word cloud
+#wordcloud(tidy_open_responses$word, tidy_open_responses$n, max.words = 150)
+
+rm(lyric_activities_columns, POS_open_responses, ud_model)
+```
+
+```{r}
+# most common verb is sing or singing, followed by playing
+tidy_open_responses %>% filter(upos == "VERB") %>%
+  arrange(desc(n))
+
+# 82 activities involved singing
+lyric_activities[grepl("sing", lyric_activities$value),] %>% select(-name)
+
+# responses vary, although many involve playing an instrument
+lyric_activities[grepl("play", lyric_activities$value),] %>% select(-name)
+
+# although the lemmas are distributed, writing is also common
+lyric_activities[grepl("writ", lyric_activities$value),] %>% select(-name)
+
+wordcloud(tidy_open_responses$lemma, tidy_open_responses$n)
+
+
+rm(tidy_open_responses, lyric_activities, lyric_preferences_dt)
+```
+

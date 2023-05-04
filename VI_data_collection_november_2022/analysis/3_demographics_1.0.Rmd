@@ -1,0 +1,168 @@
+---
+title: "Demographics"
+author: "andrew demetriou"
+date: "26/04/2023"
+---
+
+#AIM
+
+The aim of this notebook is to explore the demographic variables provided by prolific. 
+The dataframe used here is not in the public repo. It includes both complete and partial responses for which individuals indicated consent on the consent form. 
+
+```{r setup, include=FALSE}
+library('here')       # file logistics
+library('data.table') # data manipulation
+library('dplyr')      # data manipulation
+library('ggplot2')    # data visualization
+library('gridExtra')  # data visualization
+library('naniar')     # visualizing missingness
+library('forcats')    # ordering factors
+library('lme4')       # linear mixed effects model 
+library('lmerTest')   # p values for lme4
+#library('shiny')      # interactive visualization
+#library('DT')         # interactive visualization
+
+options(scipen=999)
+```
+
+```{r}
+# load dataset
+load(here("VI_data_collection_november_2022", "intermediary_data", "working_df.RDS"))
+
+# create a working dataset
+responses_dt <- as.data.table(working_df)
+
+rm(working_df)
+```
+
+```{r}
+# make missing data explicitly NA
+#for(i in names(responses_dt[,participant_ID:Finished])) (set(responses_dt, which(responses_dt[[i]] == "DATA_EXPIRED"), i, NA))
+#rm(i)
+# replace missing values with NA
+#responses_dt[Sex=="CONSENT_REVOKED"] <- NA
+
+# not sure what this is meant to indicate
+# treat as missing
+#responses_dt[Age=="1022"] <- NA
+```
+
+```{r}
+# examine missingess of variables
+missingness_dt <- responses_dt[,participant_ID:Finished] |> unique()
+
+# make a summary table
+missingness_dt |> 
+  group_by(Finished) |>
+  select(-starts_with("Lyric")) |>
+  miss_var_summary()
+
+# demographic data for surveys that were not completed is mostly unavailable
+
+rm(missingness_dt)
+```
+
+Less than 20% of respondents left feedback. Respondents reside in the US according to Prolific. 
+
+
+```{r}
+# coerce to numeric
+responses_dt$Age <- as.numeric(responses_dt$Age)
+
+age_dt <- responses_dt |> 
+  select(participant_ID, Age) |>
+  base::unique()
+
+# median age is 40
+median(age_dt$Age, na.rm=TRUE)
+
+# plot histogram
+age_dt |>
+  ggplot(aes(x=Age)) +
+  geom_histogram(bins=50) +
+  geom_vline(xintercept = 40, color="red") +
+  geom_vline(xintercept = 18, color="blue") +
+  geom_vline(xintercept = 77, color="blue") +
+  annotate(geom="text", x=46, y=30, label="Median = 40") +
+  annotate(geom="text", x=22, y=30, label="Min = 18") +
+  annotate(geom="text", x=72, y=30, label="Max = 77") +
+  xlab("Respondent Age") +
+  ylab("") +
+  theme_minimal()
+
+rm(age_dt)
+```
+```{r}
+# build demogs dt
+demogs_dt <- responses_dt %>%
+  select(participant_ID, Age:Finished) |>
+  unique()
+```
+
+```{r}
+# function to plot various demographic columns
+plot <- function(column){
+  
+  # use this to convert string to an accessible object
+  column <- sym(column)
+  
+  demogs_dt %>%
+    group_by(!!column) %>%
+    # create a column that counts the different responses
+    summarize(counts = n()) %>%
+      ggplot(aes(x=!!column, fill = !!column, y=counts)) +
+      geom_bar(stat = 'identity') +
+      # add a text entry to show the count on the plot
+      geom_text(aes(label = counts)) + 
+      coord_flip() +
+      theme_minimal() +
+      scale_x_discrete(position = "top") +
+      xlab("") +
+      labs(title = column) +
+      theme(legend.position = "none")
+}
+```
+
+There's a lot of missingness in this dataset in terms of the demographics:
+
+
+```{r}
+plot("Employment status")
+```
+
+Still, it seems clear most identify as 'white'. 
+
+```{r}
+plot("Ethnicity simplified")
+```
+
+Most were born in the US. 
+
+```{r}
+plot("Country of birth")
+```
+
+This seems to be the variable that determines the sample for prolific; responses are either US or NA. 
+
+```{r}
+plot("Country of residence")
+```
+
+Most identify as US American. 
+
+```{r}
+plot("Nationality")
+```
+
+Most speak English as their first language. 
+
+```{r}
+plot("Language")
+```
+
+Of those whose data is available, the Sex appears to be split. 
+
+```{r}
+plot("Sex")
+```
+

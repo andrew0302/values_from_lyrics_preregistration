@@ -1,12 +1,13 @@
 ---
 title: "time_per_item"
 author: "andrew demetriou"
-date: "11/29/2021"
+date: "26/04/2023"
 ---
 
 #AIM
 
-The aim of this notebook is to examine how long it took to answer the items on the lyrics questionnaire, and to complete each set of questions for each song lyric. 
+The aim of this notebook is to examine how long it took to answer the questions for each song (item_ID), and the questions on the lyrics preference intensity questionnaire.
+The dataframe used here is not in the public repo. It includes both complete and partial responses for which individuals indicated consent on the consent form. 
 
 
 ```{r setup, include=FALSE}
@@ -38,15 +39,17 @@ rm(working_df)
 
 ```{r}
 # make missing data explicitly NA
-for(i in names(responses_dt[,participant_ID:Finished])) (set(responses_dt, which(responses_dt[[i]] == "DATA_EXPIRED"), i, NA))
-rm(i)
+#for(i in names(responses_dt[,participant_ID:Finished])) (set(responses_dt, which(responses_dt[[i]] == "DATA_EXPIRED"), i, NA))
+#rm(i)
 # replace missing values with NA
-responses_dt[Sex=="CONSENT_REVOKED"] <- NA
+#responses_dt[Sex=="CONSENT_REVOKED"] <- NA
 
 # not sure what this is meant to indicate
 # treat as missing
-responses_dt[Age=="1022"] <- NA
+#responses_dt[Age=="1022"] <- NA
 ```
+
+Less than 20% of respondents left feedback. 
 
 ```{r}
 # examine missingess of variables
@@ -63,8 +66,8 @@ missingness_dt |>
 rm(missingness_dt)
 ```
 
-Less than 20% of respondents left feedback. Respondents reside in the US according to Prolific. 
 
+Median age was 40, range 18-77, with 67 missing values. 
 
 ```{r}
 # coerce to numeric
@@ -187,7 +190,7 @@ According to: https://www.qualtrics.com/support/survey-platform/survey-module/ed
 # 1) either first or last click for a question
 # 2) participant ID
 # 3) the song id
-clicks <- grepl("m_First Click|m_Last Click|participant_ID|song|Age|Sex", colnames(responses_dt)) 
+clicks <- grepl("m_First Click|m_Last Click|participant_ID|item_ID|Age|Sex", colnames(responses_dt)) 
 
 # subset data based on clicks vector
 clicks_dt <- responses_dt[, ..clicks]
@@ -198,44 +201,47 @@ clicks_dt <- clicks_dt[, diff := (as.numeric(`m_Last Click`) - as.numeric(`m_Fir
 rm(clicks)
 ```
 
-Visualize differences distribution of time taken per song:
+Visualize differences distribution of time taken per song. 
+Here I take the 40 songs with the largest standard deviation and plot them against the songs with the lowest standard deviation. 
 
 ```{r}
 # create a df of median time taken for each song
 time_taken_table <- clicks_dt |> 
-  group_by(song) |>
+  group_by(item_ID) |>
   summarize(mean = mean(diff, na.rm=T), median = median(diff, na.rm=T), sd = sd(diff, na.rm=T)) |>
   # descending order by standard deviation
   arrange(desc(sd))
 
 # the 40 songs with the largest standard deviation
-songs <- head(time_taken_table$song, 20)
+item_IDs <- head(time_taken_table$item_ID, 20)
 
 # plot largest sd songs
-long_diff_plot <- clicks_dt[song %in% songs] %>%
-  ggplot(., aes(x=diff, y=song, color = song)) +
+long_diff_plot <- clicks_dt[item_ID %in% item_IDs] %>%
+  ggplot(., aes(x=diff, y=item_ID, color = item_ID)) +
   geom_boxplot(show.legend=FALSE) +
   theme_minimal() +
-  xlab("Time taken (In seconds)")
+  xlab("Time taken (In seconds)") + 
+  xlim(0, 750)
 
 # plot smallest sd songs
-songs <- tail(time_taken_table$song, 20)
-short_diff_plot <- clicks_dt[song %in% songs] %>%
-  ggplot(., aes(x=diff, y=song, color = song)) +
+item_IDs <- tail(time_taken_table$item_ID, 20)
+short_diff_plot <- clicks_dt[item_ID %in% item_IDs] %>%
+  ggplot(., aes(x=diff, y=item_ID, color = item_ID)) +
   geom_boxplot(show.legend=FALSE) +
   theme_minimal() +
-  xlab("Time taken (In seconds)")
+  xlab("Time taken (In seconds)") + 
+  xlim(0, 750)
 
 grid.arrange(long_diff_plot, short_diff_plot, ncol=1)
 
-rm(time_taken_table, songs, long_diff_plot, short_diff_plot)
+rm(time_taken_table, item_IDs, long_diff_plot, short_diff_plot)
 ```
 
 Differences are quite substantial. 
 
 ```{r}
 # an exploratory random effects model looking at age and time per question block
-model <- lmer(diff ~ (1|song) + Age, data = clicks_dt)
+model <- lmer(diff ~ (1|item_ID) + Age, data = clicks_dt)
 
 summary(model)
 
@@ -274,7 +280,7 @@ clicks_dt[diff<900] %>% ggplot(aes(x=diff)) +
 ```{r}
 clicks_dt |>
   ggplot(aes(x=diff, y=Age, color=Sex)) +
-  geom_point() +
+  geom_point(alpha = 0.1) +
   theme_minimal() +
   xlab("Time (in seconds)")
 ```
@@ -319,7 +325,9 @@ lyric_questions_clicks_dt$diff = lyric_questions_clicks_dt$`Lyric_questions_time
 finished_isna <- is.na(lyric_questions_clicks_dt$Finished )
 lyric_questions_clicks_dt <- lyric_questions_clicks_dt[! finished_isna]
 ```
+
 A number of rows look like the data was poorly recorded; time taken evaluates to 0, and only 2-3 clicks on the page were recorded. 
+
 There are also 3 extreme values, two of which show over 1500 seconds, and one showing over 900 seconds, among participants who completed the survey. 
 
 ```{r}
