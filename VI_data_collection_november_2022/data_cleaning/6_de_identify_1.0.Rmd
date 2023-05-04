@@ -26,11 +26,19 @@ de_dupe_long_df <- de_dupe_long_df |> select(participant_ID, everything())
 ```{r}
 working_df <- de_dupe_long_df
 
+public_df <- working_df %>% select(
+  -Age, -Sex, 
+  -`Ethnicity simplified`, `Country of birth`, 
+  -`Total approvals`, -Nationality, 
+  `Country of residence`, Language, 
+  `Student status`, `Employment status`)
+
 rm(de_dupe_long_df)
 ```
 
 ```{r}
 save(working_df, file = here("VI_data_collection_november_2022", "intermediary_data", "working_df.RDS"))
-write.csv(working_df, file = here("VI_data_collection_november_2022", "intermediary_data", "working_df.csv"))
+save(public_df, file = here("VI_data_collection_november_2022", "intermediary_data", "public_df.RDS"))
+write.csv(public_df, file = here("VI_data_collection_november_2022", "intermediary_data", "public_df.csv"))
 ```
 

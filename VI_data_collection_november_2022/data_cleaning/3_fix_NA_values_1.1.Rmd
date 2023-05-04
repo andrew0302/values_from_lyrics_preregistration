@@ -36,7 +36,6 @@ cols <- all_dt |> select(contains(c(
   ))) |> colnames()
 
 # convert columns to numeric, blanks to NA
-#temp_df[,cols] <- lapply(cols, function(x)as.numeric(temp_df[[x]]))
 all_dt[,cols] <- lapply(cols, function(x)as.numeric(all_dt[[x]]))
 
 # convert free text column to NA
@@ -46,6 +45,8 @@ all_dt <- all_dt |>
 ```
 
 ```{r}
+# replace NAs with 0 when the participant has completed the question block:
+
 # for every row
 for(row in 1:nrow(all_dt)){
   
@@ -68,6 +69,24 @@ for(row in 1:nrow(all_dt)){
  }
 }
 ```
+
+```{r}
+# make missing data explicitly NA
+for(i in names(all_dt[,PROLIFIC_PID:Finished])) (set(all_dt, which(all_dt[[i]] == "DATA_EXPIRED"), i, NA))
+rm(i)
+
+
+# replace missing values with NA
+all_dt$Sex <- gsub("CONSENT_REVOKED", NA, all_dt$Sex)
+
+# not sure what this is meant to indicate
+all_dt$Age <- gsub("1022", NA, all_dt$Age)
+all_dt$Age <- gsub("CONSENT_REVOKED", NA, all_dt$Age)
+all_dt$Age <- gsub("DATA_EXPIRED", NA, all_dt$Age)
+
+#t <- all_dt[is.na(all_dt$PROLIFIC_PID),]
+```
+
 
 ```{r}
 # intermediary working data

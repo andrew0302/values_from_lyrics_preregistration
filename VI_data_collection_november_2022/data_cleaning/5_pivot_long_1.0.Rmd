@@ -33,7 +33,8 @@ de_dupe_long_df <- de_dupe_df |>
     cols = `828136-w`:`213759518-r`, 
   
     # two new columns: song and question
-    names_to = c('song', 'question'),
+    #names_to = c('song', 'question'),
+    names_to = c('item_ID', 'question'),
   
     # separate names by "-"
     names_sep = "-", 
