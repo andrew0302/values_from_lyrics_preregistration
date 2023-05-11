@@ -73,29 +73,26 @@ values<-c("POWER", "ACHIEVEMENT", "HEDONISM",
 rm(columns)
 ```
 
+```{r}
+count_df <- responses_dt %>%
+  group_by(item_ID) %>%
+  count()
+
+mean(count_df$n)
+median(count_df$n)
+
+count_df %>%
+  ggplot(aes(n)) +
+  geom_histogram(bins=10, color = 'black', fill = 'grey')
+
+rm(count_df)
+```
 
 ```{r}
 responses_dt %>%
   pivot_longer(cols = POWER:SECURITY) %>%
   ggplot(aes(x=value, group=name, col = name)) +
   geom_density()
-```
-
-```{r}
-tsne <- 
-  responses_dt[,3:12] %>%
-  Rtsne(., dims=2, check_duplicates = F, perplexity=50, verbose=TRUE, max_iter=500, pca = T)
-
-tsne_df <- tsne$Y %>% as.data.frame()
-
-tsne_df$item_ID <- responses_dt$item_ID
-```
-
-```{r}
-tsne_df %>%
-  ggplot(aes(x=V1, y=V2, color = item_ID)) +
-  geom_point(size = 0.1) +
-  theme(legend.position = 'none')
 ```
 
 
@@ -137,7 +134,7 @@ Make a plot of the confidence scores for each song:
 
 ```{r}
 #compute median
-median_confidence <- responses_dt %>% group_by(item_ID) %>% summarize(median=median(confidence, na.rm=TRUE))
+median_confidence <- responses_dt %>% group_by(item_ID) %>% dplyr::summarize(median = median(confidence, na.rm=TRUE))
 
 #plot histogram of individual song's confidence ratings
 plot_confidence <- function(item){

@@ -21,8 +21,6 @@ library('lubridate')  # minute / second functions
 library('forcats')    # ordering factors
 library('lme4')       # linear mixed effects model 
 library('lmerTest')   # p values for lme4
-#library('shiny')      # interactive visualization
-#library('DT')         # interactive visualization
 
 options(scipen=999)
 ```
@@ -35,18 +33,6 @@ load(here("VI_data_collection_november_2022", "intermediary_data", "working_df.R
 responses_dt <- as.data.table(working_df)
 
 rm(working_df)
-```
-
-```{r}
-# make missing data explicitly NA
-#for(i in names(responses_dt[,participant_ID:Finished])) (set(responses_dt, which(responses_dt[[i]] == "DATA_EXPIRED"), i, NA))
-#rm(i)
-# replace missing values with NA
-#responses_dt[Sex=="CONSENT_REVOKED"] <- NA
-
-# not sure what this is meant to indicate
-# treat as missing
-#responses_dt[Age=="1022"] <- NA
 ```
 
 Less than 20% of respondents left feedback. 
@@ -234,10 +220,16 @@ short_diff_plot <- clicks_dt[item_ID %in% item_IDs] %>%
 
 grid.arrange(long_diff_plot, short_diff_plot, ncol=1)
 
-rm(time_taken_table, item_IDs, long_diff_plot, short_diff_plot)
+rm(time_taken_table, long_diff_plot, short_diff_plot)
 ```
 
 Differences are quite substantial. 
+
+```{r}
+setDT(not_simple_medium_alpha_2021_full_2_2)
+long_sd_df <- not_simple_medium_alpha_2021_full_2_2[mxm_id %in% item_IDs]
+```
+
 
 ```{r}
 # an exploratory random effects model looking at age and time per question block

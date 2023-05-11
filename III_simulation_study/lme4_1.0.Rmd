@@ -103,8 +103,8 @@ random_effect_sd_dt <- machines_as_subjects |>
 ```
 
 ```{r}
-random_effect_sd_dt |>
-  saveRDS(here("III_simulation_study", "intermediary_data", "lme4_random_effect_sd_dt.RDS"))
+#random_effect_sd_dt |>
+#  saveRDS(here("III_simulation_study", "intermediary_data", "lme4_random_effect_sd_dt.RDS"))
 ```
 
 
@@ -194,7 +194,16 @@ intercept_summary_dt$mean_fitted    <- intercept_summary_dt$mean_fitted    |>
 intercept_summary_dt |>
   ggplot(aes(x=value, y=mean_intercept)) +
     geom_point() +
-    scale_y_continuous(limits = c(-0.001, 0.001)) +
+    #scale_y_continuous(limits = c(-0.001, 0.001)) +
+    geom_hline(yintercept = 0, linetype = 'dotted', color = 'red') +
+    theme_minimal() +
+    theme(legend.position = "none", axis.text.x = element_text(angle = 45))
+
+# plot means
+intercept_summary_dt |>
+  ggplot(aes(x=value, y=mean_fitted)) +
+    geom_point() +
+    #scale_y_continuous(limits = c(-0.001, 0.001)) +
     geom_hline(yintercept = 0, linetype = 'dotted', color = 'red') +
     theme_minimal() +
     theme(legend.position = "none", axis.text.x = element_text(angle = 45))

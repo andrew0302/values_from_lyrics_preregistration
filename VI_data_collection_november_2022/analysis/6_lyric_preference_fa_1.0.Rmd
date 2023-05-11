@@ -200,7 +200,7 @@ A very small correlation between the first factor and subjectivity ratings, like
 Also moderate correlations between the factors scores. 
 
 ```{r}
-corr_df <- lyric_preferences_dt %>% select(subjective, MR1, MR2, MR3) %>% 
+corr_df <- lyric_preferences_dt %>% select(subjective, ML1, ML2, ML3) %>% 
   mutate_all(., function(x) as.numeric(as.character(x))) %>%
   filter(!is.na(subjective)) 
 

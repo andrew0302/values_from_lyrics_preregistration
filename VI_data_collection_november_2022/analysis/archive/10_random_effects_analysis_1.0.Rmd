@@ -1,0 +1,249 @@
+---
+title: "random effects estimated with mplus"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('dplyr')           # data manipulation
+library('tidyr')           # data manipulation
+library('ggplot2')         # visualization
+library('corrplot')        # correlation plot
+library("MplusAutomation") # Mplus integration
+
+# load dataset
+source(here("VI_data_collection_november_2022", "functions", "load_and_format_data_1.0.R"))
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+```{r}
+# load dataset
+load(here("VI_data_collection_november_2022", "intermediary_data", "public_df.RDS"))
+
+# load functions
+#source(here("0_functions", "descriptives_function_1.6.R"))
+
+# create a working dataset
+responses_dt <- as.data.table(public_df)
+
+rm(public_df)
+```
+
+
+```{r}
+# replace 'song' with 'item_ID' as column name
+setDT(responses_dt)
+
+# subset columns for values questions:
+responses_dt <- responses_dt %>%
+  select("participant_ID", "item_ID", "w", "f", 
+         paste0("1_", seq(1, 10)),
+         "c")
+
+# convert to numeric
+columns <- c(paste0("1_", seq(1, 10)), "c")
+responses_dt[, (columns):= lapply(.SD, as.numeric), .SDcols = columns]
+
+responses_dt <- responses_dt %>%
+  rename(writer=w, 
+         familiar = f, 
+         POWER = `1_1`, 
+         ACHIEVEMENT = `1_2`, 
+         HEDONISM = `1_3`, 
+         STIMULATION = `1_4`, 
+         SELF = `1_5`, 
+         UNIVERSALISM = `1_6`, 
+         BENEVOLENCE = `1_7`, 
+         TRADITION = `1_8`, 
+         CONFORMITY = `1_9`, 
+         SECURITY = `1_10`, 
+         confidence = c
+         ) %>%
+  select(participant_ID, item_ID, 
+                         POWER, ACHIEVEMENT, HEDONISM, 
+                         STIMULATION, SELF, UNIVERSALISM, 
+                         BENEVOLENCE, TRADITION, 
+                         CONFORMITY, SECURITY, 
+                         writer, familiar, confidence)
+
+
+values<-c("POWER", "ACHIEVEMENT", "HEDONISM",  
+          "STIMULATION", "SELF", "UNIVERSALISM", 
+          "BENEVOLENCE", "TRADITION",  
+          "CONFORMITY", "SECURITY")
+
+rm(columns)
+```
+
+```{r}
+# select only ID columns and values scores
+df <- responses_dt %>% select(participant_ID, item_ID, all_of(values))
+
+# rename columns to have same names as in functions
+colnames(df) <- c("subject_ID", "item_ID", paste0("y", seq(1, 10)))
+
+# mplus and data.table don't work together
+df <- as.data.frame(df)
+
+rm(responses_dt)
+```
+
+```{r}
+# mplus model specification:
+# this model estimates parameters from response data 
+# including the correlation of the item intercepts
+
+mplus_model <- mplusObject(
+  TITLE = "model;",
+  MISSING = ".;",
+  # select only participant variables
+  VARIABLE = "
+  USEVARIABLES = item_ID subject_ID y1-y10;
+  CLUSTER = item_ID subject_ID;",
+  
+  # the only estimator available is Bayes
+  # manual page 656:
+  # FBITERATIONS: number of iterations for each MCMC chain
+  ANALYSIS = "
+  TYPE = CROSSCLASSIFIED RANDOM;
+  ESTIMATOR = BAYES;
+  FBITERATIONS = 10000;
+  ALGORITHM = GIBBS(RW);
+  PROCESSORS = 11;",
+  
+  MODEL = "
+  
+  %within% 
+  y1-y10;
+  
+  %between item_ID% 
+  y1-y10; [y1-y10];  
+  y1 WITH y1-y10;
+  y2 WITH y1-y10;
+  y3 WITH y1-y10;
+  y4 WITH y1-y10;
+  y5 WITH y1-y10;
+  y6 WITH y1-y10;
+  y7 WITH y1-y10;
+  y8 WITH y1-y10;
+  y9 WITH y1-y10;
+  y10 WITH y1-y10;
+  
+  %between subject_ID% 
+  y1-y10; [y1-y10@0];", 
+  
+  OUTPUT = "standardized cinterval(hpd)",
+  
+  # page 838 of the manual:
+  # distribution of plausible values for each observation
+  # first number in fscores is the number of draws to compute per observation
+  # from a bayesian estimation procedure;
+  # when second number in fscores is ten, every tenth draw is used to compute 
+  SAVEDATA = "FILE IS fscores.dat;
+              Save = fscores(100 10);",
+  
+  rdata = df
+)
+
+fit <- mplusModeler(mplus_model, 
+                    modelout = "mplus/sim.inp", 
+                    run=TRUE)
+# print errors and warnings
+ fit$results$errors
+ fit$results$warnings
+
+rm(mplus_model)
+```
+
+
+```{r}
+random_effects_mplus_df <- assemble_ci_dfs(fit)
+```
+
+```{r}
+random_effects_mplus_df %>%
+  ggplot(aes(x=model, y=SUBJECT_ID, color=model)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=SUBJECT_ID_lower, ymax=SUBJECT_ID_upper)) +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45)) +
+  ggtitle("subject random effect SD by value")
+```
+
+```{r}
+random_effects_mplus_df %>%
+  ggplot(aes(x=model, y=ITEM_ID, color=model)) +
+  geom_errorbar(aes(ymin=ITEM_ID_lower, ymax=ITEM_ID_upper)) + 
+  geom_point() +
+  #geom_point(aes(x=model, y=SD, color = "red"), shape = 4, size=4) +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45)) +
+  ggtitle("item random effect SD by value")
+```
+
+```{r}
+# retrieve item intercepts from mplus model fscores output:
+item_intercepts <- get_random_intercepts_mplus(fit, intercept = 'item_ID')
+
+# compute mean of item intercepts
+# in simulated data these were set to 0
+item_intercept_summary_df <-  item_intercepts |>
+  select(starts_with("y_")) |>
+  colMeans() |>
+  t() |>
+  as.data.frame() |>
+  t() |>
+  as.data.frame() |>
+  rownames_to_column() |>
+  rename('mean' = 'V1', 'values' = 'rowname') 
+```
+
+```{r}
+#original values order
+#values <- c("y_power", "y_security", "y_conformity", "y_tradition", "y_benevolence", "y_universalism", "y_self_direction", "y_stimulation", "y_hedonism", "y_achievement")
+
+# retrieve mean item intercept by value from model output
+model_output_means <- fit$results$parameters$unstandardized |>
+  filter(BetweenWithin == "Between ITEM_ID") |>
+  filter(paramHeader == "Means") |>
+  select(-paramHeader, -sig, -BetweenWithin)
+
+#model_output_means$values <- values
+model_output_means$values <- c("y_power", "y_security", "y_conformity", "y_tradition", "y_benevolence", "y_universalism", "y_self_direction", "y_stimulation", "y_hedonism", "y_achievement")
+#merge(model_output_means, item_intercepts, by=values)
+
+model_output_means |> 
+  ggplot(aes(x = values, y= est, color = values)) +
+    geom_point() +
+    geom_errorbar(aes(ymin=lower_2.5ci, ymax=upper_2.5ci)) + 
+    geom_hline(yintercept = 0, linetype = 'dotted', color = 'red') +
+    # plot the means extracted from the fscores file as a red 'x' (item_intercepts_summary_df)
+    #geom_point(data = item_intercept_summary_df, aes(x=values, y=mean, color = "red"), shape = 4, size = 4) +
+    theme_minimal() +
+    theme(legend.position = "none", axis.text.x = element_text(angle = 45)) +
+    ggtitle("item intercept mean by value")
+```
+
+```{r}
+item_ids <- item_intercepts$ITEM_ID
+
+# reconstitute original item IDs
+for(i in 1:length(item_ids)){
+ item_intercepts$item_ID_r[i] <- paste0("2", str_pad(i, 4, pad='0')) 
+}
+
+# merge two dataframes
+correlation_dt <- merge(item_intercepts, item_ground_truth, by.x = 'item_ID_r', by.y = 'item_ID') |>
+  select(-ITEM_ID)
+
+# plot correlation matrix between two sets of variables
+cor(correlation_dt[,2:11], correlation_dt[,12:21]) |> 
+  corrplot(
+    method = "color", 
+    type = "full", 
+    addCoef.col = "black", 
+    number.cex = 0.75)
+```

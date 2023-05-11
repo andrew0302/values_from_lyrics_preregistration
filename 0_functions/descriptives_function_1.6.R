@@ -180,7 +180,7 @@ get_within_estimates <- function(
     mod <- augment(mod) |> 
       select(subject_ID, item_ID,.fitted) |> 
       group_by(item_ID) |>
-      summarize(mean = mean(.fitted))
+      dplyr::summarize(mean = mean(.fitted))
     
     return(mod)
   })
@@ -203,7 +203,7 @@ get_individual_intercepts <- function(
   random_effects <- lapply(mods, function(mod){
     mod <- ranef(mod)
     mod <- mod$item_ID
-    mod <- rownames_to_column(mod)
+    mod <- tibble::rownames_to_column(mod)
     colnames(mod) <- c("item_ID", "intercept")
     return(mod)
   })

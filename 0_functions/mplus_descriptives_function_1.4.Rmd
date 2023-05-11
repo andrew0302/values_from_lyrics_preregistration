@@ -384,7 +384,7 @@ build_mplus_correlation_matrix <- function(mplus_model_fit_object, human_or_mach
 
 ```{r}
 # mplus_model_fit_object <- fit
-# corr_mat <- build_subject_correlation_matrix(fit, human_or_machine = 'Y')
+# corr_mat <- build_mplus_correlation_matrix(fit, human_or_machine = 'Y')
 # corrplot(as.matrix(corr_mat))
 ```
 
