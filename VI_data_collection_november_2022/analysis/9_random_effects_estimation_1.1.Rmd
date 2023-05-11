@@ -10,6 +10,7 @@ library('dplyr')           # data manipulation
 library('tidyr')           # data manipulation
 library("MplusAutomation") # Mplus integration
 library("boot")            # bootstrapping CIs
+library('ggplot2')         # visualization
 
 # load dataset
 source(here("VI_data_collection_november_2022", "functions", "load_and_format_data_1.0.R"))
@@ -17,6 +18,7 @@ source(here("VI_data_collection_november_2022", "functions", "load_and_format_da
 options(scipen=999)
 theme_set(theme_minimal())
 ```
+
 
 ```{r}
 # load lme4 functions

@@ -1,7 +1,7 @@
 TITLE:
 model;
 DATA:
-FILE = "mplus_files/sim_04a034f72ad1c48479aaada183a21376.dat";
+FILE = "mplus_files/sim_1c472bab5eb4b10fb879c3e8ebebd720.dat";
  
 VARIABLE:
 NAMES = subject_ID item_ID y1 y2 y3 y4 y5 y6 y7 y8 y9 y10; 

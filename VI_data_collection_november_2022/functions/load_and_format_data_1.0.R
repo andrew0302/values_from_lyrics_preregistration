@@ -46,4 +46,13 @@ values<-c("POWER", "ACHIEVEMENT", "HEDONISM",
           "BENEVOLENCE", "TRADITION",  
           "CONFORMITY", "SECURITY")
 
+responses_dt <- responses_dt %>%
+  arrange(as.numeric(item_ID))
+
+item_ids   <- responses_dt %>% select(item_ID) %>% unique()
+item_ids$item_number <- seq(1:nrow(item_ids))
+
+responses_dt <- merge(responses_dt, item_ids, by = "item_ID")
+responses_dt <- responses_dt %>% arrange(as.numeric(item_ID)) %>% select(item_ID, item_number, everything())
+
 rm(columns)
