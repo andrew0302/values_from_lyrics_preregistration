@@ -49,10 +49,13 @@ values<-c("POWER", "ACHIEVEMENT", "HEDONISM",
 responses_dt <- responses_dt %>%
   arrange(as.numeric(item_ID))
 
-item_ids   <- responses_dt %>% select(item_ID) %>% unique()
-item_ids$item_number <- seq(1:nrow(item_ids))
 
-responses_dt <- merge(responses_dt, item_ids, by = "item_ID")
-responses_dt <- responses_dt %>% arrange(as.numeric(item_ID)) %>% select(item_ID, item_number, everything())
+#responses_dt$item_number <- responses_dt$item_ID
+#item_ids   <- responses_dt %>% select(item_ID) %>% unique()
+#item_ids$item_number <- seq(1:nrow(item_ids))
+#responses_dt <- merge(responses_dt, item_ids, by = "item_ID")
+
+responses_dt$row_number <- seq(1:nrow(responses_dt))
+responses_dt <- responses_dt %>% arrange(as.numeric(item_ID)) %>% select(row_number, participant_ID, item_ID, everything())
 
 rm(columns)

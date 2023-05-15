@@ -1,14 +1,15 @@
 TITLE:
 model;
 DATA:
-FILE = "mplus/sim_87090c4cdbf7bb0ffda8a22b38e9dc2b.dat";
+FILE = "mplus/sim_cf253d1c59c2bd0ed8b4d4af9cfe8f5a.dat";
  
 VARIABLE:
-NAMES = subject_ID item_ID y1 y2 y3 y4 y5 y6 y7 y8 y9 y10; 
+NAMES = row_number subject_ID item_ID y1 y2 y3 y4 y5 y6 y7 y8 y9 y10; 
  MISSING=.;
  
   USEVARIABLES = item_ID subject_ID y1-y10;
   CLUSTER = item_ID subject_ID;
+  IDVARIABLE = row_number;
 ANALYSIS:
 
   TYPE = CROSSCLASSIFIED RANDOM;
