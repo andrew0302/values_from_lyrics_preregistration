@@ -170,11 +170,11 @@ format_ci_df <- function(
 
 
 ```{r}
-assemble_ci_dfs <- function(fit){
+assemble_ci_dfs <- function(df, fit){
   
   # extract random effects dataframes from model object
-  subject_intercept_df <- get_random_intercepts_mplus(fit, intercept = 'subject_ID')
-  item_intercept_df    <- get_random_intercepts_mplus(fit, intercept = 'item_ID')
+  subject_intercept_df <- get_random_intercepts_mplus(df, fit, intercept = 'subject_ID')
+  item_intercept_df    <- get_random_intercepts_mplus(df, fit, intercept = 'item_ID')
   
   # compute 95% bootstrapped confidence intervals
   subject_ci_list <- bootstrap_SD_list(subject_intercept_df, 'SUBJECT_ID')

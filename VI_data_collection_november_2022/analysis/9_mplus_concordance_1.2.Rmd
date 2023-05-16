@@ -11,6 +11,7 @@ library('tidyr')           # data manipulation
 library("MplusAutomation") # Mplus integration
 library("boot")            # bootstrapping CIs
 library('ggplot2')         # visualization
+library('corrplot')        # visualization
 
 # load dataset
 source(here("VI_data_collection_november_2022", "functions", "load_and_format_data_1.0.R"))
@@ -37,24 +38,29 @@ rm(responses_dt)
 # this model estimates parameters from response data 
 # including the correlation of the item intercepts
 
-source(here("VI_data_collection_november_2022", "mplus_models", "participant_model_1.0.R"))
+# load mplus model
+# source(here("VI_data_collection_november_2022", "mplus_models", "participant_model_1.0.R"))
 
 # run mplus model
-fit <- mplusModeler(mplus_model, 
-                    modelout = "mplus/sim.inp", 
-                    run=TRUE)
-# print errors and warnings
- fit$results$errors
- fit$results$warnings
 
-saveRDS(fit, here("VI_data_collection_november_2022", "intermediary_data", "participant_model_1.0.RDS"))
+# fit <- mplusModeler(mplus_model, 
+#                     modelout = "mplus/sim.inp", 
+#                     run=TRUE)
+
+# print errors and warnings
+# fit$results$errors
+# fit$results$warnings
+
+# saveRDS(fit, here("VI_data_collection_november_2022", "intermediary_data", "participant_model_1.0.RDS"))
  
-rm(mplus_model)
+# rm(mplus_model)
 ```
 
 
 ```{r}
 # correlate data from mplus with original df
+
+# the output from the mplus model
 fit <- readRDS(here("VI_data_collection_november_2022", "intermediary_data", "participant_model_1.0.RDS"))
 
 # mplus output of dataset
@@ -79,21 +85,14 @@ corr_df <- corr_df %>% select(
 # all appear to be 1
 cor(corr_df[,1:10], corr_df[,11:20]) %>% corrplot()
 
-rm(corr_df)
+#rm(corr_df)
 ```
 
 ```{r}
 # load mplus functions
 
-# this is actually version 1.6
-#source(here("VI_data_collection_november_2022", "functions", "mplus_descriptives_function_1.5.R"))
-
-# R throws an error with this:
 source(here("VI_data_collection_november_2022", "functions", "mplus_descriptives_function_1.6.R"))
 
-#only apprent difference is the one character 5 vs. 6
-#path1 <- here("VI_data_collection_november_2022", "functions", "mplus_descriptives_function_1.5.R")
-#path2 <- here("VI_data_collection_november_2022", "functions", "mplus_descriptives_function_1.6.R")
 ```
 
 

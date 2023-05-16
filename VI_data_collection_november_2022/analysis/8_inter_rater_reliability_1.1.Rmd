@@ -259,7 +259,7 @@ p3 <- sampled_icc_df %>%
   ggplot(aes(cor, color = as.factor(n))) +
   facet_grid(~value)+
   #geom_density(alpha = 0.3) + 
-  geom_line(stat = 'density') +
+  geom_line(stat = 'density', alpha = .7) +
   theme(axis.text.x = element_text(angle = 90), 
         strip.text.x = element_text(size = 4)) +
   coord_flip()
