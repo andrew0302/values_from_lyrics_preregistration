@@ -1,0 +1,317 @@
+---
+title: "factor analysis lyric preference intensity questionnaire"
+---
+
+```{r}
+library('data.table') # data manipulation
+library('dplyr')      # data manipulation
+library('tidyverse')  # data manipulation
+library('here')       # file logistics
+library('ggplot2')    # visualization
+library('corrplot')   # visualize correlations
+library('Hmisc')      # visualization
+library('psych')      # factor analysis
+library('mirt')       # item response theory
+library('shiny')      # interactive visualization
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+```{r}
+# load dataset
+load(here("VI_data_collection", "_data", "survey_response_data", "response_df.RDS"))
+
+# create a working dataset
+responses_dt <- as.data.table(response_df)
+
+rm(response_df)
+```
+
+
+```{r}
+# subset lyrics df
+lyric_preferences_dt <- responses_dt %>%
+  select(
+    participant_ID, 
+    subjective,
+    all_of(starts_with("Lyric"))) %>%
+  unique()
+
+# rename columns
+colnames(lyric_preferences_dt) <- gsub("yric_preferences", "", colnames(lyric_preferences_dt))
+names(lyric_preferences_dt)[names(lyric_preferences_dt) == 'Lyric_percentage_1'] <- 'L_16'
+
+rm(responses_dt)
+```
+
+```{r}
+# subset lyric preferences items
+lyrics_questionnaire <- lyric_preferences_dt[,3:18]
+
+#ensure that only complete cases are included
+lyrics_questionnaire <- lyrics_questionnaire[complete.cases(lyrics_questionnaire),]
+
+# convert all columns to numeric
+lyrics_questionnaire <- mutate_all(lyrics_questionnaire, function(x) as.numeric(as.character(x)))
+```
+
+```{r}
+# function to plot histogram for each question
+histogram_plot_function <- function(column){
+  
+  ggplot(lyrics_questionnaire, aes(x=column)) +
+    geom_histogram(bins=9) +
+    scale_y_continuous(limits = c(0,300))
+}
+
+list_of_histograms <- lapply(lyrics_questionnaire, histogram_plot_function)
+```
+
+As per https://bookdown.org/bean_jerry/using_r_for_social_work_research/item-response-theory.html:
+
+The better fitting model shows and SRMSR of .085, and an RMSEA of .08.
+
+```{r}
+# reset scale
+lyrics_questionnaire$L_16 <- lyrics_questionnaire$L_16 / 20
+
+#estimate Graded Response model (GRM)
+mod_1 <- (mirt(lyrics_questionnaire, 1, verbose = FALSE, itemtype = 'graded', SE = TRUE))
+
+#model fit for response models with ordinal data
+M2(mod_1, type = "C2", calcNULL = FALSE)
+
+
+#estimate Generalized Partial Credit Model
+mod_2 <- (mirt(lyrics_questionnaire, 1, verbose = FALSE, itemtype = 'gpcm', SE = TRUE))
+
+#model fit
+M2(mod_2, type = "C2", calcNULL = FALSE)
+
+# model 2 has a better fit: RMSEA = .08, SRMSR =.085
+mod <- mod_2
+rm(mod_1, mod_2)
+```
+
+"The mirt implementation of S-X2 computes an RMSEA value which can be used to assess degree of item fit. Values less than .06 are considered evidence of adequate fit."
+
+It appears the model fits all the items well, as all RMSEA - S-X2 values are below .06. 
+
+```{r}
+itemfit(mod)
+```
+
+
+Items 1, 2, 5, and 16 have extremely flat lines. 
+
+```{r}
+#plot(mod, type='trace', which.item = c(1,2,3,4,5,6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), facet_items=T, 
+#     as.table = TRUE, auto.key=list(points=F, lines=T, columns=4, space = 'top', cex = .8), 
+#              theta_lim = c(-3, 3), 
+#     main = "")
+
+plot(mod, type='infotrace', which.item = c(1,2,3,4,5,6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), facet_items=T, 
+     as.table = TRUE, auto.key=list(points=F, lines=T, columns=4, space = 'top', cex = .8), 
+              theta_lim = c(-3, 3), 
+     main = "")
+```
+
+
+```{r}
+# scree plot: 4 factors
+fa.parallel(lyrics_questionnaire)
+
+# adjusted scale: 3 factors
+lyrics_questionnaire %>%
+  select(-L_1, -L_2, -L_5, -L_16) %>%
+  fa.parallel()
+```
+
+```{r}
+# alpha is .79, (95% CI: .77, .82)
+lyrics_alpha <- alpha(lyrics_questionnaire, n.iter = 500, check.keys = T)
+lyrics_alpha$boot.ci
+
+# alpha improces to .83, (95% CI: .81, .85)
+lyrics_alpha <- lyrics_questionnaire %>% 
+    select(-L_1, -L_2, -L_5, -L_16) %>%
+    alpha(., n.iter=500, check.keys=T)
+
+lyrics_alpha$boot.ci
+
+rm(lyrics_alpha)
+```
+
+```{r}
+# fa diagrams confirm that questions 1, 2, 5, and 16 may not be very informative
+
+  lapply(seq(1,4), function(x){
+    fa(lyrics_questionnaire, rotate = "varimax", fm="ml", nfactors = x) %>%
+  fa.diagram()
+})
+```
+
+```{r}
+# model gets closer to acceptable parameters: RMSEA = .075, SRMSR = .066
+
+#estimate Generalized Partial Credit Model
+mod <- (mirt(lyrics_questionnaire %>% select(-L_1, -L_2, -L_5, -L_16), 1, verbose = FALSE, itemtype = 'gpcm', SE = TRUE))
+
+#model fit
+M2(mod, type = "C2", calcNULL = FALSE)
+```
+Scale information / test infomation and conditional standard errors:
+
+Our final scale did not do a good job of measuring values at the extremes:
+
+```{r}
+plot(mod, type = 'infoSE', theta_lim = c(-3, 3), 
+     main="")
+```
+
+```{r}
+factor_analysis <- fa(lyrics_questionnaire, 3, rotate = "varimax", fm="ml")
+factor_scores   <- factor.scores(lyrics_questionnaire, factor_analysis)
+factor_scores   <- factor_scores$scores
+lyric_preferences_dt <- cbind(lyric_preferences_dt, factor_scores)
+
+rm(factor_analysis, factor_scores)
+```
+
+```{r}
+#estimate p values for each correlation in a matrix
+cor.mtest <- function(mat, ...) {
+    mat <- as.matrix(mat)
+    n <- ncol(mat)
+    p.mat<- matrix(NA, n, n)
+    diag(p.mat) <- 0
+    for (i in 1:(n - 1)) {
+        for (j in (i + 1):n) {
+            tmp <- cor.test(mat[, i], mat[, j], ...)
+            p.mat[i, j] <- p.mat[j, i] <- tmp$p.value
+        }
+    }
+  colnames(p.mat) <- rownames(p.mat) <- colnames(mat)
+  p.mat
+}
+```
+
+A very small correlation between the first factor and subjectivity ratings, likely spurious. 
+Also moderate correlations between the factors scores. 
+
+```{r}
+corr_df <- lyric_preferences_dt %>% select(subjective, ML1, ML2, ML3) %>% 
+  mutate_all(., function(x) as.numeric(as.character(x))) %>%
+  filter(!is.na(subjective)) 
+
+#corr_df %>% cor()
+
+p.mat <- cor.mtest(corr_df)
+
+corrplot(cor(corr_df), p.mat = p.mat, sig.level=0.05, type = "lower", diag = F)
+
+rm(corr_df, p.mat, cor.mtest)
+```
+
+
+
+```{r}
+all_lyrics_questions <- c(
+  "I prefer music that contains lyrics, as opposed to music that does not", 
+  "I only pay attention to the lyrics of songs or artists that I like.", 
+  "I always pay attention to the lyrics of a song, if the song has them", 
+  "I enjoy learning about song lyrics and their meaning, for example by reading  blogs and forums or listening to artist interviews", 
+  "If a song has lyrics that I don't like for any reason, I don't listen to it", 
+  "If I am not sure about the lyrics of a song, I search them on the internet", 
+  "I contribute to online resources on lyrics, for example forums, or on platforms where I can contribute lyric transcriptions", 
+  "I memorize the lyrics to the songs I listen to", 
+  "I write my own song lyrics", 
+  "I post excerpts of song lyrics online, e.g. on social media", 
+  "I discuss song lyrics with my friends", 
+  "I come up with alternate versions of song lyrics that I find entertaining, i.e. song parodies", 
+  "I ponder the meaning of song lyrics", 
+  "I quote lyrics often in conversation", 
+  "I read and/or write poetry", 
+  "What percentage of your music library do you think contains songs with lyrics?" 
+)
+```
+
+```{r}
+# question lists
+four_factor_questions <- 
+  list(all_lyrics_questions[c(10, 14, 7, 11, 15, 12)],
+     all_lyrics_questions[c(13, 4, 6, 3, 2)],
+     all_lyrics_questions[9],
+     all_lyrics_questions[c(1, 16, 8)])
+
+three_factor_questions <- 
+  list(all_lyrics_questions[c(10,7,14,11,15,9,12)], 
+       all_lyrics_questions[c(13, 4, 6, 3, 2)], 
+       all_lyrics_questions[c(1,16,8)])
+
+two_factor_questions <- 
+  list(all_lyrics_questions[c(11,10,14,7,15,12,9)], 
+       all_lyrics_questions[c(3,16,4,13,8,6,1)])
+
+one_factor_questions <- 
+  list(all_lyrics_questions[c(11,4,14,13,10,15,6,3,8,7,12,9)])
+
+question_lists <- list(one_factor_questions, two_factor_questions, three_factor_questions, four_factor_questions)
+
+rm(one_factor_questions, two_factor_questions, three_factor_questions, four_factor_questions)
+```
+
+
+
+```{r}
+ui <- fluidPage(
+  titlePanel("Lyric Questions"),
+  
+  # drop down menu to display the values
+  numericInput('question', 'select question number', value=1, min=1, step=1, max=16), 
+  
+  # print out specific question
+  uiOutput('question_text'),
+  
+  #plot histogram of question responses
+  plotOutput('histogram'),
+  
+  # print out all lyrics questions
+  verbatimTextOutput('all_questions'),
+  
+  numericInput('factors', 'select number of factors', value=1, min=1, step=1, max=4),
+  
+  #correlation plot
+  plotOutput('fa_plot')
+)
+
+server <- function(input, output, session){
+  
+  # retrieve input list element
+  output$question_text <- renderUI(all_lyrics_questions[input$question])
+  
+  # show question list
+  output$all_questions <- renderPrint(question_lists[[input$factors]])
+  
+  # plot input item histogram
+  output$histogram <- renderPlot({
+    list_of_histograms[input$question] 
+  })
+  
+  # correlation plot of lyrics responses
+  output$fa_plot <- renderPlot({
+    #list_of_diagrams[input$factors]
+        fa(lyrics_questionnaire, rotate = "varimax", fm="ml", nfactors = input$factors) %>%
+  fa.diagram()
+  })
+  
+  
+}
+shinyApp(ui=ui, server=server)
+```
+
+
+
+
+

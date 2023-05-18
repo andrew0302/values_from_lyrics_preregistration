@@ -1,0 +1,44 @@
+---
+title: "6_de_identify"
+author: "Andrew M. Demetriou"
+date: "2023-04-06"
+output: html_document
+---
+
+```{r}
+library('here')
+library('data.table')
+
+source(here("VI_data_collection_november_2022", 'data_cleaning', '5_pivot_long_1.0.R'))
+```
+
+```{r}
+# create anonymized participant_ID based on Prolific ID:
+de_dupe_long_df$participant_ID <- sapply(de_dupe_long_df$PROLIFIC_PID, digest::digest, algo = "md5") 
+
+# remove prolific ID
+de_dupe_long_df <- de_dupe_long_df |> select(-c(PROLIFIC_PID, ResponseId))
+
+# reorder columns
+de_dupe_long_df <- de_dupe_long_df |> select(participant_ID, everything())
+```
+
+```{r}
+working_df <- de_dupe_long_df
+
+public_df <- working_df %>% select(
+  -Age, -Sex, 
+  -`Ethnicity simplified`, `Country of birth`, 
+  -`Total approvals`, -Nationality, 
+  `Country of residence`, Language, 
+  `Student status`, `Employment status`)
+
+rm(de_dupe_long_df)
+```
+
+```{r}
+save(working_df, file = here("VI_data_collection_november_2022", "intermediary_data", "working_df.RDS"))
+save(public_df, file = here("VI_data_collection_november_2022", "intermediary_data", "public_df.RDS"))
+write.csv(public_df, file = here("VI_data_collection_november_2022", "intermediary_data", "public_df.csv"))
+```
+

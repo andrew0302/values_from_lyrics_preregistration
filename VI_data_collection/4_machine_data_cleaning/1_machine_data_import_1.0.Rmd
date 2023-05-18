@@ -1,0 +1,75 @@
+---
+title: "machine data import"
+author: "Andrew M. Demetriou"
+---
+
+#AIM: Import and format machine scores data provided by Jaehun Kim. 
+
+```{r}
+library('here')         # file logistics
+library('data.table')   # data logistics  
+library('tidyverse')    # data logistics
+```
+
+```{r}
+# create list of machine output file names
+path <- here("VI_data_collection", "_data", "machine_scores")
+files <- list.files(path)
+```
+
+
+```{r}
+# create list of read in files
+machines_as_subjects <- lapply(files, function(x){
+  # read in file
+  df <- fread(input = here(path, x))
+  # create machine ID column, remove file extension
+  df$machine_ID <- gsub("\\..*","",x)
+  # reorder columns
+  df <- df %>% select(machine_ID, song_id, all_of(everything()))
+  return(df)
+})
+
+# turn list into a single data.table
+machines_as_subjects <- rbindlist(machines_as_subjects)
+# transform to character column
+machines_as_subjects$song_id <- as.character(machines_as_subjects$song_id)
+```
+
+```{r}
+# load participant response dataset
+source(here("VI_data_collection", "_functions", "format_response_data_1.1.R"))
+
+# unique item_ids for subsetting machine output dataframe
+item_ids <- responses_dt %>% select(item_ID) %>% unique()
+
+# subset machine output dataframe
+machines_as_subjects <- machines_as_subjects[song_id %in% item_ids$item_ID, ]
+```
+
+```{r}
+# organize columns
+machines_as_subjects <- machines_as_subjects %>% select(-V1)
+
+machines_as_subjects$row_number <- seq(1:nrow(machines_as_subjects))
+
+colnames(machines_as_subjects) <- c("participant_ID", "item_ID", 
+                                    "SECURITY", "CONFORMITY", "TRADITION", 
+                                    "BENEVOLENCE", "UNIVERSALISM", "SELF", 
+                                    "STIMULATION", "HEDONISM", 
+                                    "ACHIEVEMENT", "POWER", "row_number"
+                                    )
+
+machines_as_subjects <- machines_as_subjects %>% 
+    select(row_number, participant_ID, item_ID, 
+         POWER, ACHIEVEMENT, HEDONISM, 
+         STIMULATION, SELF, UNIVERSALISM, 
+         BENEVOLENCE, TRADITION, 
+         CONFORMITY, SECURITY)
+```
+
+```{r}
+saveRDS(machines_as_subjects, file = here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS"))
+write_csv(machines_as_subjects, file = here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.csv"))
+```
+

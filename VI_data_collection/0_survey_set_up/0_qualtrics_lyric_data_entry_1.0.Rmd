@@ -1,0 +1,65 @@
+---
+title: "helper notebook for qualtrics data entry"
+author: "Andrew M. Demetriou"
+date: '2022-11-17'
+---
+
+# AIM: To faciliate copy+paste data entry to Qualtrics
+
+This notebook was used to display the mxm id of each song along with the raw lyrics, to make copy and pasting the data into a Qualtrics Survey. 
+
+Note: the original plan was to use formR. However, the surver at Gottingen could not be verified as GDPR compliant by our data stewards, and our attempt to set up a formR server at TU Delft failed. Thus we defaulted to Qualtrics. 
+
+```{r}
+library("here")
+library("data.table")
+library("tidyverse")
+library("knitr")
+```
+
+```{r}
+# file names: SET THESE TO THE CURRENT FILES
+lyrics_file    <- "not_simple_medium_alpha_2021_full_2_2.csv"
+selection_file <- "not_simple_medium_alpha_2021_full_10w (2).csv"
+
+# paths with data and template
+primary_data_file_path <- here("IV_survey_builder", "primary_data_")
+template_file_path <- here("IV_survey_builder", "template_files_")
+```
+
+```{r}
+# lyrics datasets
+all_lyrics_dt     <- fread(here(primary_data_file_path, lyrics_file)) %>% select(mxm_id, lyrics_body)
+
+# manual selection process
+selected_dt <- fread(here(primary_data_file_path, selection_file)) %>% 
+  select(mxm_id, Keep) %>% 
+  # these are the four identifiers from the lyric rating process
+  filter(Keep == "O" | Keep == "o" | Keep == "m" | Keep == "M" | Keep == "a" | Keep == "A")
+
+# making a single df
+selected_dt <- merge(selected_dt, all_lyrics_dt, be=mxm_id) |>
+  select(mxm_id, lyrics_body)
+
+rm(all_lyrics_dt, lyrics_file, primary_data_file_path, template_file_path, selection_file)
+```
+
+```{r}
+row_number <- 361
+
+kable(selected_dt[row_number,2])
+
+kable(selected_dt[row_number,1])
+
+#-t
+#-w
+#-f
+#-t
+#-1
+#-m
+#-c
+#-r
+```
+
+
+

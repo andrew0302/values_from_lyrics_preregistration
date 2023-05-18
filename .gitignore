@@ -69,14 +69,14 @@ I_time_pilot/response_data/validation_internal_pilot_3.0_Responses in Progress.c
 II_rater_pilot/response_data/prolific_export_619f3c47f6b78ee67274583e.csv
 II_rater_pilot/response_data/annotation_number_estimation _2.2_November 28, 2021_07.51.csv
 
-VI_data_collection_november_2022/response_data/annotation_run_1_April 5, 2023_06.28.csv
-VI_data_collection_november_2022/response_data/annotation_run_1_April 5, 2023_06.23.csv
-VI_data_collection_november_2022/response_data/prolific_export_637357bf150585a4675a4b6b.csv
 
-# working data set
-VI_data_collection_november_2022/intermediary_data/all_dt.RDS
-VI_data_collection_november_2022/intermediary_data/working_df.RDS
-VI_data_collection_november_2022/intermediary_data/working_df.csv
+VI_data_collection/_data/survey_response_data/annotation_run_1_April 5, 2023_06.28.csv
+VI_data_collection/_data/survey_response_data/annotation_run_1_April 5, 2023_06.23.csv
+VI_data_collection/_data/survey_response_data/prolific_export_637357bf150585a4675a4b6b.csv
+
+# workding dataframes
+VI_data_collection/_data/survey_response_data/all_dt.RDS
+VI_data_collection/_data/survey_response_data/working_df.RDS
 
 # raw lyric data
 IV_survey_builder/primary_data_/
@@ -86,6 +86,7 @@ IV_survey_builder/survey_files_/annotation_run_1_set_3.csv
 IV_survey_builder/survey_files_/annotation_run_1_set_4.csv
 IV_survey_builder/survey_files_/annotation_run_1_set_5.csv
 IV_survey_builder/survey_files_/annotation_run_1_set_6.csv
-
+VI_data_collection/_data/primary_data/lyrics.txt
+VI_data_collection/_data/primary_data/lyrics.csv
 
   # End of https://www.gitignore.io/api/r

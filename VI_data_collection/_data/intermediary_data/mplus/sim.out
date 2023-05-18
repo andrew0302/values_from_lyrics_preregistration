@@ -1,0 +1,76 @@
+Mplus VERSION 8.6 (Mac)
+MUTHEN & MUTHEN
+05/18/2023   2:45 PM
+
+INPUT INSTRUCTIONS
+
+  TITLE:
+  model;
+  DATA:
+  FILE = "VI_data_collection/_data/intermediary_data/mplus/sim_1a268b2b17594948921b350f125fd
+
+  VARIABLE:
+  NAMES = row_number subject_ID item_ID y1 y2 y3 y4 y5 y6 y7 y8 y9 y10;
+   MISSING=.;
+
+    USEVARIABLES = item_ID subject_ID y1-y10;
+    CLUSTER = item_ID subject_ID;
+    IDVARIABLE = row_number;
+  ANALYSIS:
+
+    TYPE = CROSSCLASSIFIED RANDOM;
+    ESTIMATOR = BAYES;
+    FBITERATIONS = 10000;
+    ALGORITHM = GIBBS(RW);
+    PROCESSORS = 11;
+  MODEL:
+
+
+    %within%
+    y1-y10;
+
+    %between item_ID%
+    y1-y10; [y1-y10];
+    y1 WITH y1-y10;
+    y2 WITH y1-y10;
+    y3 WITH y1-y10;
+    y4 WITH y1-y10;
+    y5 WITH y1-y10;
+    y6 WITH y1-y10;
+    y7 WITH y1-y10;
+    y8 WITH y1-y10;
+    y9 WITH y1-y10;
+    y10 WITH y1-y10;
+
+    %between subject_ID%
+    y1-y10; [y1-y10@0];
+  OUTPUT:
+  standardized cinterval(hpd)
+  SAVEDATA:
+  FILE IS fscores.dat;
+                Save = fscores(100 10);
+
+*** WARNING
+  Input line exceeded 90 characters. Some input may be truncated.
+  FILE = "VI_data_collection/_data/intermediary_data/mplus/sim_1a268b2b17594948921b350f125fd6
+*** WARNING in DATA command
+  Statement not terminated by a semicolon:
+  FILE = "VI_data_collection/_data/intermediary_data/mplus/sim_1a268b2b17594948921b350f125fd6
+*** WARNING in DATA command
+  Mismatched quotation in FILE option.  A quotation mark will be assumed at
+  the end of the line.
+*** ERROR in DATA command
+  The file specified for the FILE option cannot be found.  Check that this
+  file exists:  VI_data_collection/_data/intermediary_data/mplus/sim_1a268b2b17594948921b350f125fd6
+
+
+MUTHEN & MUTHEN
+3463 Stoner Ave.
+Los Angeles, CA  90066
+
+Tel: (310) 391-9971
+Fax: (310) 391-8971
+Web: www.StatModel.com
+Support: Support@StatModel.com
+
+Copyright (c) 1998-2021 Muthen & Muthen
