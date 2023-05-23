@@ -13,8 +13,9 @@ library("boot")            # bootstrapping CIs
 library('ggplot2')         # visualization
 library('corrplot')        # visualization
 
-# load dataset
-source(here("VI_data_collection", "2_intermediary_data_computing", "1_format_response_data_1.1.R"))
+# load datasets
+source(here("VI_data_collection", "_functions", "format_response_data_1.1.R"))
+machines_as_subjects_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS"))
 
 options(scipen=999)
 theme_set(theme_minimal())
@@ -51,8 +52,37 @@ source(here("VI_data_collection", "2_intermediary_data_computing", "_mplus_model
  fit$results$errors
  fit$results$warnings
 
-saveRDS(fit, here("VI_data_collection", "_data","intermediary_data", "mplus_participant_model_1.0.RDS"))
+saveRDS(fit, here("VI_data_collection", "_data", "intermediary_data", "mplus_participant_model_1.0.RDS"))
  
 # rm(mplus_model)
 ```
+
+
+```{r}
+# select only ID columns and values scores
+df <- machines_as_subjects_df %>% select(row_number, participant_ID, item_ID, all_of(values))
+
+# rename columns to have same names as in functions
+colnames(df) <- c("row_number", "subject_ID", "item_ID", paste0("y", seq(1, 10)))
+df <- as.data.frame(df)
+
+rm(machines_as_subjects_df)
+```
+
+```{r}
+# run mplus model
+# load mplus model
+source(here("VI_data_collection", "2_intermediary_data_computing", "_mplus_models", "participant_model_1.0.R"))
+
+ fit <- mplusModeler(mplus_model, 
+                     modelout = "VI_data_collection/_data/mplus_output/sim.inp", 
+                     run=TRUE)
+
+# print errors and warnings
+ fit$results$errors
+ fit$results$warnings
+
+saveRDS(fit, here("VI_data_collection", "_data", "intermediary_data", "m_mplus_participant_model_1.0.RDS"))
+```
+
 

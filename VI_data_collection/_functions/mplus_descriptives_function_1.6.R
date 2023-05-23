@@ -96,7 +96,9 @@ bootstrap_SD_list <- function(
  
  # create list of bootstrapped outputs
  boots <- apply(boot_df, 2, function(y){
-   b <- boot(y, samplesd,R=1000);
+   # y <- boot_df$POWER
+   #b <- boot(y, samplesd, R=1000);
+   b <- boot(y, samplesd, R=10000);
    boot.ci(b)
    }) 
  

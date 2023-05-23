@@ -1,7 +1,7 @@
 TITLE:
 model;
 DATA:
-FILE = "VI_data_collection/_data/mplus_output/sim_1a268b2b17594948921b350f125fd6f0.dat";
+FILE = "VI_data_collection/_data/mplus_output/sim_9772a021284f2985292e007ea39733fa.dat";
  
 VARIABLE:
 NAMES = row_number subject_ID item_ID y1 y2 y3 y4 y5 y6 y7 y8 y9 y10; 

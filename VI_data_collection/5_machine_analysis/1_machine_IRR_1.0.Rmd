@@ -13,6 +13,12 @@ library('ggplot2')         # visualization
 library('ggridges')        # joyplot visualization
 library('psych')           # intra class correlation
 
+# remove scientific notation
+options(scipen=999)
+# set ggplot theme to minimal
+theme_set(theme_minimal())
+
+# load dataset
 machines_as_subjects_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS"))
 
 # include names of variables
@@ -36,7 +42,8 @@ list_of_icc_dfs <-  lapply(values, function(value){
   df <- machines_as_subjects_df %>% dplyr::select(participant_ID, item_ID, value) %>%
     pivot_wider(names_from = participant_ID, values_from = value)
   icc_df <- df %>% select(-item_ID) %>% ICC()
-  icc_df <- icc_df$results %>% filter(type =="ICC2k" | type == "ICC2")
+  #icc_df <- icc_df$results %>% filter(type =="ICC2k" | type == "ICC2")
+  icc_df <- icc_df$results %>% filter(type =="ICC2k")
   icc_df$value <- value
   return(icc_df)
 })
@@ -44,82 +51,110 @@ list_of_icc_dfs <-  lapply(values, function(value){
 icc_df <- rbindlist(list_of_icc_dfs)
 ```
 
+"Based on the 95% confident interval of the ICC estimate, values less than 0.5, between 0.5 and 0.75, between 0.75 and 0.9, and greater than 0.90 are indicative of poor, moderate, good, and excellent reliability..."
+
 ```{r}
 icc_df %>%
-  ggplot(aes(x=ICC, y=value, color = type, group=type)) +
+  ggplot(aes(x=ICC, y=value, color = value)) +
   geom_point() +
-  geom_errorbar(xmin = icc_df$`lower bound`, xmax = icc_df$`upper bound`)
+  geom_errorbar(xmin = icc_df$`lower bound`, xmax = icc_df$`upper bound`) +
+  xlim(0, 1) + 
+  geom_vline(xintercept = .5, color = "red", linetype = "dotted") +
+  theme(legend.position = "none")
 
-icc_df %>% group_by(type) %>%
-  dplyr::summarize(mean = mean(ICC), sd = sd(ICC))
+#icc_df %>% group_by(type) %>%
+#  dplyr::summarize(mean = mean(ICC), sd = sd(ICC))
 
-rm(icc_df)
+#rm(icc_df)
 ```
 
 ```{r}
-# load lme4 functions
-source(here("VI_data_collection_november_2022", "functions", "lme4_descriptives_function_1.7.R"))
+get_icc <- function(df=machines_as_subjects_df, n, value){
+  df$item_ID <- as.factor(df$item_ID)
 
-# load mplus functions
-source(here("VI_data_collection_november_2022", "functions", "mplus_descriptives_function_1.6.R"))
+  df%>% select(value)
+  
+  # get canonical mean per value
+  canon <- df %>%
+      #select only stimuli columns
+      dplyr::select(item_ID, value, -participant_ID) %>%
+      #group by each column
+      group_by(item_ID) %>%
+      #calculate means of all columns
+      summarize_all(mean)
+  
+  # subsample data
+  data_sample <- df %>% select(participant_ID, item_ID, value) %>% 
+    group_by(item_ID) %>%
+    sample_n(n) %>% ungroup() 
+  
+  # calculate mean sample ratings
+  sample_means <- data_sample %>%
+    select(-participant_ID) %>%
+    group_by(item_ID) %>%
+    summarize_all(mean)
+  
+  # calculate correlation between sample mean and canonical mean
+  cor <- cor(canon[,2], sample_means[,2])[[1,1]]
+  
+  # compute ICC
+  icc_df <- data_sample %>%
+    pivot_wider(names_from = participant_ID, values_from = value) %>%
+    select(-item_ID) %>% ICC() 
+  
+  # subset rows
+  icc_df <- icc_df$results %>% filter(type == 'ICC2k') %>%
+    select(type, ICC, `lower bound`, `upper bound`)
+  
+  # remove rownames
+  rownames(icc_df) <- NULL
+  
+  # collect values to return
+  icc_df$value <- value
+  icc_df$n <- n
+  icc_df$cor <- cor
+  
+  return(icc_df)
+}  
+
+#t <- get_icc(machines_as_subjects_df, n=15, value=values[[2]])
 ```
 
 ```{r}
-# select only ID columns and values scores
-df <- machines_as_subjects %>% select(participant_ID, item_ID, all_of(values))
+samples_of_ICC <- function(
+  value,
+  df = machines_as_subjects_df, 
+  n_samples = 15, 
+  n_raters = seq(2, 10, by = 1)
+  ){
+  #draw n_raters number of samples n_samples number of times
+  icc_tibble <- rep(n_raters, each = n_samples) %>% 
+    purrr::map_df( function(n) { 
+      get_icc(df, n, value)
+    })
+  return(icc_tibble)
+}
 
-# rename columns to have same names as in functions
-colnames(df) <- c("subject_ID", "item_ID", values)
+#s<- samples_of_ICC(value = values[[2]])
 ```
 
 ```{r}
-# run lmer models for each value as the dependent variable 
-
-# extract standard deviation 95% CI for participants and songs by value
-
- lme4_random_effect_sd_dt <- df |> 
-   assemble_random_effect_sd_dt()
-
-# save object
-# save(lme4_random_effect_sd_dt, file = here("VI_data_collection_november_2022", "intermediary_data", "lme4_random_effect_sd_dt.RDS"))
-
-#load(here("VI_data_collection_november_2022", "intermediary_data", "lme4_random_effect_sd_dt.RDS"))
-```
-
-
-```{r}
-# plot estimated SD for participant random effect, by value and software
-lme4_random_effect_sd_dt %>%
-  ggplot(aes(x=model, y=subject_ID, color = model)) +
-  geom_point(size = 3) +
-  geom_errorbar(aes(ymin=subject_ID_lower, ymax=subject_ID_higher)) +
-  theme(axis.text.x = element_text(angle = 45)) +
-  xlab("") +
-  ylab("") +
-  guides(color = 'none') +
-  ggtitle("participant random effect SD")
+list_of_icc_dfs <- lapply(values, samples_of_ICC)
+sampled_icc_df <- rbindlist(list_of_icc_dfs)
 ```
 
 ```{r}
-# plot estimated SD for participant random effect, by value and software
-lme4_random_effect_sd_dt %>%
-  ggplot(aes(x=model, y=item_ID, color = model)) +
-  geom_point(size = 3) +
-  geom_errorbar(aes(ymin=item_ID_lower, ymax=item_ID_higher)) +
-  theme(axis.text.x = element_text(angle = 45)) +
-  xlab("") +
-  ylab("") +
-  guides(color = 'none') +
-  ggtitle("item random effect SD")
-```
+p3 <- sampled_icc_df %>%
+  #filter(type == "ICC2") %>%
+  ggplot(aes(cor, color = as.factor(n))) +
+  facet_grid(~value)+
+  #geom_density(alpha = 0.3) + 
+  geom_line(stat = 'density', alpha = .5) +
+  theme(axis.text.x = element_text(angle = 90), 
+        strip.text.x = element_text(size = 4)) +
+  coord_flip()
 
-```{r}
-lme4_intercept_and_predicted_dt %>%
-  group_by(value) %>%
-  ggplot(aes(x= intercept, y = value, fill =value, alpha = 0.7)) +
-  geom_density_ridges() + 
-  theme(legend.position = "none") + 
-  xlab("item intecepts") + 
-  ylab("schwartz value")
+
+p3
 ```
 
