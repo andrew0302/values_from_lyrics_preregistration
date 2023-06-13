@@ -13,7 +13,7 @@ library('tidyverse')    # data logistics
 
 ```{r}
 # create list of machine output file names
-path <- here("VI_data_collection", "_data", "machine_scores")
+path <- here("VI_data_collection", "_data", "machine_scores", "first_export")
 files <- list.files(path)
 ```
 

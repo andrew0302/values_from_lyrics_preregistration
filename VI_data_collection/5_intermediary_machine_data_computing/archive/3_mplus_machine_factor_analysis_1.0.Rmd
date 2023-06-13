@@ -1,0 +1,47 @@
+---
+title: "machine factor analysis"
+---
+
+```{r}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library("MplusAutomation") # Mplus integration
+library("psych")           # factor analysis
+library("ggplot2")         # visualization
+library("corrplot")        # correlation plot
+
+# load datasets
+machines_as_subjects_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS"))
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM", 
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION", 
+            "CONFORMITY", "SECURITY")
+
+# pivot to wide: each machine / value combination is a column
+machines_as_fixed_df <- machines_as_subjects_df %>%
+  pivot_wider(id_cols = item_ID, names_from = participant_ID, values_from = all_of(values))
+
+rm(machines_as_subjects_df, values)
+```
+
+```{r}
+df <- machines_as_fixed_df
+
+# save column names
+column_names <- colnames(df) %>% as.data.frame()
+column_names$renamed <- c("item_ID", paste0("z", seq(1:440)))
+
+# rename for mplus syntax
+colnames(df) <- c("item_ID", paste0("z", seq(1:440)))
+
+# add row number for mplus output
+df$row_number <- seq(1:nrow(df))
+
+rm(machines_as_fixed_df)
+```
+
+
+
+

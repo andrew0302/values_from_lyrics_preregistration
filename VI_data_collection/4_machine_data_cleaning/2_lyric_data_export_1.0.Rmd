@@ -40,7 +40,9 @@ rm(all_lyrics_dt, lyrics_file, primary_data_file_path, template_file_path, selec
 
 
 ```{r}
-export_dt <- selected_dt
+export_dt <- selected_dt[1:360]
+mxm_ids <- export_dt$mxm_id %>% as.data.frame()
+colnames(mxm_ids) <- "song_ID"
 
 # remove punctuation from lyric data
 export_dt$lyrics_body <- gsub(",", "", export_dt$lyrics_body)
@@ -51,9 +53,9 @@ export_dt <- export_dt %>% mutate(across(everything(), ~str_remove_all(., '"')))
 ```
 
 ```{r}
-#write.csv(export_dt, here("VI_data_collection_november_2022", "primary_data", "lyrics.csv"), row.names=FALSE)
-
 path <- here("VI_data_collection", "_data","primary_data", "lyrics.txt")
 writeLines(export_dt$lyrics_body, path)
+
+saveRDS(mxm_ids, here("VI_data_collection", "_data", "primary_data", "mxm_ids"))
 ```
 

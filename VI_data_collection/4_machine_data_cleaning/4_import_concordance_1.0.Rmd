@@ -1,0 +1,59 @@
+---
+title: "machine score import concordance"
+---
+
+
+```{r}
+library('here')         # file logistics
+library('tidyverse')    # data logistics
+library('data.table')   # read in data
+```
+
+```{r}
+# read in machine scores provided by Jaehun
+df_1 <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS")) %>%
+  filter(participant_ID == "googlenews_idf_weight_lyrics")
+```
+
+```{r}
+# read in scores from second export
+path <- here("VI_data_collection", "_data", "machine_scores", "second_export")
+df_2 <- fread(input = here(path, "word2vec-google-news_idf.csv"))
+
+# name machine setup
+df_2$participant_ID <- "word2vec-google-news_idf.csv"
+
+# drop last row
+df_2 <- df_2 %>% filter(V1 != '360')
+```
+
+```{r}
+# read in scores from third export
+path <- here("VI_data_collection", "_data", "machine_scores", "third_export")
+#list.files(path)
+df_3 <- fread(input = here(path, "word2vec-google-news_idf.csv"))
+```
+
+```{r}
+cor(df_1$POWER, df_2$power)
+cor(df_1$ACHIEVEMENT, df_2$achievement)
+cor(df_1$HEDONISM, df_2$hedonism)
+```
+
+```{r}
+cor(df_1$POWER, df_3$power)
+cor(df_2$power, df_3$power)
+```
+
+```{r}
+cor(df_1$POWER, df_2$power)
+cor(df_1$POWER, df_2$security)
+cor(df_1$POWER, df_2$conformity)
+cor(df_1$POWER, df_2$tradition)
+cor(df_1$POWER, df_2$benevolence)
+cor(df_1$POWER, df_2$universalism)
+cor(df_1$POWER, df_2$`self-direction`)
+cor(df_1$POWER, df_2$stimulation)
+cor(df_1$POWER, df_2$hedonism)
+cor(df_1$POWER, df_2$achievement)
+```

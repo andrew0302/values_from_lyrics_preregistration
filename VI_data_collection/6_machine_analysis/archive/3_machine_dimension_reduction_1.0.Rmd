@@ -1,0 +1,208 @@
+---
+title: "machine factor analysis"
+---
+
+```{r}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library("psych")           # factor analysis
+library("ggplot2")         # visualization
+library("corrplot")        # correlation plot
+library('FactoMineR')      # extracting principal components
+library('factoextra')      # visualization
+
+# load datasets
+machines_as_subjects_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS"))
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM", 
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION", 
+            "CONFORMITY", "SECURITY")
+
+# pivot to wide: each machine / value combination is a column
+machines_as_fixed_df <- machines_as_subjects_df %>%
+  pivot_wider(id_cols = item_ID, names_from = participant_ID, values_from = all_of(values))
+
+# create dataframe with only mxm trained scores
+MFA_df <- machines_as_fixed_df %>% 
+  select(-item_ID) %>%
+  select(-(all_of(contains("glove")))) %>%
+  select(-(all_of(contains("google"))))
+
+# reorder columns
+MFA_df <- MFA_df %>% 
+  select(intersect(contains("far"), contains("idf")), 
+         intersect(contains("far"), contains("uniform")), 
+         intersect(contains("split"), contains("idf")), 
+         intersect(contains("split"), contains("uniform"))
+         ) 
+```
+
+```{r}
+build_factor_loadings_df <- function(scores_df=machines_as_subjects_df, n_factors=1){
+  
+  #scores_df <- machines_as_subjects_df
+  #n_factors = 2
+  #x <- machine_fas[[1]]
+  
+  # pivot to wide: each machine / value combination is a column
+  machines_as_fixed_df <- scores_df %>%
+  pivot_wider(id_cols = item_ID, names_from = participant_ID, values_from = all_of(values))
+  
+  # run factor analyses and store as list
+  machine_fas <- lapply(values, function(x){
+  machines_as_fixed_df %>% select(starts_with(x)) %>%
+    fa(nfactors=n_factors, fm="ml")
+  })
+  
+  # extract factor loadings as a list, format as data.table
+  machine_loadings_list <- lapply(machine_fas, function(x){
+    df <- x$loadings[1:44,] %>% as.data.frame()
+    df$participant_ID <- rownames(df)
+    rownames(df) <- NULL
+    #colnames(df) <- c("loadings", "participant_ID")
+    setDT(df)
+    return(df)
+  })
+
+  # bind list into a single data.table
+  machine_loadings_df <- rbindlist(machine_loadings_list)
+
+  # create a new column for each value
+  lapply(values, function(x){
+    machine_loadings_df[grepl(x, machine_loadings_df$participant_ID), value := x]
+  })
+
+  # remove value name from participant_ID column
+  for(value in values){
+    machine_loadings_df$participant_ID <- gsub(paste0(value, "_"), "", machine_loadings_df$participant_ID)
+  }
+
+  machine_loadings_df$participant_ID <- gsub("_weight_lyrics", "", machine_loadings_df$participant_ID)
+  machine_loadings_df$participant_ID <- gsub("mxm_", "", machine_loadings_df$participant_ID)
+
+  return(machine_loadings_df)
+
+}
+```
+
+
+```{r}
+factor_1_df <- build_factor_loadings_df(n_factors = 1)
+
+factor_1_df %>%
+  ggplot(aes(participant_ID, abs(.), fill = .)) +
+  facet_wrap(~value, nrow=1) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  scale_fill_gradient2(name = "Loading", 
+                       high = "blue", mid = "white", low = "red", 
+                       midpoint = 0, guide = "none") +
+  ylab("loading") +
+  theme_bw(base_size =10) +
+  theme(axis.text.x= element_text(angle = 90))
+```
+
+```{r}
+show_correlation_plot <- function(df=machines_as_fixed_df, value="POWER"){
+  df <- df %>% select(any_of(starts_with(value)))
+  cor_mat <- cor(df)
+  rownames(cor_mat) <- NULL
+  colnames(cor_mat) <- NULL
+  corrplot(cor_mat, title = value)
+}
+```
+
+```{r}
+for(value in values){
+  show_correlation_plot(value=value)
+}
+```
+
+```{r}
+rm(factor_1_df, machines_as_fixed_df, machines_as_subjects_df, value, build_factor_loadings_df, show_correlation_plot)
+```
+
+
+```{r}
+run_MFA <- function(df=MFA_df, value="POWER"){
+  
+  MFA(df %>% select(all_of(starts_with(value))) %>%
+        scale(), 
+    group = c(10, 10, 10, 10), 
+    type = rep("s",4), 
+    name.group = c("faruqui idf", "faruqui uniform", 
+                   "split idf", "split uniform"))
+}
+```
+
+
+```{r}
+format_MFA_output_df <- function(MFA_output#, value="POWER"
+                                 ){
+  
+  # MFA_output <- MFA_power
+  # extract overall eigenvalues
+  overall <- MFA_output$eig[1:3,1:3] %>% 
+    # format as dataframe
+    as.data.frame() %>% 
+    # add column identifier
+    mutate("model" = "overall")
+  
+  # extract eigenvalues per model
+  model_components <- lapply(MFA_output$separate.analyses, function(x){
+    return(x$eig[1:3,1:3]%>%as.data.table())
+  })
+  
+  # create column identifier
+  model_names <- names(model_components)
+
+  #setDT(model_components)
+  model_components_df <- rbindlist(model_components, idcol = TRUE)
+  colnames(model_components_df) <- c("model", "eigenvalue","percentage of variance", "cumulative percentage of variance")
+  
+  # coerce to single df
+  model_output_df <- rbind(overall, model_components_df)
+  #model_output_df$value <- value
+  rownames(model_output_df) <- NULL
+  model_output_df$comp <- rep(c("comp 1", "comp 2", "comp 3"), 5)
+  return(model_output_df)
+}
+
+#run_MFA(MFA_df, value = "POWER")
+#t<-format_MFA_output_df(MFA_power, value = "POWER")
+```
+
+```{r}
+# run MFAs on machine setups for each value
+MFA_list <- lapply(values, function(x){
+  run_MFA(df=MFA_df, value = x)
+})
+names(MFA_list) <- values
+
+# format into a list
+formatted_MFA_df <- lapply(MFA_list, format_MFA_output_df) %>%
+  rbindlist(., idcol=T)
+
+rm(formatted_MFA_df, MFA_list,run_MFA, format_MFA_output_df)
+```
+
+
+```{r}
+far_idf_df <- MFA_df %>% select(intersect(contains("far"), contains("idf")))
+#far_idf_df%>%select(starts_with("POWER"))%>%pairs.panels()
+#far_idf_df%>%select(starts_with("HEDONISM"))%>%pairs.panels()
+#far_idf_fa <- fa(far_idf_df, nfactors=1, rotate="none")
+
+far_idf_fas <- lapply(values, function(x){
+  far_idf_df %>% select(starts_with(value)) %>%
+    fa(., nfactors=1, rotate="none")
+})
+names(far_idf_fas) <- values
+```
+
+```{r}
+far_idf_fas[[1]]
+```
+

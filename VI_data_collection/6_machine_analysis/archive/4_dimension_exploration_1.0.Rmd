@@ -1,0 +1,86 @@
+---
+title: "dimension reduction"
+author: "Andrew M. Demetriou"
+---
+
+```{r}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library('corrr')           # correlation analysis
+library('FactoMineR')      # extracting principal components
+library('factoextra')      # visualization
+library('ggplot2')         # visualization
+library("corrplot")        # correlation plot
+options(scipen=999)
+
+# load datasets
+machines_as_subjects_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS"))
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM", 
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION", 
+            "CONFORMITY", "SECURITY")
+
+# pivot to wide: each machine / value combination is a column
+machines_as_fixed_df <- machines_as_subjects_df %>%
+  pivot_wider(id_cols = item_ID, names_from = participant_ID, values_from = all_of(values))
+```
+
+```{r}
+faruqui_idf_df <-machines_as_fixed_df %>% 
+  select(all_of(starts_with("HEDONISM"))) %>%
+  select(all_of(contains("faruqui"))) %>%
+  select(all_of(contains("idf"))) %>%
+  scale()
+```
+
+```{r}
+show_correlation_plot <- function(df){
+  cor_mat <- cor(df)
+  rownames(cor_mat) <- NULL
+  colnames(cor_mat) <- NULL
+  corrplot(cor_mat)
+}
+```
+
+```{r}
+df.pca <- princomp(faruqui_idf_df)
+summary(df.pca)
+#df.pca$loadings[, 1:2]
+
+# correlation plot
+show_correlation_plot(faruqui_idf_df)
+
+# Scree plot
+fviz_eig(df.pca, addlabels = TRUE)
+
+# square cosine plot
+#fviz_cos2(df.pca, choice = "var", axes = 1:2)
+
+# biplot
+fviz_pca_var(df.pca, col.var="cos2", gradient.cols = c("blue", "purple", "red"), 
+             repel=TRUE)
+```
+
+```{r}
+power_mfa <- MFA(machines_as_fixed_df%>%select(-item_ID)%>%select(all_of(starts_with("POWER"))), 
+    group = c(1, 1, 1, 1, 10, 10, 10, 10), 
+    type = rep("s",8), 
+    name.group = c("glove idf", "glove uniform", 
+                   "word2vec idf", "word2vec uniform", 
+                   "faruqui idf", "faruqui uniform", 
+                   "split idf", "split uniform")
+    )
+```
+```{r}
+achievement_mfa <- MFA(machines_as_fixed_df%>%select(-item_ID)%>%select(all_of(starts_with("ACHIEVEMENT"))), 
+    group = c(1, 1, 1, 1, 10, 10, 10, 10), 
+    type = rep("s",8), 
+    name.group = c("glove idf", "glove uniform", 
+                   "word2vec idf", "word2vec uniform", 
+                   "faruqui idf", "faruqui uniform", 
+                   "split idf", "split uniform")
+    )
+```
+

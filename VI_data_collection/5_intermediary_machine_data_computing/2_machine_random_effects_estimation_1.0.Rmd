@@ -1,0 +1,104 @@
+---
+title: "machine random effect estimation"
+author: "Andrew M. Demetriou"
+date: "`r Sys.Date()`"
+---
+
+```{r}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('dplyr')           # data manipulation
+library('tidyr')           # data manipulation
+library('ggplot2')         # visualization
+library('ggridges')        # joyplot visualization
+library('psych')           # intra class correlation
+
+# remove scientific notation
+options(scipen=999)
+# set ggplot theme to minimal
+theme_set(theme_minimal())
+
+# load dataset
+machines_as_subjects_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS"))
+
+# include names of variables
+values<-c("POWER", "ACHIEVEMENT", "HEDONISM",  
+          "STIMULATION", "SELF", "UNIVERSALISM", 
+          "BENEVOLENCE", "TRADITION",  
+          "CONFORMITY", "SECURITY")
+```
+
+```{r}
+# load lme4 functions
+source(here("VI_data_collection", "_functions", "lme4_descriptives_function_1.7.R"))
+
+# load mplus functions
+source(here("VI_data_collection", "_functions", "mplus_descriptives_function_1.6.R"))
+```
+
+```{r}
+# select only ID columns and values scores
+df <- machines_as_subjects_df %>% select(participant_ID, item_ID, all_of(values))
+
+# rename columns to have same names as in functions
+colnames(df) <- c("subject_ID", "item_ID", values)
+```
+
+```{r}
+# run lmer models for each value as the dependent variable 
+
+# extract standard deviation 95% CI for participants and songs by value
+
+ m_lme4_random_effect_sd_dt <- df |> 
+   assemble_random_effect_sd_dt()
+
+# save object
+save(m_lme4_random_effect_sd_dt, file = here("VI_data_collection", "_data","intermediary_data", "m_lme4_random_effect_sd_dt.RDS"))
+```
+
+```{r}
+# run lmer models for each value as the dependent variable 
+# extract item intercepts and .fitted values for each observation
+m_lme4_intercept_and_predicted_dt <- df %>% assemble_intercept_and_predicted_dt()
+
+# save object
+save(m_lme4_intercept_and_predicted_dt, file = here("VI_data_collection", "_data", "intermediary_data", "m_lme4_intercept_and_predicted_dt.RDS"))
+```
+
+```{r}
+fit <- readRDS(here("VI_data_collection", "_data","intermediary_data", "m_mplus_participant_model_1.0.RDS"))
+```
+
+```{r}
+# select only ID columns and values scores
+df <- machines_as_subjects_df %>% select(row_number, participant_ID, item_ID, all_of(values))
+
+# rename columns to have same names as in functions
+colnames(df) <- c("row_number", "subject_ID", "item_ID", paste0("y", seq(1, 10)))
+df <- as.data.frame(df)
+
+rm(machines_as_subjects_df)
+```
+
+```{r}
+# extract standard deviation 95% CI for participants and songs by value
+m_mplus_random_effect_sd_dt <- assemble_ci_dfs(df, fit)
+
+# save object
+save(m_mplus_random_effect_sd_dt, file = here("VI_data_collection", "_data","intermediary_data", "m_mplus_random_effect_sd_dt.RDS"))
+```
+
+```{r}
+# retrieve item intercepts from mplus model fscores output:
+m_mplus_intercept_df <- get_random_intercepts_mplus(df, fit, intercept = 'item_ID')
+
+# format table
+m_mplus_intercept_df <- m_mplus_intercept_df %>% 
+  pivot_longer(cols = all_of(values), names_to = "value", values_to = "intercept") %>%
+  arrange(value, ITEM_ID)
+
+# save object
+save(m_mplus_intercept_df, file = here("VI_data_collection", "_data","intermediary_data", "m_mplus_intercept_df.RDS"))
+```
+
+
