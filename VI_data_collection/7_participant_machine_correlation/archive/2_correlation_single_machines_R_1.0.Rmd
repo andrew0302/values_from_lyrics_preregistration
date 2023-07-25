@@ -1,0 +1,156 @@
+---
+title: title: "estimate correlations, single machines model, with R"
+---
+
+
+```{r}
+library('data.table')      # data manipulation
+library('here')            # file logistics
+library('tidyverse')       # data manipulation
+library("ggplot2")         # visualization
+library("corrr")           # multiple correlations
+library("boot")            # bootstrapped CIs of correlations
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM", 
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION", 
+            "CONFORMITY", "SECURITY")
+```
+
+```{r}
+# load machine dataset
+load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_f_df.RDS"))
+machines_as_fixed_f_df <- machines_as_fixed_f_df %>% select(-(contains("mean")))
+
+# lme4 item intercepts
+load(here("VI_data_collection", "_data","intermediary_data", "lme4_intercept_and_predicted_dt.RDS"))
+
+# mplus item intercepts
+load(here("VI_data_collection", "_data","intermediary_data", "mplus_intercept_df.RDS"))
+```
+
+```{r}
+# pivot to wide format
+lme4_intercept_df <- lme4_intercept_and_predicted_dt %>%
+  select(-mean) %>%
+  pivot_wider(id_cols = "item_ID", values_from = "intercept", names_from = "value")
+
+mplus_intercept_df <- mplus_intercept_df %>%
+  rename(item_ID = ITEM_ID) %>%
+  pivot_wider(id_cols = "item_ID", values_from = "intercept", names_from = "value")
+
+
+rm(lme4_intercept_and_predicted_dt)
+```
+
+```{r}
+# merge with machine scores dataframe
+lme4_corr_df <- merge(lme4_intercept_df, machines_as_fixed_f_df, by="item_ID")
+
+# merge with machine scores dataframe
+mplus_corr_df <- merge(mplus_intercept_df, machines_as_fixed_f_df, by="item_ID")
+
+rm(mplus_intercept_df, lme4_intercept_df, machines_as_fixed_f_df)
+```
+
+```{r}
+value <- values[4]
+
+df <- lme4_corr_df %>% select(starts_with(value))
+
+corr_df <- df %>% correlate() %>% focus(value)
+
+corr_df$value <- word(corr_df$term, 1, sep = "\\_")
+corr_df$setup <- word(corr_df$term, 2, -1, sep = "\\_")
+corr_df$setup <- gsub("_lyrics", "", corr_df$setup)
+corr_df$setup <- gsub("_weight", "", corr_df$setup)
+```
+
+
+```{r}
+lower <- list()
+upper <- list()
+
+for(i in 2:ncol(df)){
+  corr.fun <- function(df=df, idx=idx){
+    df <- df[idx, ]
+    c(cor(df[, 1], df[, i], method = "pearson"))
+  }
+  
+  bootstrap <- boot(df, corr.fun, R=1000)
+
+  ci <- boot.ci(boot.out = bootstrap, type = "norm")
+
+  print(ci$normal)
+
+  lower[i] <- ci$normal[2]
+  upper[i] <- ci$normal[3]
+}
+
+corr_df$low2.5 <- lower[2:9]
+corr_df$up2.5 <- upper[2:9]
+```
+
+```{r}
+lme4_correlation_dfs <- lapply(values, function(value){
+  
+  # select columns with value from main dataframe
+  df <- lme4_corr_df %>% select(starts_with(value))
+  
+  # correlate participant scores with all other columns
+  corr_df <- df %>% correlate() %>% focus(value)
+  
+  ## estimate confidence intervals
+  #  create empty lists for confidence intervals
+  lower <- list()
+  upper <- list()
+  
+  # estimate ci for each column, excluding first
+  for(i in 2:ncol(df)){
+    # correlation function to pass to boot function
+    corr.fun <- function(df=df, idx=idx){
+      # found this online, and I don't know what it does
+      df <- df[idx, ]
+      # estimate correlation with ith column
+      c(cor(df[, 1], df[, i], method = "pearson"))
+    }
+  
+  # bootstrap correlations using above function 1000 times
+  bootstrap <- boot(df, corr.fun, R=1000)
+
+  # estimate confidence interval from bootstrap output
+  ci <- boot.ci(boot.out = bootstrap, type = "norm")
+
+  # sanity checking
+  #print(ci$normal)
+
+  # save output to list
+  # note: first entry is always null for some reason
+  lower[i] <- ci$normal[2]
+  upper[i] <- ci$normal[3]
+  }
+
+## format output
+# column names
+colnames(corr_df) <- c("model", "estimate", "value", "setup")
+# add confidence intervals to df
+corr_df$low2.5 <- as.numeric(lower[2:9])
+corr_df$up2.5 <- as.numeric(upper[2:9])
+# reorder columns
+corr_df <- corr_df %>% select(low2.5, estimate, up2.5, model)
+# separate columns for model and value
+corr_df$value <- word(corr_df$model, 1, sep = "\\_")
+corr_df$setup <- word(corr_df$model, 2, -1, sep = "\\_")
+corr_df$setup <- gsub("_lyrics", "", corr_df$setup)
+corr_df$setup <- gsub("_weight", "", corr_df$setup)
+# set as data table
+setDT(corr_df)
+
+return(corr_df)
+})
+```
+
+```{r}
+lme4_correlation_dfs[[1]]
+```
+
