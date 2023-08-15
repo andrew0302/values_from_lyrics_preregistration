@@ -1,0 +1,207 @@
+---
+title: "estimate intercepts using lme4 and mplus"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('dplyr')           # data manipulation
+library("MplusAutomation") # Mplus integration
+
+# load and format datasets
+source(here("VI_data_collection", "3_response_intercept_analysis", "0_format_response_data_1.1.R"))
+```
+
+```{r}
+# dataframe with all responses
+responses_dt_a <- rbind(
+  responses_dt   %>% select(participant_ID, item_ID, all_of(values)), 
+  responses_dt_p %>% select(participant_ID, item_ID, all_of(values)))
+
+responses_dt_a$row_number <- seq(1:nrow(responses_dt_a))
+```
+
+We have three datasets loaded:
+
+From current survey:
+*`responses_dt_c` is only complete responses from the current survey
+*`responses_dt` is both all complete and all partial responses from current survey
+*`responses_dt_p` is all complete responses from the pilot study
+*`responses_dt_a` is all responses from current survey and pilot study
+
+```{r}
+format_df_for_mplus <- function(df){
+  # select only ID columns and values scores
+  mplus_df <- df %>% select(row_number, participant_ID, item_ID, all_of(values))
+  
+  # rename columns for Mplus
+  colnames(mplus_df) <- c("row_number", "subject_ID", "item_ID", paste0("y", seq(1, 10)))
+  
+  # coerce to dataframe for mplus modeller
+  mplus_df <- as.data.frame(mplus_df)
+  
+  return(mplus_df)
+}
+```
+
+```{r}
+fit_mplus_model <- function(df){
+  
+  # run mplus model
+ fit <- mplusModeler(mplus_model, 
+                     modelout = "VI_data_collection/_data/mplus_output/participant_model_1.0.inp", 
+                     hashfilename = FALSE,
+                     check = TRUE,
+                     run=TRUE)
+
+  # print errors and warnings
+  print(fit$results$errors)
+  print(fit$results$warnings)
+  
+  return(fit)
+}
+```
+
+This wouldn't run in a single function, so I run it iteratively with each dataset:
+
+```{r}
+# format df
+mplus_df <- format_df_for_mplus(responses_dt)  
+  
+# load mplus model specification
+source(here("VI_data_collection", "2_intermediary_response_data_computing",
+            "_mplus_models", "participant_model_1.0.R"))
+
+# fit model
+fit <- mplus_df %>% fit_mplus_model()
+
+#saveRDS(fit_responses_dt, here("VI_data_collection", "_data", "intermediary_data", "mplus_participant_model_1.0.RDS"))
+```
+
+```{r}
+# format df
+mplus_df <- format_df_for_mplus(responses_dt_p)  
+  
+# load mplus model specification
+source(here("VI_data_collection", "2_intermediary_response_data_computing",
+            "_mplus_models", "participant_model_1.0.R"))
+
+# fit model
+fit_p <- mplus_df %>% fit_mplus_model()
+
+#saveRDS(fit_responses_dt, here("VI_data_collection", "_data", "intermediary_data", "mplus_participant_model_p_1.0.RDS"))
+```
+
+```{r}
+# format df
+mplus_df <- format_df_for_mplus(responses_dt_c)  
+  
+# load mplus model specification
+source(here("VI_data_collection", "2_intermediary_response_data_computing",
+            "_mplus_models", "participant_model_1.0.R"))
+
+# fit model
+fit_c <- mplus_df %>% fit_mplus_model()
+
+#saveRDS(fit_responses_dt, here("VI_data_collection", "_data", "intermediary_data", "mplus_participant_model_c_1.0.RDS"))
+```
+```{r}
+# format df
+mplus_df <- format_df_for_mplus(responses_dt_a)  
+  
+# load mplus model specification
+source(here("VI_data_collection", "2_intermediary_response_data_computing",
+            "_mplus_models", "participant_model_1.0.R"))
+
+# fit model
+fit_a <- mplus_df %>% fit_mplus_model()
+
+#saveRDS(fit_responses_dt_a, here("VI_data_collection", "_data", "intermediary_data", "mplus_participant_model_a_1.0.RDS"))
+```
+```{r}
+# load mplus fit objects saved from notebook 1
+fit   <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "mplus_participant_model_1.0.RDS"))
+fit_a <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "mplus_participant_model_a_1.0.RDS"))
+fit_c <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "mplus_participant_model_c_1.0.RDS"))
+fit_p <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "mplus_participant_model_p_1.0.RDS"))
+```
+
+
+```{r}
+# load mplus functions
+source(here("VI_data_collection", "2_intermediary_response_data_computing", "_functions", "mplus_descriptives_function_1.7.R"))
+
+# load lme4 functions
+source(here("VI_data_collection", "2_intermediary_response_data_computing", "_functions", "lme4_descriptives_function_1.7.R"))
+```
+
+```{r}
+build_intercept_df <- function(df, fit_object=fit, dataset_label){
+  
+  # df <- responses_dt_p %>% rename(subject_ID = participant_ID)
+  # fit_object <- fit_p
+  
+  df <- get_random_intercepts_mplus(
+    # adjust column name to fit legacy function
+    df %>% rename(subject_ID = participant_ID), fit_object, 
+    # specify intercept to retrieve
+    intercept = 'item_ID') %>%
+    # pivot values columns to long format
+    pivot_longer(cols = all_of(values), names_to = "value", values_to = "intercept") %>% 
+    # reorder df
+    arrange(value, ITEM_ID) %>%
+    # add column that labels the dataset
+    mutate(dataset = dataset_label)
+}
+```
+
+```{r}
+# build intercept df for each dataset
+mplus_intercept_df_1 <- build_intercept_df(responses_dt, fit, "complete and partial responses") %>% rename(item_ID = ITEM_ID)
+mplus_intercept_df_c <- build_intercept_df(responses_dt_c, fit_c, "complete responses only") %>% rename(item_ID = ITEM_ID)
+mplus_intercept_df_p <- build_intercept_df(responses_dt_p, fit_p, "pilot study responses only") %>% rename(item_ID = ITEM_ID)
+mplus_intercept_df_a <- build_intercept_df(responses_dt_a, fit_a, "all responses") %>% rename(item_ID = ITEM_ID)
+```
+
+```{r}
+lme4_intercept_and_predicted <- function(df){
+  # select only ID columns and values scores
+  df <- df %>% select(participant_ID, item_ID, all_of(values))
+  
+  # rename columns to have same names as in functions
+  colnames(df) <- c("subject_ID", "item_ID", values)
+  
+  # run lmer models with each value as the dependent variable and
+  # extract standard deviation 95% CI for participants and songs by value
+  lme4_intercept_and_predicted_dt <- df |> 
+     assemble_intercept_and_predicted_dt()
+}
+```
+
+```{r}
+lme4_intercept_dt   <- lme4_intercept_and_predicted(responses_dt)   %>% 
+  mutate(dataset = "complete and partial responses")
+lme4_intercept_dt_c <- lme4_intercept_and_predicted(responses_dt_c) %>% 
+  mutate(dataset = "complete responses only")
+lme4_intercept_dt_p <- lme4_intercept_and_predicted(responses_dt_p) %>% 
+  mutate(dataset = "pilot study responses only")
+lme4_intercept_dt_a <- lme4_intercept_and_predicted(responses_dt_a) %>% 
+  mutate(dataset = "all responses")
+```
+
+```{r}
+df <- merge(lme4_intercept_dt, mplus_intercept_df_1, by = c("item_ID", "value"))
+cor(df$intercept.x, df$intercept.y)
+
+df <- merge(lme4_intercept_dt_c, mplus_intercept_df_c, by = c("item_ID", "value"))
+cor(df$intercept.x, df$intercept.y)
+
+df <- merge(lme4_intercept_dt_p, mplus_intercept_df_p, by = c("item_ID", "value"))
+cor(df$intercept.x, df$intercept.y)
+
+df <- merge(lme4_intercept_dt_a, mplus_intercept_df_a, by = c("item_ID", "value"))
+cor(df$intercept.x, df$intercept.y)
+```
+
+

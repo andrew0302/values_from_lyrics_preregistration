@@ -1,0 +1,85 @@
+---
+title: "4_check_duplicates"
+author: "Andrew M. Demetriou"
+date: "2023-04-06"
+output: html_document
+---
+
+# AIM: to check for duplicate entries
+
+```{r}
+library('here')
+library('data.table')
+library('dplyr')
+library('stringr')
+library('tidyr')
+
+# load response data frame
+all_dt<- readRDS(file = here("VI_data_collection", "_data", "survey_response_data", "all_dt.RDS"))
+complete_dt<- readRDS(file = here("VI_data_collection", "_data", "survey_response_data", "complete_dt.RDS"))
+```
+```{r}
+pivot_function <- function(df){
+  df |>
+    # pivot longer had an issue with mixed column types
+    # make everything a character vector
+    mutate(across(everything(), as.character)) |>
+  
+    # pivot to long format
+    pivot_longer(
+    
+      # range of columns
+      cols = `828136-w`:`213759518-r`, 
+  
+      # two new columns: song and question
+      names_to = c('song', 'question'),
+  
+      # separate names by "-"
+      names_sep = "-", 
+  
+      # new columns for participant responses
+      values_to = "response", 
+  
+      # drop empty cells
+      values_drop_na = TRUE
+  )
+}
+```
+
+```{r}
+# pivot raw data to long format
+all_dt_long      <- pivot_function(all_dt)
+complete_dt_long <- pivot_function(complete_dt)
+```
+
+```{r}
+# check for duplicates
+all_dt_long %>%
+  dplyr::group_by(participant_ID, song, question) %>%
+  dplyr::summarise(n = dplyr::n(), .groups = "drop") %>%
+  dplyr::filter(n > 1L)
+
+complete_dt_long %>%
+  dplyr::group_by(participant_ID, song, question) %>%
+  dplyr::summarise(n = dplyr::n(), .groups = "drop") %>%
+  dplyr::filter(n > 1L)
+
+
+# same participant_ID for two response IDs:
+# R_Dp1VL9Eduv8pRV7, R_2456rueICK0vyBX
+# 3d3cc7339134e971665b3b97916c470f
+```
+
+```{r}
+# drop # 3d3cc7339134e971665b3b97916c470f
+# de_dupe_df <- all_dt
+# de_dupe_df <- de_dupe_df[ResponseId != "R_Dp1VL9Eduv8pRV7"]
+# de_dupe_df <- de_dupe_df[ResponseId != "R_2456rueICK0vyBX"]
+
+all_dt <- all_dt[participant_ID != "3d3cc7339134e971665b3b97916c470f"]
+complete_dt <- complete_dt[participant_ID != "3d3cc7339134e971665b3b97916c470f"]
+
+rm(pivot_function)
+```
+
+

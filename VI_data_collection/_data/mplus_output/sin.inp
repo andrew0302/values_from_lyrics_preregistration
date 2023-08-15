@@ -34,16 +34,40 @@ MODEL:
   %between item_ID% 
   y1-y10; [y1-y10];  
 
-  y1  WITH  z1- z8;
-  y2  WITH  z9-z16;
-  y3  WITH z17-z24;
-  y4  WITH z25-z32;
-  y5  WITH z33-z40;
-  y6  WITH z41-z48;
-  y7  WITH z49-z56;
-  y8  WITH z57-z64;
-  y9  WITH z65-z72;
-  y10 WITH z73-z80;
+  m1  BY  z1-z4;
+  m2  BY  z5-z8;
+  m3  BY  z9-z12;
+  m4  BY z13-z16;
+  m5  BY z17-z20;
+  m6  BY z21-z24;
+  m7  BY z25-z28;
+  m8  BY z29-z32;
+  m9  BY z33-z36;
+  m10 BY z37-z40;
+  m11 BY z41-z44;
+  m12 BY z45-z48;
+  m13 BY z49-z52;
+  m14 BY z53-z56;
+  m15 BY z57-z60;
+  m16 BY z61-z64;
+  m17 BY z65-z68;
+  m18 BY z69-z72;
+  m19 BY z73-z76;
+  m20 BY z77-z80;
+  
+  y1  WITH   m1-m2;
+  y2  WITH   m3-m4;
+  y3  WITH   m5-m6;
+  y4  WITH   m7-m8;
+  y5  WITH  m9-m10;
+  y6  WITH m11-m12;
+  y7  WITH m13-m14;
+  y8  WITH m15-m16;
+  y9  WITH m17-m18;
+  y10 WITH m19-m20;
+  
+  m1-m20  WITH m1-m20@0;
+
   
 OUTPUT:
 standardized cinterval(hpd)

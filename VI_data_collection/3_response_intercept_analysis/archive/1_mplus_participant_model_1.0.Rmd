@@ -1,0 +1,57 @@
+---
+title: "run mplus participant model"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('dplyr')           # data manipulation
+library("MplusAutomation") # Mplus integration
+
+# load datasets
+source(here("VI_data_collection", "_functions", "1_format_response_data_1.0.R"))
+
+list.files(here("VI_data_collection", "_functions"))
+```
+
+
+```{r}
+# select only ID columns and values scores
+df <- responses_dt %>% select(row_number, participant_ID, item_ID, all_of(values))
+
+# rename columns to have same names as in functions
+colnames(df) <- c("row_number", "subject_ID", "item_ID", paste0("y", seq(1, 10)))
+df <- as.data.frame(df)
+
+rm(responses_dt)
+```
+
+
+```{r}
+# mplus model specification:
+# this model estimates parameters from response data 
+# including the correlation of the item intercepts
+
+# load mplus model specification
+source(here("VI_data_collection", "2_intermediary_response_data_computing", "_mplus_models", "participant_model_1.0.R"))
+
+# run mplus model
+ fit <- mplusModeler(mplus_model, 
+                     modelout = "VI_data_collection/_data/mplus_output/participant_model_1.0.inp", 
+                     hashfilename = FALSE,
+                     check = TRUE,
+                     run=TRUE)
+
+# print errors and warnings
+ fit$results$errors
+ fit$results$warnings
+
+saveRDS(fit, here("VI_data_collection", "_data", "intermediary_data", "mplus_participant_model_1.0.RDS"))
+ 
+# rm(mplus_model)
+```
+```{r}
+participant_model <- readModels(here("VI_data_collection","_data","mplus_output","participant_model_1.0.out"))
+```
+

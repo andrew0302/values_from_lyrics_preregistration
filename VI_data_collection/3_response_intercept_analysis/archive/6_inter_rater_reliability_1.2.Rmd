@@ -1,0 +1,304 @@
+---
+title: "inter rater reliability"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')       # file logistics
+library('data.table') # data manipulation
+library('dplyr')      # data manipulation
+library('tidyr')      # data manipulation
+library('ggplot2')    # visualization
+library('psych')      # intra class correlation
+library('patchwork')  # combine plots
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+```{r}
+# load datasets
+source(here("VI_data_collection", "2_intermediary_response_data_computing", "0_format_response_data_1.1.R"))
+
+response_dfs <- list(
+  responses_dt = responses_dt, 
+  responses_dt_c = responses_dt_c,
+  responses_dt_a = responses_dt_a,
+  responses_dt_p = responses_dt_p)
+
+rm(responses_dt, responses_dt_a, responses_dt_c, responses_dt_p)
+```
+
+
+```{r}
+# reorder columns
+reorder_df <- function(df){
+  df <- df %>% select(
+    participant_ID, item_ID, 
+    POWER, ACHIEVEMENT, HEDONISM, 
+    STIMULATION, SELF, UNIVERSALISM, 
+    BENEVOLENCE, TRADITION, 
+    CONFORMITY, SECURITY, 
+    writer, familiar, confidence)
+}
+```
+
+```{r}
+# create list of dataframes
+reordered_dfs <- lapply(response_dfs[1:2], reorder_df)
+
+rm(reorder_df)
+```
+
+```{r}
+plots <- lapply(reordered_dfs, function(x){
+  
+  count_df <- x %>%
+    group_by(item_ID) %>%
+    count()
+
+  count_median <- median(count_df$n)
+
+  plot <- count_df %>%
+    ggplot(aes(n)) +
+    geom_histogram(bins=10, color = 'black', fill = 'grey') +
+    xlab("ratings per item") +
+    geom_vline(xintercept = count_median, color = "red")
+  
+  return(plot)
+})
+
+names(plots) <- names(reordered_dfs)
+
+plots[[1]] + ggtitle(names(plots[1]))
+plots[[2]] + ggtitle(names(plots[2]))
+
+rm(plots)
+```
+'psych' package documentation:
+"Where the data are laid out in terms of Rows (subjects) and Columns (rater or tests), the various ICCs are found by the ratio of various estimates of variance components. 
+In all cases, subjects are taken as varying at random, and the residual variance is also random. The distinction between models 2 and 3 is whether the judges (items/tests) are seen as random or fixed. A further distinction is whether the emphasis is upon absolute agreement of the judges, or merely consistency."
+
+"ICC2: A random sample of k judges rate each target. The measure is one of absolute agreement in the ratings."
+
+Koo, Terry, and Mae Li. 2016. “A Guideline of Selecting and Reporting Intraclass Correlation Coefficients for Reliability Research.” Journal of Chiropractic Medicine 15 (March). doi:10.1016/j.jcm.2016.02.012
+
+Definitions: inter-rater reliability: "...reflects the variation between 2 or more raters who measure the same group of subjects"
+
+Selection criteria:
+<<model selection>>
+1) do we have the same set of raters for all subjects? 
+No
+2) do we have a sample of raters randomly selected from a larger population or a specific sample of raters?
+Randomly selected from a larger population of Prolific users whose demographics represent the U.S. population. 
+
+One-Way Random-Effects Model:
+In this model, each subject is rated by a different set of raters who were randomly chosen from a larger population of possible raters.
+
+Two-Way Random-Effects Model:
+If we randomly select our raters from a larger population of raters with similar characteristics, 2-way random-effects model is the model of choice. 
+In other words, we choose 2-way random-effects model if we plan to generalize our reliability results to any raters who possess the same characteristics as the selected raters in the reliability study.
+
+
+<<type selection>>
+3) Are we interested in the reliability of a single rater or the mean value of multiple raters?
+The mean value of multiple raters
+
+“Type” Selection
+This selection depends on how the measurement protocol will be conducted in actual application. 
+For instance, if we plan to use the mean value of 3 raters as an assessment basis, the experimental design of the reliability study should involve 3 raters, and the “mean of k raters” type should be selected.
+
+<<definition>>
+4) Do we concern about consistency or agreement?
+Consistency
+
+Absolute agreement concerns if different raters assign the same score to the same subject. 
+Conversely, consistency definition concerns if raters’ scores to the same group of subjects are correlated in an additive manner
+
+```{r}
+make_icc_df <- function(df){
+  # iterate over list of values
+  list_of_icc_dfs <- lapply(values,function(value){
+  
+    # select columns
+  df <- df %>% dplyr::select(participant_ID, item_ID, value) %>%
+    # pivot so that participants are columns
+    pivot_wider(names_from = participant_ID, values_from = value)
+  
+  # remove item_ID column
+  icc_df <- df %>% select(-item_ID) %>% 
+    # pass to ICC function
+    psych::ICC()
+  
+  # select relevant ICC output
+  icc_df <- icc_df$results %>% filter(type =="ICC2k" | type == "ICC2")
+  icc_df$value <- value
+  return(icc_df)
+})
+  
+  # bind list of icc dfs
+  icc_df <- rbindlist(list_of_icc_dfs)
+}
+```
+
+```{r}
+icc_df_list <- lapply(reordered_dfs, make_icc_df)
+
+rm(make_icc_df)
+```
+
+"Based on the 95% confident interval of the ICC estimate, values less than 0.5, between 0.5 and 0.75, between 0.75 and 0.9, and greater than 0.90 are indicative of poor, moderate, good, and excellent reliability..."
+
+```{r}
+lapply(icc_df_list, function(x){
+  x %>%
+    ggplot(aes(x=ICC, y=value, color = type, group=type)) +
+      geom_point() +
+      geom_errorbar(xmin = x$`lower bound`, xmax = x$`upper bound`)
+})
+
+lapply(icc_df_list, function(x){
+  x %>%
+    group_by(type) %>%
+    dplyr::summarize(mean = mean(ICC), sd = sd(ICC))
+})
+```
+```{r}
+responses_dt <- reordered_dfs[[1]]
+```
+
+```{r}
+get_icc <- function(df=responses_dt, n, value){
+  df$item_ID <- as.factor(df$item_ID)
+
+  df%>% select(value)
+  
+  # get canonical mean per value
+  canon <- df %>%
+      #select only stimuli columns
+      dplyr::select(item_ID, value, -participant_ID, -confidence, -writer, -familiar) %>%
+      #group by each column
+      group_by(item_ID) %>%
+      #calculate means of all columns
+      summarize_all(mean)
+  
+  # subsample data
+  data_sample <- df %>% select(participant_ID, item_ID, value) %>% 
+    group_by(item_ID) %>%
+    sample_n(n) %>% ungroup() 
+  
+  # calculate mean sample ratings
+  sample_means <- data_sample %>%
+    select(-participant_ID) %>%
+    group_by(item_ID) %>%
+    summarize_all(mean)
+  
+  # calculate correlation between sample mean and canonical mean
+  cor <- cor(canon[,2], sample_means[,2])[[1,1]]
+  
+  # compute ICC
+  icc_df <- data_sample %>%
+    pivot_wider(names_from = participant_ID, values_from = value) %>%
+    select(-item_ID) %>% ICC() 
+  
+  # subset rows
+  icc_df <- icc_df$results %>% filter(type == 'ICC2' | type == 'ICC2k') %>%
+    select(type, ICC, `lower bound`, `upper bound`)
+  
+  # remove rownames
+  rownames(icc_df) <- NULL
+  
+  # collect values to return
+  icc_df$value <- value
+  icc_df$n <- n
+  icc_df$cor <- cor
+  
+  return(icc_df)
+}  
+
+#t <- get_icc(responses_dt, n=15, value=values[[2]])
+```
+
+```{r}
+samples_of_ICC <- function(
+  value,
+  df = responses_dt, 
+  n_samples = 10, 
+  n_raters = seq(5, 20, by = 5)
+  ){
+  #draw n_raters number of samples n_samples number of times
+  icc_tibble <- rep(n_raters, each = n_samples) %>% 
+    purrr::map_df( function(n) { 
+      get_icc(df, n, value)
+    })
+  return(icc_tibble)
+}
+
+#s<- samples_of_ICC(value = values[[2]])
+```
+
+```{r}
+list_of_icc_dfs <- lapply(values, samples_of_ICC)
+sampled_icc_df <- rbindlist(list_of_icc_dfs)
+```
+
+```{r}
+# changes in ICC as a function of sample size
+
+# ICC2
+p1 <- sampled_icc_df %>%
+  filter(type == "ICC2") %>%
+  ggplot(aes(ICC, color = as.factor(n))) +
+  facet_grid(~value)+
+  #geom_density() + 
+  geom_line(stat = 'density', alpha = 0.7) +
+  theme(axis.text.x = element_text(angle = 90), 
+        strip.text.x = element_text(size = 4)) +
+  coord_flip()
+
+# ICC2k
+p2 <- sampled_icc_df %>%
+  filter(type == "ICC2k") %>%
+  ggplot(aes(ICC, color = as.factor(n))) +
+  facet_grid(~value)+
+  #geom_density() + 
+  geom_line(stat = 'density', alpha = 0.7) +
+  theme(axis.text.x = element_text(angle = 90), 
+        strip.text.x = element_text(size = 4)) +
+  coord_flip()
+
+#p1 / p2
+
+p2
+```
+
+```{r}
+# changes in correlation to canonical mean as a function of sample size
+
+# it actually doesn't matter which ICC is chosen, because that's not the metric of interest, but I compute both plots anyway
+p3 <- sampled_icc_df %>%
+  filter(type == "ICC2") %>%
+  ggplot(aes(cor, color = as.factor(n))) +
+  facet_grid(~value)+
+  #geom_density(alpha = 0.3) + 
+  geom_line(stat = 'density', alpha = .7) +
+  theme(axis.text.x = element_text(angle = 90), 
+        strip.text.x = element_text(size = 4)) +
+  coord_flip()
+
+p4 <- sampled_icc_df %>%
+  filter(type == "ICC2k") %>%
+  ggplot(aes(cor, color = as.factor(n))) +
+  facet_grid(~value)+
+  #geom_density(alpha = 0.3) + 
+  geom_line(stat = 'density', alpha = .7) +
+  theme(axis.text.x = element_text(angle = 90), 
+        strip.text.x = element_text(size = 4)) +
+  coord_flip()
+
+
+p4
+```
+
+
+

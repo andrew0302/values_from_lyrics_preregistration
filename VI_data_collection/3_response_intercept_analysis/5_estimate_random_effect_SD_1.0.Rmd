@@ -1,0 +1,106 @@
+---
+title: "random intercept SD estimation"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('dplyr')           # data manipulation
+library('tidyr')           # data manipulation
+library("MplusAutomation") # Mplus integration
+library("boot")            # bootstrapping CIs
+library('ggplot2')         # visualization
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY")
+
+# load datasets
+response_dfs <- readRDS(file=here("VI_data_collection", "_data", "survey_response_data", "response_dfs.RDS"))
+
+# load mplus fit objects
+fits <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_participant_fits"))
+
+# load functions
+source(here("VI_data_collection", "3_response_intercept_analysis", "_functions", "lme4_descriptives_function_1.7.R"))
+
+source(here("VI_data_collection", "3_response_intercept_analysis", "_functions", "mplus_descriptives_function_1.6.R"))
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+```{r}
+lme4_random_effects <- function(df){
+  # select only ID columns and values scores
+  df <- df %>% select(participant_ID, item_ID, all_of(values))
+  
+  # rename columns to have same names as in functions
+  colnames(df) <- c("subject_ID", "item_ID", values)
+  
+  # run lmer models with each value as the dependent variable and
+  # extract standard deviation 95% CI for participants and songs by value
+  lme4_random_effect_sd_dt <- df |> 
+    assemble_random_effect_sd_dt()
+}
+```
+
+```{r}
+# create iterator variable
+dataset_names <- names(response_dfs)
+
+# estimate participant / item intercept SDs using lme4
+lme4_random_effect_sd_list <- lapply(
+  # iterate over dataset_names
+  seq_along(dataset_names), function(i){
+  # estimate intercepts
+  lme4_random_effects(response_dfs[[i]]) %>% 
+      # add column with name of dataset
+      mutate(dataset = paste(names(dataset_names)[[i]], dataset_names[[i]]))
+})
+
+# bind into a single dataframe  
+lme4_random_effect_sd_dt <- rbindlist(lme4_random_effect_sd_list)
+
+rm(dataset_names, lme4_random_effect_sd_list)
+```
+
+```{r}
+# save object
+save(lme4_random_effect_sd_dt, file = here("VI_data_collection", "_data","intermediary_data", "lme4_random_effect_sd_dt.RDS"))
+```
+
+```{r}
+mplus_random_effects <- function(df, fit_object){
+  df <- df %>% rename(subject_ID = participant_ID)
+  assemble_ci_dfs(df, fit_object)
+}
+```
+
+
+```{r}
+# create iterator variable
+dataset_names <- names(response_dfs)
+
+# estimate participant / item intercept SDs using lme4
+mplus_random_effect_sd_list <- lapply(
+  # iterate over dataset_names
+  seq_along(dataset_names), function(i){
+  # estimate intercepts
+  mplus_random_effects(response_dfs[[i]], fits[[i]]) %>% 
+      # add column with name of dataset
+      mutate(dataset = paste(names(dataset_names)[[i]], dataset_names[[i]]))
+})
+
+# bind into a single dataframe  
+mplus_random_effect_sd_dt <- rbindlist(mplus_random_effect_sd_list)
+
+#rm(dataset_names, lme4_random_effect_sd_list)
+```
+
+```{r}
+save(mplus_random_effect_sd_dt, file = here("VI_data_collection", "_data","intermediary_data", "mplus_random_effect_sd_dt.RDS"))
+```
+

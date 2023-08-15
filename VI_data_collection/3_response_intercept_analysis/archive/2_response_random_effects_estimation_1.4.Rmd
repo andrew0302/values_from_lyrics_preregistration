@@ -1,0 +1,157 @@
+---
+title: "random effects estimated with lmer and mplus"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('dplyr')           # data manipulation
+library('tidyr')           # data manipulation
+library("MplusAutomation") # Mplus integration
+library("boot")            # bootstrapping CIs
+library('ggplot2')         # visualization
+
+# load datasets
+source(here("VI_data_collection", "2_intermediary_response_data_computing", "0_format_response_data_1.1.R"))
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+```{r}
+# load lme4 functions
+source(here("VI_data_collection", "2_intermediary_response_data_computing", "_functions", "lme4_descriptives_function_1.7.R"))
+
+# load mplus functions
+source(here("VI_data_collection", "2_intermediary_response_data_computing", "_functions", "mplus_descriptives_function_1.6.R"))
+```
+```{r}
+lme4_random_effects <- function(df){
+  # select only ID columns and values scores
+  df <- df %>% select(participant_ID, item_ID, all_of(values))
+  
+  # rename columns to have same names as in functions
+  colnames(df) <- c("subject_ID", "item_ID", values)
+  
+  # run lmer models with each value as the dependent variable and
+  # extract standard deviation 95% CI for participants and songs by value
+  lme4_random_effect_sd_dt <- df |> 
+    assemble_random_effect_sd_dt()
+}
+```
+
+```{r}
+# dataframe with all responses
+responses_dt_a <- rbind(
+  responses_dt   %>% select(participant_ID, item_ID, all_of(values)), 
+  responses_dt_p %>% select(participant_ID, item_ID, all_of(values)))
+```
+
+
+```{r}
+# estimate random effects for each df
+lme4_ran_effect_sd_dt   <- lme4_random_effects(responses_dt)   %>% mutate(dataset = "complete and partial responses")
+lme4_ran_effect_sd_dt_c <- lme4_random_effects(responses_dt_c) %>% mutate(dataset = "complete responses only")
+lme4_ran_effect_sd_dt_p <- lme4_random_effects(responses_dt_p) %>% mutate(dataset = "pilot study responses only")
+lme4_ran_effect_sd_dt_a <- lme4_random_effects(responses_dt_a) %>% mutate(dataset = "all responses")
+```
+
+
+```{r}
+# merge intermediary dfs
+lme4_random_effect_sd_dt <- rbind(
+  lme4_ran_effect_sd_dt_p,
+  lme4_ran_effect_sd_dt_c, 
+  lme4_ran_effect_sd_dt, 
+  lme4_ran_effect_sd_dt_a 
+  )
+
+# save object
+#save(lme4_random_effect_sd_dt, file = here("VI_data_collection", "_data","intermediary_data", "lme4_random_effect_sd_dt.RDS"))
+
+rm(lme4_ran_effect_sd_dt_p,lme4_ran_effect_sd_dt_c, lme4_ran_effect_sd_dt, lme4_ran_effect_sd_dt_a)
+```
+
+```{r}
+lme4_intercept_and_predicted <- function(df){
+  # select only ID columns and values scores
+  df <- df %>% select(participant_ID, item_ID, all_of(values))
+  
+  # rename columns to have same names as in functions
+  colnames(df) <- c("subject_ID", "item_ID", values)
+  
+  # run lmer models with each value as the dependent variable and
+  # extract standard deviation 95% CI for participants and songs by value
+  lme4_intercept_and_predicted_dt <- df |> 
+     assemble_intercept_and_predicted_dt()
+}
+```
+
+```{r}
+lme4_intercept_dt   <- lme4_intercept_and_predicted(responses_dt)   %>% 
+  mutate(dataset = "complete and partial responses")
+lme4_intercept_dt_c <- lme4_intercept_and_predicted(responses_dt_c) %>% 
+  mutate(dataset = "complete responses only")
+lme4_intercept_dt_p <- lme4_intercept_and_predicted(responses_dt_p) %>% 
+  mutate(dataset = "pilot study responses only")
+lme4_intercept_dt_a <- lme4_intercept_and_predicted(responses_dt_a) %>% 
+  mutate(dataset = "all responses")
+```
+
+
+```{r}
+# merge intermediary dfs
+lme4_intercept_and_predicted_dt <- rbind(
+  lme4_intercept_dt_p,
+  lme4_intercept_dt_c, 
+  lme4_intercept_dt, 
+  lme4_intercept_dt_a 
+  )
+
+# save object
+#save(lme4_intercept_and_predicted_dt, file = here("VI_data_collection", "_data", "intermediary_data", "lme4_intercept_and_predicted_dt.RDS"))
+```
+
+```{r}
+# note: I recreate the df to include the row number
+# this is because I use the row number to match records from mplus output
+df <- responses_dt %>% select(row_number, participant_ID, item_ID, all_of(values))
+
+# format df for mplus:
+# rename columns to have same names as in functions
+colnames(df) <- c("row_number", "subject_ID", "item_ID", paste0("y", seq(1, 10)))
+
+# mplus and data.table don't work together
+df <- as.data.frame(df)
+```
+
+```{r}
+fit <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_participant_model_1.0.RDS"))
+```
+
+```{r}
+# extract standard deviation 95% CI for participants and songs by value
+mplus_random_effect_sd_dt <- assemble_ci_dfs(df, fit)
+
+# save object
+save(mplus_random_effect_sd_dt, file = here("VI_data_collection", "_data","intermediary_data", "mplus_random_effect_sd_dt.RDS"))
+```
+
+```{r}
+# retrieve item intercepts from mplus model fscores output:
+mplus_intercept_df <- get_random_intercepts_mplus(df, fit, intercept = 'item_ID')
+
+# format table
+mplus_intercept_df <- mplus_intercept_df %>% 
+  pivot_longer(cols = all_of(values), names_to = "value", values_to = "intercept") %>%
+  arrange(value, ITEM_ID)
+  
+
+# save object
+save(mplus_intercept_df, file = here("VI_data_collection", "_data","intermediary_data", "mplus_intercept_df.RDS"))
+```
+
+
+
+

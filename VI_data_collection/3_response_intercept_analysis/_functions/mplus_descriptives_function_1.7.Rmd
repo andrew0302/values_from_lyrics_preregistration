@@ -1,0 +1,210 @@
+---
+title: "mplus - random effects estimation"
+author: "Andrew M. Demetriou"
+date: "21/09/2022"
+---
+```{r, include=FALSE}
+library("here")            # file logistics
+library("tidyverse")       # data wrangling 
+library("corrplot")        # visualization
+library("MplusAutomation") # Mplus integration
+library("boot")            # bootstrapping CIs
+library("data.table")      # dataframe logistics
+```
+
+
+```{r}
+get_random_intercepts_mplus <- function(
+    df, # original dataframe
+    fit, # output of mplus model run
+    intercept, # participant or item
+    # 10 item character vector of variables in order
+    DVs = c(
+            "POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY"
+      )){
+  
+  intercept <- intercept |> toupper()
+  
+  if(intercept == 'SUBJECT_ID'){
+    prefix <- 'B2a_Y'
+  }else if(intercept == 'ITEM_ID'){
+    prefix <- 'B2b_Y'
+  }else(print("error: wrong intercept identifier"))
+  
+  # retrieve original IDs 
+  ID_df <- df %>% dplyr::select(row_number, subject_ID, item_ID)
+  
+  # merge output from mplus and original IDs
+  mplus_df <- fit$results$savedata
+  mplus_df <- merge(mplus_df, ID_df, by.x = 'ROW_NUMB', by.y = 'row_number')
+  # rename IDs to original IDs
+  mplus_df$ITEM_ID <- mplus_df$item_ID
+  mplus_df$SUBJECT_ID <- mplus_df$subject_ID
+  
+  # this is the output from the bayesian sampling process
+  factor_scores <- mplus_df |>
+    # .Mean represents the mean value of the resampling
+    select(intercept, ends_with('.Mean'))
+    
+    # extract intercept SDs
+    intercepts_df <- factor_scores |>
+      # 'B2a' - subject intercepts 'B2b' - item intercepts
+      select(intercept, starts_with(prefix))
+    
+    # reduce to a single row per item / participant
+    #intercepts_df <- intercepts_df %>% unique()
+    intercepts_df <- intercepts_df[!duplicated(intercepts_df[1]),]
+    
+    colnames(intercepts_df) <- c(intercept, DVs)
+    
+    return(intercepts_df)
+}
+
+#subject_intercept_df <- get_random_intercepts_mplus(df, fit, intercept = 'subject_ID')
+#item_intercept_df    <- get_random_intercepts_mplus(df, fit, intercept = 'item_ID')
+```
+
+
+
+```{r}
+# retrieve standard deviation of an object
+samplesd <- function(x, d) {
+  return(sd(x[d]))
+}
+```
+
+
+```{r}
+bootstrap_SD_list <- function(
+     intercept_df, 
+        intercept,
+    DVs = c(
+            "POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY"
+            )){
+ # intercept <- 'ITEM_ID'
+ # intercept_df <- item_intercept_df
+  
+ # remove IDs from df
+ boot_df <- intercept_df |>
+   select(-intercept)
+ 
+ # create list of bootstrapped outputs
+ boots <- apply(boot_df, 2, function(y){
+   b <- boot(y, samplesd,R=1000);
+   boot.ci(b, type = "bca")
+   }) 
+ 
+ # create list of confidence intervals
+ ci_list <-list(
+ y_power          <- c(boots$POWER$t0, boots$POWER$bca),
+ y_achievement    <- c(boots$ACHIEVEMENT$t0, boots$ACHIEVEMENT$bca),
+ y_hedonism       <- c(boots$HEDONISM$t0, boots$HEDONISM$bca),
+ y_stimulation    <- c(boots$STIMULATION$t0, boots$STIMULATION$bca),
+ y_self_direction <- c(boots$SELF$t0, boots$SELF$bca),
+ y_universalism   <- c(boots$UNIVERSALISM$t0, boots$UNIVERSALISM$bca),
+ y_benevolence    <- c(boots$BENEVOLENCE$t0, boots$BENEVOLENCE$bca),
+ y_tradition      <- c(boots$TRADITION$t0, boots$TRADITION$bca),
+ y_conformity     <- c(boots$CONFORMITY$t0, boots$CONFORMITY$bca),
+ y_security       <- c(boots$SECURITY$t0, boots$SECURITY$bca)
+ )
+ 
+ # rename the items in the list
+ ci_list <- setNames(ci_list, DVs)
+}
+
+#item_ci_list <- bootstrap_SD_list(item_intercept_df, 'ITEM_ID')
+#subject_ci_list <- bootstrap_SD_list(subject_intercept_df, 'SUBJECT_ID')
+```
+
+```{r}
+ci_list_item_to_row <- function(ci_list_row, intercept){
+
+  #ci_list_row <- item_ci_list[1]
+  
+formatted_ci_list_row <- 
+   ci_list_row |>
+   as.data.frame() |> 
+   t() |>
+   as.data.frame() |>
+   select(V1, V5, V6) |>
+   rownames_to_column() |>
+   as.data.frame()
+
+colnames(formatted_ci_list_row) <- c("value", intercept, paste0(intercept, "_lower"), paste0(intercept, "_upper"))
+
+return(formatted_ci_list_row)
+}
+
+# t<- lapply(item_ci_list, ci_list_item_to_row, intercept = "ITEM_ID")
+# s<- rbindlist(t, use.names = FALSE, idcol = 'model')
+```
+
+```{r}
+format_ci_df <- function(
+    ci_list, 
+    intercept, 
+    DVs = c("y_power", "y_security", "y_conformity", "y_tradition", 
+            "y_benevolence", "y_universalism", "y_self_direction", 
+            "y_stimulation", "y_hedonism", "y_achievement")){
+    
+    ci_list <- lapply(ci_list, ci_list_item_to_row, intercept = intercept)
+    ci_df   <- rbindlist(ci_list, idcol = 'model') |>
+      select(-value)
+}
+# item_formatted_df <- format_ci_df(item_ci_list, 'ITEM_ID')
+# subject_formatted_df <- format_ci_df(subject_ci_list, 'SUBJECT_ID')
+```
+
+
+```{r}
+assemble_ci_dfs <- function(df, fit){
+  
+  # extract random effects dataframes from model object
+  subject_intercept_df <- get_random_intercepts_mplus(df, fit, intercept = 'subject_ID')
+  item_intercept_df    <- get_random_intercepts_mplus(df, fit, intercept = 'item_ID')
+  
+  # compute 95% bootstrapped confidence intervals
+  subject_ci_list <- bootstrap_SD_list(subject_intercept_df, 'SUBJECT_ID')
+  item_ci_list    <- bootstrap_SD_list(item_intercept_df, 'ITEM_ID')
+  
+  # convert ci lists to dataframes
+  subject_ci_df <- format_ci_df(subject_ci_list, 'SUBJECT_ID')
+  item_ci_df    <- format_ci_df(item_ci_list, 'ITEM_ID')
+  
+  # merge dfs
+  random_effects_df <- merge(subject_ci_df, item_ci_df, by.x="model", by.y = "model")
+  random_effects_df <- random_effects_df[c(
+            "POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY"
+    ),]
+}
+```
+
+```{r}
+# load dfs and fit objects for testing
+response_dfs <- readRDS(here("VI_data_collection", "_data", "survey_response_data", "response_dfs.RDS"))
+fits <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_participant_fits"))
+```
+
+
+```{r}
+df <- response_dfs[[4]] %>% rename(subject_ID = participant_ID)
+fit <- fits[[4]]
+random_effects_df <- assemble_ci_dfs(df, fit)
+```
+
+```{r}
+library("knitr")
+# output notebook as R script
+knitr::purl(input = here('VI_data_collection', "2_intermediary_response_data_computing", "_functions", "mplus_descriptives_function_1.7.Rmd"), 
+            output = here('VI_data_collection', "2_intermediary_response_data_computing", "_functions", "mplus_descriptives_function_1.7.R"))
+```
+

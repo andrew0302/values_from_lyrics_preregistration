@@ -1,0 +1,332 @@
+---
+title: "comparing random effects estimated with lmer and mplus"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')       # file logistics
+library('data.table') # data manipulation
+library('dplyr')      # data manipulation
+library('tidyr')      # data manipulation
+library('ggplot2')    # visualization
+library('ggridges')   # joyplots
+library('smacof')     # multidimensional scaling
+library('patchwork')  # multiple plots 
+library('corrplot')   # correlation plots
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+```{r}
+# load dataframes
+# lme4 random effects summary table
+load(here("VI_data_collection", "_data","intermediary_data", "lme4_random_effect_sd_dt.RDS"))
+
+# mplus random effects summary table
+load(here("VI_data_collection", "_data","intermediary_data", "mplus_random_effect_sd_dt.RDS"))
+
+# lme4 item intercepts
+lme4_intercept_dfs <- readRDS(here("VI_data_collection", "_data","intermediary_data", "lme4_item_intercept_dfs.RDS"))
+
+# mplus item intercepts
+mplus_intercept_dfs <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_item_intercept_dfs.RDS"))
+```
+
+
+```{r}
+merged_intercept_dfs <- lapply(seq_along(lme4_intercept_dfs), function(i){
+  merge(lme4_intercept_dfs[[i]], mplus_intercept_dfs[[i]], by = c("item_ID", "value", "dataset"))
+}) %>% rbindlist()
+```
+
+```{r}
+# overall correlations by dataset
+merged_intercept_dfs %>% group_by(dataset) %>%
+  summarize(r = cor(intercept.x, intercept.y))
+
+# overall correlations by dataset and value
+corr_df <- merged_intercept_dfs %>% group_by(dataset, value) %>%
+  summarize(r = cor(intercept.x, intercept.y))
+```
+
+```{r}
+corr_df %>% mutate(r = round(as.numeric(r), 5)) %>%
+  ggplot(aes(x=dataset, y=value, fill = r)) +
+  geom_tile() +
+  geom_text(aes(label = r)) +
+  theme(axis.text.x = element_text(angle = 45))
+
+rm(corr_df, merged_intercept_dfs)
+```
+
+```{r}
+# merge random effect sd dataframes
+
+# id the software
+lme4_random_effect_sd_dt <- lme4_random_effect_sd_dt %>% select(-Residual) %>%
+  mutate(software = "lme4")
+
+# rename columns
+colnames(mplus_random_effect_sd_dt) <- c(
+  "model", 
+  "subject_ID", "subject_ID_lower", "subject_ID_higher", 
+  "item_ID", "item_ID_lower", "item_ID_higher", 
+  "dataset")
+
+# id the software
+mplus_random_effect_sd_dt$software <- "mplus"
+
+# merge
+random_effect_sd_dt <- rbind(mplus_random_effect_sd_dt, lme4_random_effect_sd_dt)
+rm(mplus_random_effect_sd_dt, lme4_random_effect_sd_dt)
+```
+
+
+```{r}
+# plot estimated SD for participant random effect, by value and software
+random_effect_sd_dt %>%
+  ggplot(aes(x=model, y=subject_ID, color = model, group = software, shape = software)) +
+  facet_wrap(~dataset, ncol=2) +
+  geom_point(position = position_dodge(width = .70), size = 3) +
+  geom_errorbar(aes(ymin=subject_ID_lower, ymax=subject_ID_higher), position = position_dodge(width = .70)) +
+  theme(axis.text.x = element_text(angle = 45)) +
+  xlab("") +
+  ylab("") +
+  ylim(10, 35) +
+  guides(color = 'none') +
+  ggtitle("participant random effect SD")
+```
+
+
+```{r}
+# plot estimated SD for item random effect, by value and software
+random_effect_sd_dt %>%
+  ggplot(aes(x=model, y=item_ID, color = model, group = software, shape = software)) +
+  facet_wrap(~dataset, ncol=2) +
+  geom_point(position = position_dodge(width = .70), size = 3) +
+  geom_errorbar(aes(ymin=item_ID_lower, ymax=item_ID_higher), position = position_dodge(width = .70)) +
+  theme(axis.text.x = element_text(angle = 45)) +
+  ylim(10, 35) +
+  xlab("") +
+  ylab("") +
+  guides(color = 'none') +
+  ggtitle("item random effect SD")
+
+rm(random_effect_sd_dt)
+```
+```{r}
+plot_mean_by_value <- function(df_list, title){
+  rbindlist(df_list, idcol = T) %>%
+  group_by(dataset, value) %>%
+  summarize(mean_intercept = mean(intercept)) %>%
+  ggplot(aes(x=value, y=mean_intercept)) +
+    facet_wrap(~dataset, ncol=2)+
+    geom_point() +
+    geom_hline(yintercept = 0, linetype = 'dotted', color = 'red') +
+    theme_minimal() +
+    theme(legend.position = "none", axis.text.x = element_text(angle = 45)) +
+    coord_flip() +
+    ggtitle(title)
+}
+
+p1 <- plot_mean_by_value(mplus_intercept_dfs, "mplus")
+p2 <- plot_mean_by_value(lme4_intercept_dfs, "lme4")
+
+p1 + p2
+
+rm(plot_mean_by_value, p1, p2)
+```
+
+```{r}
+joyplot_by_value <- function(df_list, title){
+  rbindlist(df_list, idcol = T) %>%
+  group_by(value) %>%
+  ggplot(aes(x= intercept, y = value, fill =value, alpha = 0.7)) +
+  facet_wrap(~dataset, ncol=2)+
+  geom_density_ridges() + 
+  theme(legend.position = "none") + 
+  xlab("item intecepts") + 
+  ylab("schwartz value") +
+  ggtitle(title)
+}
+
+p1 <- joyplot_by_value(lme4_intercept_dfs, "lme4")
+p2 <- joyplot_by_value(mplus_intercept_dfs, "mplus")
+
+p1 + p2
+```
+
+```{r}
+lme4_intercept_df  <- lme4_intercept_dfs[[1]]
+mplus_intercept_df <- mplus_intercept_dfs[[1]]
+```
+
+
+```{r}
+# lme4 correlation matrix
+lme4_intercept_corrplot_dt <- lme4_intercept_df %>%
+  # remove 'within' values
+  select(-mean) %>%
+  # set each value as a column
+  pivot_wider(names_from = 'value', values_from = 'intercept') %>%
+  select(POWER, SECURITY, CONFORMITY, 
+         TRADITION, BENEVOLENCE, UNIVERSALISM, 
+         SELF, STIMULATION, HEDONISM, 
+         ACHIEVEMENT) %>%
+  # make correlation matrix
+  cor()
+
+#remove rownames
+rownames(lme4_intercept_corrplot_dt) <- NULL
+
+
+# mplus correlation matrix
+mplus_intercept_corrplot_df <- mplus_intercept_df %>%
+  # set each value as a column  
+  pivot_wider(names_from = 'value', values_from = 'intercept') %>%
+    select(POWER, SECURITY, CONFORMITY, 
+         TRADITION, BENEVOLENCE, UNIVERSALISM, 
+         SELF, STIMULATION, HEDONISM, 
+         ACHIEVEMENT) %>%
+  # make correlation matrix
+  cor()
+
+#remove rownames
+rownames(mplus_intercept_corrplot_df) <- NULL
+
+  
+# correlation matrix used in simulation study from Schwartz, 2001:
+og_correlation_matrix <- rbind(
+    c(   1,  .04, -.04, -.20, -.32, -.48,  -.11,  .01,  .09,   .50), #power
+    c( .04,    1,  .25,  .08,  .01, -.30,  -.34, -.35, -.12,  -.11), #security
+    c(-.04,  .25,    1,  .35,  .15, -.19,  -.41, -.31, -.32,  -.18), #conformity
+    c(-.20,  .08,  .35,    1,  .12, -.07,  -.31, -.19, -.42,  -.38), #tradition
+    c(-.32,  .01,  .15,  .12,    1, -.08,  -.20, -.25, -.26,  -.25), #benevolence
+    c(-.48, -.30, -.19, -.07, -.08,    1,   .12, -.02, -.01,  -.39), #universalism
+    c(-.11, -.34, -.41, -.31, -.20,  .12,     1,  .22,  .19,   .13), #self-direction
+    c( .01, -.35, -.31, -.19, -.25, -.02,   .22,    1,  .29,   .02), #stimulation
+    c( .09, -.12, -.32, -.42, -.26, -.01,   .19,  .29,    1,   .12), #hedonism
+    c( .50, -.11, -.18, -.38, -.25, -.39,   .13,  .02,  .12,     1) #achievement 
+) %>% as.data.frame()
+
+# name columns
+colnames(og_correlation_matrix) <- c("power", "security", "conformity", 
+                                  "tradition", "benevolence", "universalism", 
+                                  "self_direction", "stimulation", 
+                                  "hedonism", "achievement")
+
+rm(lme4_intercept_and_predicted_dt, mplus_intercept_df)
+```
+
+```{r}
+# plot correlation plots lme4 and mplus
+par(mfrow=c(1,2))
+
+corrplot(lme4_intercept_corrplot_dt, 
+         method = 'color', 
+         type = 'full', 
+         addCoef.col = 'black', 
+         number.cex = 0.6, 
+         title = "lme4 corrplot",  mar=c(0,0,1,0) )
+
+corrplot(mplus_intercept_corrplot_df, 
+         method = 'color', 
+         type = 'full', 
+         addCoef.col = 'black', 
+         number.cex = 0.6, 
+         title = "mplus corrplot",  mar=c(0,0,1,0) )
+```
+
+```{r}
+# comparison plots: lme4 and OG
+
+par(mfrow=c(1,2))
+
+corrplot(lme4_intercept_corrplot_dt, 
+         method = 'color', 
+         type = 'full', 
+         addCoef.col = 'black', 
+         number.cex = 0.6, 
+         title = "lme4 corrplot",  mar=c(0,0,1,0) )
+
+corrplot(as.matrix(og_correlation_matrix), 
+         method = 'color', 
+         type = 'full', 
+         addCoef.col = 'black', 
+         number.cex = 0.6, 
+         title = "og corrplot",  mar=c(0,0,1,0) )
+```
+
+
+```{r}
+# compute mds and plot
+# input is dataframe of values scores without any IDs
+
+mds_plot <- function(correlation_matrix, title) {
+  
+  # compute a correlation matrix from dataframe
+  #correlation_matrix <- cor(df) |> round(2)  
+  
+  #compute distance matrix from correlation matrix
+  idiss <- sim2diss(correlation_matrix)
+  rownames(idiss) <- colnames(idiss)
+  # fit ratio mds 
+  fit_ratio <-  smacof::mds(idiss)
+  
+  # extract mds values and place in dataframe
+  mds.values <- fit_ratio$conf
+  mds.data   <- data.frame(
+    Sample = rownames(mds.values), 
+    X=mds.values[,1],
+    Y=mds.values[,2], 
+    # point stress contribution per value
+    # the larger the value, the less certain the estimate
+    spp = fit_ratio$spp)
+
+  # plot
+  mds.data %>%
+    ggplot(aes(x=X, y=Y, label=Sample)) + 
+    # set scales of axes
+    scale_x_continuous(name="", limits=c(-1, 1)) + 
+    scale_y_continuous(name="", limits=c(-1, 1)) +
+    # map point size to stress per point
+    geom_point(aes(size = spp, color = Sample)) +
+    geom_point(shape = 1, color = "black", (aes(size = spp))) +
+    # place text underneath points
+    geom_text(nudge_y = -.10) +
+    # remove all plot elements
+    theme_void() +
+    # remove legend
+    theme(legend.position = "none") +
+    ggtitle(title)
+}
+```
+
+```{r}
+colnames(lme4_intercept_corrplot_dt) <- tolower(colnames(lme4_intercept_corrplot_dt))
+colnames(mplus_intercept_corrplot_df) <- tolower(colnames(mplus_intercept_corrplot_df))
+p1 <- mds_plot(og_correlation_matrix, "og correlation matrix")
+p2 <- mds_plot(lme4_intercept_corrplot_dt, "lme4 correlation matrix")
+p3 <- mds_plot(mplus_intercept_corrplot_df, "mplus correlation matrix")
+```
+
+```{r}
+p2 + p3
+```
+
+```{r}
+p1 + p2
+```
+
+
+```{r}
+rm(
+mds_plot,
+p1, p2, p3, 
+og_correlation_matrix, 
+lme4_intercept_corrplot_dt, 
+mplus_intercept_corrplot_df
+)
+```
+

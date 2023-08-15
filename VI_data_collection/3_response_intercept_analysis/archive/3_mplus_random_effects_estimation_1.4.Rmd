@@ -1,0 +1,110 @@
+---
+title: "random effects estimated with lmer and mplus"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('dplyr')           # data manipulation
+library('tidyr')           # data manipulation
+library("MplusAutomation") # Mplus integration
+#library("boot")            # bootstrapping CIs
+library('ggplot2')         # visualization
+
+# load datasets
+source(here("VI_data_collection", "2_intermediary_response_data_computing", "0_format_response_data_1.1.R"))
+
+# load mplus functions
+source(here("VI_data_collection", "2_intermediary_response_data_computing", "_functions", "mplus_descriptives_function_1.7.R"))
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+
+```{r}
+fit   <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_participant_model_1.0.RDS"))
+fit_p <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_participant_model_p_1.0.RDS"))
+fit_c <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_participant_model_c_1.0.RDS"))
+fit_a <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_participant_model_a_1.0.RDS"))
+```
+
+```{r}
+mplus_ran_effect_sd_dt   <- assemble_ci_dfs(
+  responses_dt %>% rename(subject_ID = participant_ID), fit) %>%
+  mutate(dataset = "complete and partial responses")
+
+# these didn't run
+mplus_ran_effect_sd_dt_p <- assemble_ci_dfs(
+  responses_dt_p %>% rename(subject_ID = participant_ID), fit) %>% 
+  mutate(dataset = "pilot study responses only")
+
+mplus_ran_effect_sd_dt_c <- assemble_ci_dfs(
+  responses_dt_c %>% rename(subject_ID = participant_ID), fit) %>% 
+  mutate(dataset = "complete responses only")
+
+mplus_ran_effect_sd_dt_a <- assemble_ci_dfs(
+  responses_dt_a %>% rename(subject_ID = participant_ID), fit) %>% 
+  mutate(dataset = "all responses")
+
+rm(assemble_ci_dfs, bootstrap_SD_list, ci_list_item_to_row, format_ci_df, samplesd)
+```
+
+```{r}
+# save objects
+save(mplus_ran_effect_sd_dt, file = here("VI_data_collection", "_data","intermediary_data", "mplus_random_effect_sd_dt.RDS"))
+
+#save(mplus_ran_effect_sd_dt_p, file = here("VI_data_collection", "_data","intermediary_data", "mplus_random_effect_sd_dt_p.RDS"))
+
+#save(mplus_ran_effect_sd_dt_c, file = here("VI_data_collection", "_data","intermediary_data", "mplus_random_effect_sd_dt_c.RDS"))
+
+#save(mplus_ran_effect_sd_dt_a, file = here("VI_data_collection", "_data","intermediary_data", "mplus_random_effect_sd_dt_a.RDS"))
+```
+
+```{r}
+mplus_intercept_df_1 <- get_random_intercepts_mplus(responses_dt %>% rename(subject_ID = participant_ID), fit, "item_ID")
+```
+
+
+```{r}
+build_intercept_df <- function(df, fit_object=fit, dataset_label){
+  
+  # df <- responses_dt_p %>% rename(subject_ID = participant_ID)
+  # fit_object <- fit_p
+  
+  df <- get_random_intercepts_mplus(
+    # adjust column name to fit legacy function
+    df %>% rename(subject_ID = participant_ID), fit_object, 
+    # specify intercept to retrieve
+    intercept = 'item_ID') %>%
+    # pivot values columns to long format
+    pivot_longer(cols = all_of(values), names_to = "value", values_to = "intercept") %>% 
+    # reorder df
+    arrange(value, ITEM_ID) %>%
+    # add column that labels the dataset
+    mutate(dataset = dataset_label)
+}
+```
+
+```{r}
+# build intercept df for each dataset
+mplus_intercept_df_1 <- build_intercept_df(responses_dt, fit, "complete and partial responses") %>% rename(item_ID = ITEM_ID)
+mplus_intercept_df_c <- build_intercept_df(responses_dt_c, fit_c, "complete responses only") %>% rename(item_ID = ITEM_ID)
+mplus_intercept_df_p <- build_intercept_df(responses_dt_p, fit_p, "pilot study responses only") %>% rename(item_ID = ITEM_ID)
+mplus_intercept_df_a <- build_intercept_df(responses_dt_a, fit_a, "all responses") %>% rename(item_ID = ITEM_ID)
+
+# merge to single data frame
+mplus_intercept_df <- rbind(mplus_intercept_df_1, mplus_intercept_df_c, mplus_intercept_df_p, mplus_intercept_df_a)
+
+rm(mplus_intercept_df_1, mplus_intercept_df_c, mplus_intercept_df_p, mplus_intercept_df_a)
+```
+
+
+```{r}
+# save object
+save(mplus_intercept_df, file = here("VI_data_collection", "_data","intermediary_data", "mplus_intercept_df.RDS"))
+```
+
+
+

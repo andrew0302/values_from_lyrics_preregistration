@@ -1,0 +1,145 @@
+---
+title: "random effects estimated with lmer"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('dplyr')           # data manipulation
+library('tidyr')           # data manipulation
+library("MplusAutomation") # Mplus integration
+library("boot")            # bootstrapping CIs
+library('ggplot2')         # visualization
+
+# load datasets
+source(here("VI_data_collection", "2_intermediary_response_data_computing", "0_format_response_data_1.1.R"))
+
+# load lme4 functions
+source(here("VI_data_collection", "2_intermediary_response_data_computing", "_functions", "lme4_descriptives_function_1.7.R"))
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+```{r}
+lme4_random_effects <- function(df){
+  # select only ID columns and values scores
+  df <- df %>% select(participant_ID, item_ID, all_of(values))
+  
+  # rename columns to have same names as in functions
+  colnames(df) <- c("subject_ID", "item_ID", values)
+  
+  # run lmer models with each value as the dependent variable and
+  # extract standard deviation 95% CI for participants and songs by value
+  lme4_random_effect_sd_dt <- df |> 
+    assemble_random_effect_sd_dt()
+}
+```
+
+
+
+
+```{r}
+# estimate random effects for each df
+lme4_ran_effect_sd_dt   <- lme4_random_effects(responses_dt)   %>% mutate(dataset = "complete and partial responses")
+lme4_ran_effect_sd_dt_c <- lme4_random_effects(responses_dt_c) %>% mutate(dataset = "complete responses only")
+lme4_ran_effect_sd_dt_p <- lme4_random_effects(responses_dt_p) %>% mutate(dataset = "pilot study responses only")
+lme4_ran_effect_sd_dt_a <- lme4_random_effects(responses_dt_a) %>% mutate(dataset = "all responses")
+```
+
+
+```{r}
+# merge intermediary dfs
+lme4_random_effect_sd_dt <- rbind(
+  lme4_ran_effect_sd_dt_p,
+  lme4_ran_effect_sd_dt_c, 
+  lme4_ran_effect_sd_dt, 
+  lme4_ran_effect_sd_dt_a 
+  )
+
+# save object
+save(lme4_random_effect_sd_dt, file = here("VI_data_collection", "_data","intermediary_data", "lme4_random_effect_sd_dt.RDS"))
+
+rm(lme4_ran_effect_sd_dt_p,lme4_ran_effect_sd_dt_c, lme4_ran_effect_sd_dt, lme4_ran_effect_sd_dt_a)
+```
+
+```{r}
+lme4_intercept_and_predicted <- function(df){
+  # select only ID columns and values scores
+  df <- df %>% select(participant_ID, item_ID, all_of(values))
+  
+  # rename columns to have same names as in functions
+  colnames(df) <- c("subject_ID", "item_ID", values)
+  
+  # run lmer models with each value as the dependent variable and
+  # extract standard deviation 95% CI for participants and songs by value
+  lme4_intercept_and_predicted_dt <- df |> 
+     assemble_intercept_and_predicted_dt()
+}
+```
+
+```{r}
+lme4_intercept_dt   <- lme4_intercept_and_predicted(responses_dt)   %>% 
+  mutate(dataset = "complete and partial responses")
+lme4_intercept_dt_c <- lme4_intercept_and_predicted(responses_dt_c) %>% 
+  mutate(dataset = "complete responses only")
+lme4_intercept_dt_p <- lme4_intercept_and_predicted(responses_dt_p) %>% 
+  mutate(dataset = "pilot study responses only")
+lme4_intercept_dt_a <- lme4_intercept_and_predicted(responses_dt_a) %>% 
+  mutate(dataset = "all responses")
+```
+
+
+```{r}
+# merge intermediary dfs
+lme4_intercept_and_predicted_dt <- rbind(
+  lme4_intercept_dt_p,
+  lme4_intercept_dt_c, 
+  lme4_intercept_dt, 
+  lme4_intercept_dt_a 
+  )
+
+# save object
+save(lme4_intercept_and_predicted_dt, file = here("VI_data_collection", "_data", "intermediary_data", "lme4_intercept_and_predicted_dt.RDS"))
+```
+
+```{r}
+rm(
+lme4_intercept_and_predicted_dt, 
+lme4_intercept_dt, 
+lme4_intercept_dt_a, 
+lme4_intercept_dt_c, 
+lme4_intercept_dt_p, 
+lme4_ran_effect_sd_dt_a, 
+lme4_ran_effect_sd_dt_p, 
+lme4_ran_effect_sd_dt_c, 
+lme4_random_effect_sd_dt, 
+lme4_random_effects,
+responses_dt, 
+responses_dt_a, 
+responses_dt_c, 
+responses_dt_p,
+workers, values, 
+assemble_intercept_and_predicted_dt, 
+assemble_random_effect_sd_dt, 
+get_individual_intercepts, 
+get_random_confints_dt, 
+get_random_intercept_sd_dt, 
+get_within_estimates, 
+list_to_dt, 
+lme4_intercept_and_predicted, 
+makeNamedList, 
+run_mods_f)
+```
+```{r}
+length(levels(as.factor(lme4_intercept_and_predicted_dt$item_ID)))
+length(levels(as.factor(mplus_intercept_df$ITEM_ID)))
+
+length(levels(as.factor(lme4_intercept_and_predicted_dt$dataset)))
+length(levels(as.factor(mplus_intercept_df$dataset)))
+
+length(levels(as.factor(mplus_intercept_df$value)))
+length(levels(as.factor(lme4_intercept_and_predicted_dt$value)))
+```
+

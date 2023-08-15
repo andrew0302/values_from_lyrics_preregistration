@@ -1,19 +1,22 @@
 ---
-title: "Data Export"
+title: "fix column names"
 author: "Andrew M. Demetriou"
 date: "2023-04-03"
 output: html_document
 ---
 
+#AIM: manual adjustment of data entry errors in the column names
+
+
 ```{r setup, include=FALSE}
 library('data.table')   # read in .csv with fread
 library('here')         # file logistics
 library('dplyr')        # code logistics
-library("stringr")      # string recognition
+library("stringr")      # string manipylation
 ```
 
 ```{r}
-source(here("VI_data_collection_november_2022", 'scripts', '1_data_import_1.1.R'))
+source(here("VI_data_collection", '1_response_data_cleaning', '1_data_format_1.2.R'))
 ``` 
 
 ```{r}
@@ -104,6 +107,7 @@ column_names_df |>
 column_names_df$column <- column_names_df$column %>%
   gsub("\\-r_", "-m_", .)
 ```
+
 ```{r}
 # manual adjustment of '-m' labels
 

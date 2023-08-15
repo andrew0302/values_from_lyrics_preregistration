@@ -1,0 +1,322 @@
+---
+title: "random effects estimated with lmer and mplus"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('dplyr')           # data manipulation
+library('tidyr')           # data manipulation
+library('ggplot2')         # visualization
+library('ggridges')        # joyplots
+library('corrplot')        # correlation plot
+library('patchwork')       # combine plots
+library("MplusAutomation") # Mplus integration
+library("boot")            # bootstrapping CIs
+
+# load dataset
+source(here("VI_data_collection_november_2022", "functions", "load_and_format_data_1.0.R"))
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+```{r}
+# load lme4 functions
+source(here("VI_data_collection_november_2022", "functions", "lme4_descriptives_function_1.7.R"))
+
+# load mplus functions
+
+```
+
+```{r}
+# select only ID columns and values scores
+df <- responses_dt %>% select(participant_ID, item_ID, all_of(values))
+
+# rename columns to have same names as in functions
+colnames(df) <- c("subject_ID", "item_ID", values)
+
+rm(responses_dt)
+```
+
+```{r}
+# run lmer models for each value as the dependent variable 
+# extract standard deviation 95% CI for participants and songs by value
+
+# lme4_random_effect_sd_dt <- df |> 
+#   assemble_random_effect_sd_dt()
+
+# save object
+# save(lme4_random_effect_sd_dt, file = here("VI_data_collection_november_2022", "intermediary_data", "lme4_random_effect_sd_dt.RDS"))
+
+load(here("VI_data_collection_november_2022", "intermediary_data", "lme4_random_effect_sd_dt.RDS"))
+```
+
+```{r}
+# run lmer models for each value as the dependent variable 
+# extract item intercepts and .fitted values for each observation
+# lme4_intercept_and_predicted_dt <- df %>% assemble_intercept_and_predicted_dt()
+
+# save object
+# save(lme4_intercept_and_predicted_dt, file = here("VI_data_collection_november_2022", "intermediary_data", "lme4_intercept_and_predicted_dt.RDS"))
+
+load(here("VI_data_collection_november_2022", "intermediary_data", "lme4_intercept_and_predicted_dt.RDS"))
+```
+
+```{r}
+# format df for mplus:
+# rename columns to have same names as in functions
+colnames(df) <- c("subject_ID", "item_ID", paste0("y", seq(1, 10)))
+
+# mplus and data.table don't work together
+df <- as.data.frame(df)
+```
+
+```{r}
+# mplus model specification:
+# this model estimates parameters from response data 
+# including the correlation of the item intercepts
+
+mplus_model <- mplusObject(
+  TITLE = "model;",
+  MISSING = ".;",
+  # select only participant variables
+  VARIABLE = "
+  USEVARIABLES = item_ID subject_ID y1-y10;
+  CLUSTER = item_ID subject_ID;",
+  
+  # the only estimator available is Bayes
+  # manual page 656:
+  # FBITERATIONS: number of iterations for each MCMC chain
+  ANALYSIS = "
+  TYPE = CROSSCLASSIFIED RANDOM;
+  ESTIMATOR = BAYES;
+  FBITERATIONS = 10000;
+  ALGORITHM = GIBBS(RW);
+  PROCESSORS = 11;",
+  
+  MODEL = "
+  
+  %within% 
+  y1-y10;
+  
+  %between item_ID% 
+  y1-y10; [y1-y10];  
+  y1 WITH y1-y10;
+  y2 WITH y1-y10;
+  y3 WITH y1-y10;
+  y4 WITH y1-y10;
+  y5 WITH y1-y10;
+  y6 WITH y1-y10;
+  y7 WITH y1-y10;
+  y8 WITH y1-y10;
+  y9 WITH y1-y10;
+  y10 WITH y1-y10;
+  
+  %between subject_ID% 
+  y1-y10; [y1-y10@0];", 
+  
+  OUTPUT = "standardized cinterval(hpd)",
+  
+  # page 838 of the manual:
+  # distribution of plausible values for each observation
+  # first number in fscores is the number of draws to compute per observation
+  # from a bayesian estimation procedure;
+  # when second number in fscores is ten, every tenth draw is used to compute 
+  SAVEDATA = "FILE IS fscores.dat;
+              Save = fscores(100 10);",
+  
+  rdata = df
+)
+
+# run mplus model
+fit <- mplusModeler(mplus_model, 
+                    modelout = "mplus/sim.inp", 
+                    run=TRUE)
+# print errors and warnings
+ fit$results$errors
+ fit$results$warnings
+
+rm(mplus_model)
+```
+
+```{r}
+# extract standard deviation 95% CI for participants and songs by value
+# mplus_random_effect_sd_dt <- assemble_ci_dfs(fit)
+
+# save object
+# save(mplus_random_effect_sd_dt, file = here("VI_data_collection_november_2022", "intermediary_data", "mplus_random_effect_sd_dt.RDS"))
+
+load(here("VI_data_collection_november_2022", "intermediary_data", "mplus_random_effect_sd_dt.RDS"))
+```
+
+```{r}
+# retrieve item intercepts from mplus model fscores output:
+#mplus_intercept_df <- get_random_intercepts_mplus(fit, intercept = 'item_ID')
+
+# format table
+#mplus_intercept_df <- mplus_intercept_df %>% 
+#  pivot_longer(cols = all_of(values), names_to = "value", values_to = "intercept") %>%
+#  arrange(value, ITEM_ID)
+  
+
+# save object
+# save(mplus_random_effect_sd_dt, file = here("VI_data_collection_november_2022", "intermediary_data", "mplus_intercept_df.RDS"))
+
+load(here("VI_data_collection_november_2022", "intermediary_data", "mplus_intercept_dt.RDS"))
+```
+
+
+```{r}
+
+
+# compute mean of item intercepts
+# in simulated data these were set to 0
+item_intercept_summary_df <-  mplus_intercept_df |>
+  dplyr::select(all_of(values)) |>
+  colMeans() |>
+  t() |>
+  as.data.frame() |>
+  t() |>
+  as.data.frame() |>
+  rownames_to_column() |>
+  rename('mean' = 'V1', 'values' = 'rowname') 
+```
+
+
+```{r}
+# plot estimated standard deviation for participants for each value
+lme4_random_effect_sd_dt %>%
+  ggplot(aes(x=model, y=subject_ID, color=model)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=subject_ID_lower, ymax=subject_ID_higher)) +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45)) +
+  ggtitle("lme4_subject random effect SD by value")
+```
+
+```{r}
+# plot estimated standard deviation for items (lyrics) for each value
+lme4_random_effect_sd_dt %>%
+  ggplot(aes(x=model, y=item_ID, color=model)) +
+  geom_errorbar(aes(ymin=item_ID_lower, ymax=item_ID_higher)) + 
+  geom_point() +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45)) +
+  ggtitle("lme4_item random effect SD by value")
+```
+
+
+
+```{r}
+# make dataframe of mean of item intercept per item
+intercept_summary_dt <- intercept_and_predicted_dt |>
+  group_by(value) |>
+  summarize(mean_intercept = mean(intercept), mean_fitted = mean(mean))
+
+# format in non-scientific  notation for plotting
+intercept_summary_dt$mean_intercept <- intercept_summary_dt$mean_intercept |> 
+  format(scientific = F) |> as.numeric()
+intercept_summary_dt$mean_fitted    <- intercept_summary_dt$mean_fitted    |> 
+  format(scientific = F) |> as.numeric()
+
+# plot means
+intercept_summary_dt |>
+  ggplot(aes(x=value, y=mean_intercept)) +
+    geom_point() +
+    #scale_y_continuous(limits = c(-0.001, 0.001)) +
+    geom_hline(yintercept = 0, linetype = 'dotted', color = 'red') +
+    theme_minimal() +
+    theme(legend.position = "none", axis.text.x = element_text(angle = 45))
+
+rm(intercept_summary_dt)
+```
+
+```{r}
+intercept_and_predicted_dt %>% group_by(value) %>%
+  ggplot(aes(x= intercept, y = value, fill =value, alpha = 0.7)) +
+  geom_density_ridges() + 
+  theme(legend.position = "none") + 
+  xlab("item intecepts") + 
+  ylab("schwartz value")
+```
+
+
+```{r}
+intercept_dt <- intercept_and_predicted_dt |>
+  # remove 'within' values
+  select(-mean) |>
+  # set each value as a column
+  pivot_wider(names_from = 'value', values_from = 'intercept')
+
+# change order to have same order as original correlation plot
+data_corr_plot_dt <- intercept_dt %>%
+  select(POWER, SECURITY, CONFORMITY, 
+         TRADITION, BENEVOLENCE, UNIVERSALISM, 
+         SELF, STIMULATION, HEDONISM, 
+         ACHIEVEMENT) %>%
+  # make correlation matrix
+  cor()
+
+#remove rownames
+rownames(data_corr_plot_dt) <- NULL
+  
+# correlation matrix used in simulation study from Schwartz, 2001:
+og_correlation_matrix <- rbind(
+    c(   1,  .04, -.04, -.20, -.32, -.48,  -.11,  .01,  .09,   .50), #power
+    c( .04,    1,  .25,  .08,  .01, -.30,  -.34, -.35, -.12,  -.11), #security
+    c(-.04,  .25,    1,  .35,  .15, -.19,  -.41, -.31, -.32,  -.18), #conformity
+    c(-.20,  .08,  .35,    1,  .12, -.07,  -.31, -.19, -.42,  -.38), #tradition
+    c(-.32,  .01,  .15,  .12,    1, -.08,  -.20, -.25, -.26,  -.25), #benevolence
+    c(-.48, -.30, -.19, -.07, -.08,    1,   .12, -.02, -.01,  -.39), #universalism
+    c(-.11, -.34, -.41, -.31, -.20,  .12,     1,  .22,  .19,   .13), #self-direction
+    c( .01, -.35, -.31, -.19, -.25, -.02,   .22,    1,  .29,   .02), #stimulation
+    c( .09, -.12, -.32, -.42, -.26, -.01,   .19,  .29,    1,   .12), #hedonism
+    c( .50, -.11, -.18, -.38, -.25, -.39,   .13,  .02,  .12,     1) #achievement 
+) %>% as.data.frame()
+
+# name columns
+colnames(og_correlation_matrix) <- c("power", "security", "conformity", 
+                                  "tradition", "benevolence", "universalism", 
+                                  "self_direction", "stimulation", 
+                                  "hedonism", "achievement")
+
+
+# plot correlation plots side by side
+par(mfrow=c(1,2))
+
+corrplot(data_corr_plot_dt, 
+         method = 'color', 
+         type = 'full', 
+         addCoef.col = 'black', 
+         number.cex = 0.6)
+
+corrplot(as.matrix(og_correlation_matrix), 
+         method = 'color', 
+         type = 'full', 
+         addCoef.col = 'black', 
+         number.cex = 0.6)
+```
+
+```{r}
+rm(
+df,
+values, 
+workers, 
+run_mods_f, 
+list_to_dt, 
+intercept_dt, 
+makeNamedList, 
+data_corr_plot_dt, 
+get_within_estimates, 
+og_correlation_matrix, 
+get_random_confints_dt, 
+get_individual_intercepts, 
+intercept_and_predicted_dt,
+get_random_intercept_sd_dt, 
+assemble_random_effect_sd_dt, 
+assemble_intercept_and_predicted_dt
+)
+```
+

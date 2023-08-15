@@ -1,0 +1,108 @@
+---
+title: "checking mplus output"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('dplyr')           # data manipulation
+library('tidyr')           # data manipulation
+library("MplusAutomation") # Mplus integration
+library("boot")            # bootstrapping CIs
+library('ggplot2')         # visualization
+library('corrplot')        # visualization
+
+# load dataset
+source(here("VI_data_collection", "2_intermediary_response_data_computing", "0_format_response_data_1.1.R"))
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+
+
+```{r}
+# select only ID columns and values scores
+df <- responses_dt %>% select(row_number, participant_ID, item_ID, all_of(values))
+
+# rename columns to have same names as in functions
+colnames(df) <- c("row_number", "subject_ID", "item_ID", paste0("y", seq(1, 10)))
+df <- as.data.frame(df)
+
+rm(responses_dt)
+```
+
+
+```{r}
+# correlate data from mplus with original df
+
+# the output from the mplus model
+fit <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_participant_model_1.0.RDS"))
+
+# mplus output of dataset
+corr_df <- fit$results$savedata
+
+# merge with original df
+corr_df <- merge(df, corr_df, by.x='row_number', by.y = 'ROW_NUMB')
+
+# re-arrange so id variables come first
+corr_df <- corr_df %>% select(subject_ID, SUBJECT_ID, item_ID, ITEM_ID, all_of(everything()))
+
+# note output IDs don't correspond to original dataset
+corr_df[, c('subject_ID', 'SUBJECT_ID')]
+corr_df[, c('item_ID', 'ITEM_ID')]
+
+# checking to see if merging by row number worked
+corr_df <- corr_df %>% select(
+  all_of(starts_with("y")) | all_of(starts_with("Y"))
+  )
+
+# diagonal is correlation between original df variables and mplus variables
+# all appear to be 1
+cor(corr_df[,1:10], corr_df[,11:20]) %>% corrplot()
+
+#rm(corr_df)
+```
+
+```{r}
+# load mplus functions
+source(here("VI_data_collection", "2_intermediary_response_data_computing", "_functions", "mplus_descriptives_function_1.6.R"))
+```
+
+
+
+```{r}
+# check that means in mplus output match means extracted from fscores
+
+# retrieve item intercepts from mplus model fscores output:
+item_intercepts <- get_random_intercepts_mplus(df, fit, intercept = 'item_ID')
+
+# compute mean of item intercepts
+# in simulated data these were set to 0
+item_intercept_summary_df <-  item_intercepts %>%
+  select(-ITEM_ID) %>%
+  colMeans() %>%
+  t() %>%
+  as.data.frame() |>
+  t() |>
+  as.data.frame() |>
+  rownames_to_column() |>
+  rename('mean' = 'V1', 'values' = 'rowname') 
+
+model_output_means <- fit$results$parameters$unstandardized |>
+  filter(BetweenWithin == "Between ITEM_ID") |>
+  filter(paramHeader == "Means") |>
+  select(-paramHeader, -sig, -BetweenWithin)
+
+model_output_means |> 
+  ggplot(aes(x = values, y= est, color = values)) +
+    geom_point() +
+    geom_errorbar(aes(ymin=lower_2.5ci, ymax=upper_2.5ci)) + 
+    geom_hline(yintercept = 0, linetype = 'dotted', color = 'red') +
+    # plot the means extracted from the fscores file as a red 'x' (item_intercepts_summary_df)
+    geom_point(data = item_intercept_summary_df, aes(x=values, y=mean, color = "red"), shape = 4, size = 4) +
+    theme_minimal() +
+    theme(legend.position = "none", axis.text.x = element_text(angle = 45)) +
+    ggtitle("item intercept mean by value")
+```

@@ -1,0 +1,71 @@
+---
+title: "6_de_identify"
+author: "Andrew M. Demetriou"
+date: "2023-04-06"
+output: html_document
+---
+
+#AIM: De-identify dataset for publication with manuscript
+
+```{r}
+library('here')
+library('data.table')
+
+source(here("VI_data_collection", '1_response_data_cleaning', '5_pivot_long_1.2.R'))
+```
+
+```{r}
+de_identify_df <- function(df){
+  df <- df %>% select(-PROLIFIC_PID,   -Age, -Sex, 
+  -`Ethnicity simplified`, `Country of birth`, 
+  -`Total approvals`, -Nationality, 
+  `Country of residence`, Language, 
+  `Student status`, `Employment status`)
+}
+```
+
+```{r}
+# complete and incomplete survey responses
+response_df   <-de_identify_df(all_dt_long)
+
+# complete responses only
+response_df_c <- de_identify_df(complete_dt_long)
+
+rm(de_identify_df, all_dt_long, complete_dt_long)
+```
+
+```{r}
+# create a working dataframe with demographics
+# this will not be published with manuscript
+
+# remove prolific ID
+#working_df   <- all_dt_long |> select(-PROLIFIC_PID) %>% select(participant_ID, everything())
+#working_df_c <- complete_dt_long |>  select(-PROLIFIC_PID) %>% select(participant_ID, everything())
+
+# save working dfs
+#save(working_df, file = here("VI_data_collection", "_data", "survey_response_data", "working_df.RDS"))
+```
+
+```{r}
+#response_df <- working_df %>% select(
+#  -Age, -Sex, 
+#  -`Ethnicity simplified`, `Country of birth`, 
+#  -`Total approvals`, -Nationality, 
+#  `Country of residence`, Language, 
+#  `Student status`, `Employment status`)
+
+#rm(working_df)
+```
+
+```{r}
+# save dfs as R objects
+save(response_df, file = here("VI_data_collection", "_data", "survey_response_data", "response_df.RDS"))
+
+save(response_df_c, file = here("VI_data_collection", "_data", "survey_response_data", "response_df_c.RDS"))
+
+# save dfs as .csv files
+write.csv(response_df, file = here("VI_data_collection", "_data", "survey_response_data", "response_df.csv"))
+
+write.csv(response_df_c, file = here("VI_data_collection", "_data", "survey_response_data", "response_df_c.csv"))
+```
+
