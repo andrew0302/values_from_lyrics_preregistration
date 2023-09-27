@@ -1,0 +1,123 @@
+---
+title: title: "estimate correlations, single machines model, with R"
+---
+
+
+```{r}
+library('data.table')      # data manipulation
+library('here')            # file logistics
+library('tidyverse')       # data manipulation
+library("lavaan")
+library("lavaanExtra")
+library("lavaanPlot")
+```
+
+```{r}
+# load machine dataset
+load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_f_df.RDS"))
+machines_as_fixed_f_df <- machines_as_fixed_f_df %>% select(-(contains("mean")))
+
+# lme4 item intercepts
+load(here("VI_data_collection", "_data","intermediary_data", "lme4_intercept_and_predicted_dt.RDS"))
+
+# mplus item intercepts
+load(here("VI_data_collection", "_data","intermediary_data", "mplus_intercept_df.RDS"))
+```
+
+```{r}
+# pivot to wide format
+lme4_intercept_df <- lme4_intercept_and_predicted_dt %>%
+  select(-mean) %>%
+  pivot_wider(id_cols = "item_ID", values_from = "intercept", names_from = "value")
+
+mplus_intercept_df <- mplus_intercept_df %>%
+  rename(item_ID = ITEM_ID) %>%
+  pivot_wider(id_cols = "item_ID", values_from = "intercept", names_from = "value")
+
+
+rm(lme4_intercept_and_predicted_dt)
+```
+
+```{r}
+# merge with machine scores dataframe
+lme4_participant_machines_df <- merge(lme4_intercept_df, machines_as_fixed_f_df, by="item_ID")
+
+# merge with machine scores dataframe
+mplus_participant_machines_df <- merge(mplus_intercept_df, machines_as_fixed_f_df, by="item_ID")
+
+rm(mplus_intercept_df, lme4_intercept_df, machines_as_fixed_f_df)
+```
+
+```{r}
+# scale and center variables
+df <- lme4_participant_machines_df
+df[,2:91] <- scale(df[,2:91])
+```
+
+```{r}
+source(here("VI_data_collection", "7_participant_machine_correlation", "_lavaan_models", "1_single_machines_lavaan_1.0.R"))
+
+fit_list <- lapply(models, cfa, data=df)
+names(fit_list) <- c("model_all_all", 
+                   "model_all_idf", "model_all_uniform", 
+                   "model_all_mxm_trained", "model_all_pretrained", 
+                   "model_idf_pretrained", "model_uniform_pretrained", 
+                   "model_idf_mxm_trained", "model_uniform_mxm_trained")
+```
+
+
+from: West, S. G., Taylor, A. B., & Wu, W. (2012). Model fit and model selection in structural equation modeling. In R. H. Hoyle (Ed.), Handbook of Structural Equation Modeling (pp. 209-231). New York, NY: Guilford.
+
+unacceptable: RMSEA > .8 - .10 
+
+```{r}
+fit_df <- lapply(fit_list, nice_fit) %>% rbindlist()
+fit_df$Model <- as.character(names(fit_list))
+
+fit_df
+```
+
+```{r}
+source(here("VI_data_collection", "7_participant_machine_correlation", "_lavaan_models", "2_combined_machines_lavaan_1.0.R"))
+
+fit_list <- lapply(models, cfa, data=df)
+names(fit_list) <- c("model_all_all", 
+                   "model_all_idf", 
+                   "model_all_uniform")
+
+#fit_df <- lapply(fit_list[[2]], nice_fit) %>% rbindlist()
+#fit_df$Model <- as.character(names(fit_list))
+#fit_df
+
+#cfa(fit_list[[3]], data = df)
+
+# model_all_idf was the only model that converged
+nice_fit(fit_list[[2]])
+```
+
+```{r}
+source(here("VI_data_collection", "7_participant_machine_correlation", "_lavaan_models", "3_grouped_machines_lavaan_1.0.R"))
+fit_list <- lapply(models, cfa, data=df)
+
+#cfa(models[[4]], data = df)
+
+# model_split_idf was the only model that converged
+nice_fit(fit_list[[2]])
+```
+
+```{r}
+source(here("VI_data_collection", "7_participant_machine_correlation", "_lavaan_models", "4_pretrained_machines_lavaan_1.0.R"))
+fit_list <- lapply(models, cfa, data=df)
+
+#cfa(models[[4]], data=df)
+
+fit_df <- lapply(fit_list[3:4], nice_fit) %>% rbindlist()
+fit_df$Model <- as.character(names(fit_list[3:4]))
+```
+
+```{r}
+nice_lavaanPlot(fit_list[[4]])
+
+output_df <- standardizedSolution(fit_list[[4]])
+```
+

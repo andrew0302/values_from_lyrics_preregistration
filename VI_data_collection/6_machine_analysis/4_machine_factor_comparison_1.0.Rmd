@@ -27,6 +27,7 @@ values <- c("POWER", "ACHIEVEMENT", "HEDONISM",
 machines_as_fixed_df <- machines_as_subjects_df %>%
   pivot_wider(id_cols = item_ID, names_from = participant_ID, values_from = all_of(values))
 
+# df with reduced columns for the mxm-trained models
 load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_r_df.RDS"))
 
 rm(machines_as_subjects_df)
@@ -36,7 +37,7 @@ rm(machines_as_subjects_df)
 # add glove and word2vec scores to dimension reduced dataframe
 machines_as_fixed_df <- merge(machines_as_fixed_r_df, machines_as_fixed_df %>% select(item_ID, contains("glove"), contains("google")), by="item_ID")
 
-rm(machines_as_fixed_r_df)
+#rm(machines_as_fixed_r_df)
 ```
 
 Here I examine the factors comprised of all the machine setups and the means. 
@@ -90,7 +91,8 @@ cors_df %>% pivot_longer(
 rm(cors_df)
 ```
 
-I think I can safely drop all the mean scores for all values except HEDONISM.
+High correlations for all except Hedonism. 
+Here I plot the distributions:
 
 ```{r}
 p1 <- machines_as_fixed_r_df %>% 
@@ -124,6 +126,41 @@ p2 <- machines_as_fixed_r_df %>%
   ylab("model")
 
 p1 / p2
+```
+
+```{r}
+machines_as_fixed_df_long <- machines_as_fixed_df %>%
+  pivot_longer(cols = -item_ID, values_to = "estimate", names_sep = "_", names_to = c("value", "model", "weight", "dimension_reduction"))
+
+machines_as_fixed_df_long$setup <- paste0(machines_as_fixed_df_long$model, "_", machines_as_fixed_df_long$weight)
+```
+```{r}
+joyplot_by_value <- function(df){
+  df %>%
+    ggplot(aes(x= estimate, y = setup, fill =setup, alpha = 0.7)) +
+    facet_wrap(~value, ncol = 2) +
+    geom_density_ridges() + 
+    theme(legend.position = "none") + 
+    xlab("score") + 
+    ylab("model")
+}
+```
+
+```{r}
+joyplot_by_value(df = machines_as_fixed_df_long %>%
+  filter(!model == "glove840B300d" | !model == "googlenews") %>%
+  filter(dimension_reduction == "mean"))
+
+joyplot_by_value(df = machines_as_fixed_df_long %>%
+  filter(!model == "glove840B300d" | !model == "googlenews") %>%
+  filter(dimension_reduction == "fa"))
+
+joyplot_by_value(machines_as_fixed_df_long %>%
+  filter(model == "glove840B300d" | model == "googlenews"))
+```
+
+```{r}
+
 ```
 
 

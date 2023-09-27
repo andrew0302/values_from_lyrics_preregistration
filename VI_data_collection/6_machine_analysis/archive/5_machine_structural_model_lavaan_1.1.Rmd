@@ -1,0 +1,155 @@
+---
+title: title: "estimate correlations, single machines model, with R"
+---
+
+
+```{r}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library("lavaan")          # SEM
+library("lavaanExtra")     # SEM helper functions
+library("semPlot")         # visualization
+library("stringr")
+```
+
+```{r}
+# load machine dataset
+load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_f_df.RDS"))
+machines_as_fixed_f_df <- machines_as_fixed_f_df %>% select(-(contains("mean")))
+
+# lme4 item intercepts
+load(here("VI_data_collection", "_data","intermediary_data", "lme4_intercept_and_predicted_dt.RDS"))
+
+# mplus item intercepts
+load(here("VI_data_collection", "_data","intermediary_data", "mplus_intercept_df.RDS"))
+```
+
+```{r}
+# pivot to wide format
+lme4_intercept_df <- lme4_intercept_and_predicted_dt %>%
+  select(-mean) %>%
+  pivot_wider(id_cols = "item_ID", values_from = "intercept", names_from = "value")
+
+mplus_intercept_df <- mplus_intercept_df %>%
+  rename(item_ID = ITEM_ID) %>%
+  pivot_wider(id_cols = "item_ID", values_from = "intercept", names_from = "value")
+
+
+rm(lme4_intercept_and_predicted_dt)
+```
+
+```{r}
+# merge with machine scores dataframe
+lme4_participant_machines_df <- merge(lme4_intercept_df, machines_as_fixed_f_df, by="item_ID")
+
+# merge with machine scores dataframe
+mplus_participant_machines_df <- merge(mplus_intercept_df, machines_as_fixed_f_df, by="item_ID")
+
+rm(mplus_intercept_df, lme4_intercept_df, machines_as_fixed_f_df)
+```
+
+```{r}
+# scale and center variables
+df <- lme4_participant_machines_df
+df[,2:91] <- scale(df[,2:91])
+```
+
+```{r}
+variables <- colnames(df)[12:91]
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM", 
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION", 
+            "CONFORMITY", "SECURITY")
+
+
+POWER <- list(power = str_subset(variables, "POWER"))
+
+
+#power.model <- write_lavaan(latent = POWER)
+#cat(power.model)
+
+fit <- sem(power.model, data = df) %>% nice_fit()
+
+```
+
+
+
+
+
+```{r}
+source(here("VI_data_collection", "6_machine_analysis", "_lavaan_models", "1_single_machines_lavaan_1.0.R"))
+```
+
+
+```{r}
+# exploratory structural equation (esem) with all machine variables
+# cfi = 0.213, tli = 0.181
+fit <- sem(model=esem_all_all, data=df)
+nice_fit(fit)
+semPaths(fit, layout="circle", sizeMan = 4, sizeLat = 4)
+semPaths(fit, layout="circle", sizeMan = 4, sizeLat = 4, "std", structural = TRUE)
+```
+
+
+```{r}
+# esem, split mxm and pre-trained models
+# model does not converge
+fit <- sem(model=esem_mxm_split_all, data=df)
+```
+
+```{r}
+# model does not converge
+fit <- sem(model = esem_weight_split_idf, data = df)
+nice_fit(fit)
+#semPaths(fit, layout="tree", sizeMan = 4, sizeLat = 4, "est", "std", label.cex = 2)
+```
+
+```{r}
+# esem split mxm and pretrained models, using only idf weights
+# model does not converge
+fit <- sem(model = esem_weight_split_uni, data = df)
+nice_fit(fit)
+#semPaths(fit, layout="tree", sizeMan = 4, sizeLat = 4, "est", label.cex = 2)
+```
+
+```{r}
+fit <- sem(model = esem_mxm_only_all, data = df)
+nice_fit(fit)
+semPaths(fit, layout="tree", sizeMan = 4, sizeLat = 4, "est", label.cex = 2)
+```
+
+```{r}
+fit <- sem(model = esem_pre_only_all, data = df)
+nice_fit(fit)
+semPaths(fit, layout="tree", sizeMan = 4, sizeLat = 4, "est", label.cex = 2)
+```
+
+```{r}
+fit <- sem(model = esem_mxm_only_split, data = df)
+nice_fit(fit)
+semPaths(fit, layout="tree", sizeMan = 4, sizeLat = 4, "est", label.cex = 2)
+```
+
+```{r}
+fit <- sem(model = esem_pre_only_split, data = df)
+nice_fit(fit)
+semPaths(fit, layout="tree", sizeMan = 4, sizeLat = 4, "est", label.cex = 2)
+```
+
+```{r}
+fit <- sem(model = esem_mxm_split_idf, data = df)
+nice_fit(fit)
+```
+
+```{r}
+#fit <- cfa(model = sem_mxm_split_idf, data = df)
+fit <- sem(model = model_split_idf_nocor, data = df)
+nice_fit(fit)
+semPaths(fit, layout="tree", sizeMan = 4, sizeLat = 4, "est", label.cex = 2)
+t<-lavaan_cor(fit)
+fit <- sem(model = model_split_idf, data = df)
+s<-lavaan_cor(fit)
+```
+

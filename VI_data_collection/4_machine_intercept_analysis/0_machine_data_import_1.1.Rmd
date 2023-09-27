@@ -1,0 +1,93 @@
+---
+title: "machine data import"
+author: "Andrew M. Demetriou"
+---
+
+#AIM: Import and format machine scores data provided by Jaehun Kim. 
+
+```{r}
+library('here')         # file logistics
+library('data.table')   # data logistics  
+library('tidyverse')    # data logistics
+```
+
+```{r}
+# create list of machine output file names
+path <- here("VI_data_collection", "_data", "machine_scores", "first_export")
+files <- list.files(path)
+```
+
+
+```{r}
+# create list of read in files
+machines_as_subjects <- lapply(files, function(x){
+  # read in file
+  df <- fread(input = here(path, x))
+  # create machine ID column, remove file extension
+  df$machine_ID <- gsub("\\..*","",x)
+  # reorder columns
+  df <- df %>% select(machine_ID, song_id, all_of(everything()))
+  return(df)
+})
+
+# turn list into a single data.table
+machines_as_subjects <- rbindlist(machines_as_subjects)
+# transform to character column
+machines_as_subjects$song_id <- as.character(machines_as_subjects$song_id)
+```
+
+```{r}
+# load participant response dataset
+response_dfs <- readRDS(here("VI_data_collection", "_data", "survey_response_data", "response_dfs.RDS"))
+
+# unique item_ids for subsetting machine output dataframe
+machines_as_subjects <- lapply(response_dfs, function(x){
+  # get item ids from list of response dfs
+  item_ids <- x %>% select(item_ID) %>% unique()
+  
+  # subset machine df by item ids
+  df <- machines_as_subjects[song_id %in% item_ids$item_ID, ] %>% 
+           select(-V1)
+  # add row number column to sync with mplus
+  df$row_number <- seq(1:nrow(df))
+  
+  # rename columns
+  colnames(df) <- c(
+    "participant_ID", "item_ID", 
+    "SECURITY", "CONFORMITY", "TRADITION", 
+    "BENEVOLENCE", "UNIVERSALISM", "SELF", 
+    "STIMULATION", "HEDONISM", 
+    "ACHIEVEMENT", "POWER", "row_number")
+  
+  # reorder columns 
+  df <- df %>% 
+    select(row_number, participant_ID, item_ID, 
+         POWER, ACHIEVEMENT, HEDONISM, 
+         STIMULATION, SELF, UNIVERSALISM, 
+         BENEVOLENCE, TRADITION, 
+         CONFORMITY, SECURITY)
+})
+
+# name machine dfs
+names(machines_as_subjects) <- c(
+  "machines_as_subjects", 
+  "machines_as_subjects_c",
+  "machines_as_subjects_p",
+  "machines_as_subjects_a")
+
+#machines_as_subjects <- machines_as_subjects[2:4]
+```
+
+
+```{r}
+saveRDS(machines_as_subjects, file = here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS"))
+
+write_csv(machines_as_subjects[[1]], file = here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.csv"))
+
+write_csv(machines_as_subjects[[2]], file = here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df_c.csv"))
+
+write_csv(machines_as_subjects[[3]], file = here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df_p.csv"))
+
+write_csv(machines_as_subjects[[4]], file = here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df_a.csv"))
+```
+

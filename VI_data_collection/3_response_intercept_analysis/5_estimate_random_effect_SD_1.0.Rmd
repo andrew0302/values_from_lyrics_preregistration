@@ -21,7 +21,7 @@ values <- c("POWER", "ACHIEVEMENT", "HEDONISM",
 response_dfs <- readRDS(file=here("VI_data_collection", "_data", "survey_response_data", "response_dfs.RDS"))
 
 # load mplus fit objects
-fits <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_participant_fits"))
+fits <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_participant_fits.RDS"))
 
 # load functions
 source(here("VI_data_collection", "3_response_intercept_analysis", "_functions", "lme4_descriptives_function_1.7.R"))

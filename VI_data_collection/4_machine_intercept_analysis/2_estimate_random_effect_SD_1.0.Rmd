@@ -1,0 +1,108 @@
+---
+title: "machine random effect estimation"
+author: "Andrew M. Demetriou"
+date: "`r Sys.Date()`"
+---
+
+```{r}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('dplyr')           # data manipulation
+library('tidyr')           # data manipulation
+library('ggplot2')         # visualization
+library('ggridges')        # joyplot visualization
+library('psych')           # intra class correlation
+
+# remove scientific notation
+options(scipen=999)
+# set ggplot theme to minimal
+theme_set(theme_minimal())
+
+# load datasets
+machines_as_subjects_dfs <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS"))
+
+# include names of variables
+values<-c("POWER", "ACHIEVEMENT", "HEDONISM",  
+          "STIMULATION", "SELF", "UNIVERSALISM", 
+          "BENEVOLENCE", "TRADITION",  
+          "CONFORMITY", "SECURITY")
+
+# load lme4 functions
+source(here("VI_data_collection", "3_response_intercept_analysis", "_functions", "lme4_descriptives_function_1.7.R"))
+
+# load mplus functions
+source(here("VI_data_collection", "3_response_intercept_analysis", "_functions", "mplus_descriptives_function_1.7.R"))
+```
+
+```{r}
+# extract standard deviation 95% CI for participants and songs by value
+m_lme4_random_effect_sd_dts <- lapply(machines_as_subjects_dfs, function(df){
+  
+  #df <- machines_as_subjects_dfs[[1]]
+  df <- df %>% select(-row_number)
+
+  # rename columns to have same names as in functions
+  colnames(df) <- c("subject_ID", "item_ID", values)
+  
+  df |> assemble_random_effect_sd_dt() 
+})
+
+
+# create iterator variable
+dataset_names <- names(machines_as_subjects_dfs)
+
+# estimate participant / item intercept SDs using lme4
+m_lme4_random_effect_sd_list <- lapply(
+  # iterate over dataset_names
+  seq_along(dataset_names), function(i){
+  
+    df <- machines_as_subjects_dfs[[i]] %>% select(-row_number)
+    colnames(df) <- c("subject_ID", "item_ID", values)
+    
+    # estimate intercepts
+    assemble_random_effect_sd_dt(df) %>% 
+      # add column with name of dataset
+      mutate(dataset = paste(names(dataset_names)[[i]], dataset_names[[i]]))
+})
+
+# bind into a single dataframe  
+m_lme4_random_effect_sd_dt <- rbindlist(m_lme4_random_effect_sd_list)  %>% select(-Residual)
+
+# save object
+save(m_lme4_random_effect_sd_dt, file = here("VI_data_collection", "_data","intermediary_data", "m_lme4_random_effect_sd_dt.RDS"))
+```
+
+
+```{r}
+# load mplus outputs
+machine_fits <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "mplus_machine_fits.RDS"))
+```
+
+```{r}
+mplus_random_effects <- function(df, fit_object){
+  df <- df %>% rename(subject_ID = participant_ID)
+  assemble_ci_dfs(df, fit_object)
+}
+```
+
+
+```{r}
+# create iterator variable
+dataset_names <- names(machines_as_subjects_dfs)
+
+# estimate participant / item intercept SDs using lme4
+mplus_random_effect_sd_list <- lapply(
+  # iterate over dataset_names
+  seq_along(dataset_names), function(i){
+  # estimate intercepts
+  mplus_random_effects(machines_as_subjects_dfs[[i]], machine_fits[[i]]) %>% 
+      # add column with name of dataset
+      mutate(dataset = paste(names(dataset_names)[[i]], dataset_names[[i]]))
+})
+
+# bind into a single dataframe  
+m_mplus_random_effect_sd_dt <- rbindlist(mplus_random_effect_sd_list)
+
+# save object
+save(m_mplus_random_effect_sd_dt, file = here("VI_data_collection", "_data","intermediary_data", "m_mplus_random_effect_sd_dt.RDS"))
+```

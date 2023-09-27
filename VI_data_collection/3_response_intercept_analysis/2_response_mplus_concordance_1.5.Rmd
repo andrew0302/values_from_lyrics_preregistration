@@ -43,7 +43,7 @@ rm(responses_dt)
 
 ```{r}
 # load fit object
-fits <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_participant_fits"))
+fits <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_participant_fits.RDS"))
 fit <- fits[[1]]
 rm(fits)
 ```

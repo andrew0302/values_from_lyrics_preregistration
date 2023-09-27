@@ -18,7 +18,7 @@ values <- c("POWER", "ACHIEVEMENT", "HEDONISM",
 response_dfs <- readRDS(file=here("VI_data_collection", "_data", "survey_response_data", "response_dfs.RDS"))
 ```
 
-We have three datasets loaded into a single list:
+We have four datasets loaded into a single list:
 
 From current survey:
 *`responses_dt_c` is only complete responses from the current survey
@@ -58,7 +58,6 @@ fit_mplus_model <- function(df){
   return(fit)
 }
 ```
-
 
 This wouldn't run in a single function, so I run it on each data set:
 
@@ -236,7 +235,7 @@ mplus_item_intercept_dfs <- list(
   mplus_intercept_df_p = mplus_intercept_df_p, 
   mplus_intercept_df_a = mplus_intercept_df_a)
 
-saveRDS(mplus_item_intercept_dfs, here("VI_data_collection", "_data", "intermediary_data", "mplus_item_intercept_dfs.RDS"))
+saveRDS(mplus_item_intercept_dfs, here("VI_data_collection", "_data", "intermediary_data", "participant_mplus_item_intercept_dfs.RDS"))
 ```
 
 
@@ -262,7 +261,7 @@ lme4_intercept_and_predicted <- function(df){
 ```
 
 ```{r}
-lme4_intercept_dt   <- lme4_intercept_and_predicted(response_dfs[[1]])   %>% 
+lme4_intercept_dt_1  <-lme4_intercept_and_predicted(response_dfs[[1]])   %>% 
   mutate(dataset = "complete and partial responses")
 lme4_intercept_dt_c <- lme4_intercept_and_predicted(response_dfs[[2]]) %>% 
   mutate(dataset = "complete responses only")
@@ -275,12 +274,12 @@ lme4_intercept_dt_a <- lme4_intercept_and_predicted(response_dfs[[4]]) %>%
 ```{r}
 # coerce to list
 lme4_item_intercepts_dfs <- list(
-  lme4_intercept_dt   = lme4_intercept_dt, 
+  lme4_intercept_dt_1 = lme4_intercept_dt_1, 
   lme4_intercept_dt_c = lme4_intercept_dt_c, 
   lme4_intercept_dt_p = lme4_intercept_dt_p, 
   lme4_intercept_dt_a = lme4_intercept_dt_a)
 
-saveRDS(lme4_item_intercepts_dfs, here("VI_data_collection", "_data", "intermediary_data", "lme4_item_intercept_dfs.RDS"))
+saveRDS(lme4_item_intercepts_dfs, here("VI_data_collection", "_data", "intermediary_data", "participant_lme4_item_intercept_dfs.RDS"))
 ```
 
 

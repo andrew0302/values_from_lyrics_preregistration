@@ -294,10 +294,11 @@ p4 <- sampled_icc_df %>%
   ggplot(aes(cor, color = as.factor(n))) +
   facet_grid(~value)+
   #geom_density(alpha = 0.3) + 
-  geom_line(stat = 'density', alpha = .7) +
+  geom_line(stat = 'density', alpha = .9) +
   theme(axis.text.x = element_text(angle = 90), 
         strip.text.x = element_text(size = 4)) +
-  coord_flip()
+  coord_flip() +
+  labs(x = "correlation", colour = "n")
 
 
 p4

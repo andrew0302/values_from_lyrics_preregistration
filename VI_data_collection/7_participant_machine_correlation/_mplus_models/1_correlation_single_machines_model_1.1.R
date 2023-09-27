@@ -52,7 +52,7 @@ mplus_model <- mplusObject(
   # distribution of plausible values for each observation
   # first number in fscores is the number of draws to compute per observation
   # when second number in fscores is ten, every tenth draw is used to compute 
-  SAVEDATA = "FILE IS sin.dat;
+  SAVEDATA = "FILE IS machine_4.dat;
               Save = fscores(50 10);",
   
   rdata = df

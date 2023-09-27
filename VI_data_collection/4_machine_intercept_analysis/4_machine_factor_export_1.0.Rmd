@@ -1,0 +1,86 @@
+---
+title: "machine factor export"
+---
+
+```{r}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+
+options(scipen=999)
+theme_set(theme_minimal())
+
+# load datasets
+machines_as_subjects_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS"))
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM", 
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION", 
+            "CONFORMITY", "SECURITY")
+
+# pivot to wide: each machine / value combination is a column
+machines_as_fixed_df <- machines_as_subjects_df %>%
+  pivot_wider(id_cols = item_ID, names_from = participant_ID, values_from = all_of(values))
+
+load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_r_df.RDS"))
+
+rm(machines_as_subjects_df)
+```
+
+```{r}
+# add glove and word2vec scores to dimension reduced dataframe
+machines_as_fixed_df <- merge(machines_as_fixed_r_df, machines_as_fixed_df %>% 
+                                select(item_ID, contains("glove"), contains("google")), by="item_ID")
+
+rm(machines_as_fixed_r_df)
+```
+
+
+```{r}
+# separate out the columns representing the means of the models for
+# the value of HEDONISM
+# (see notebook 4_machine_factor_comparison in 6_machine_analysis folder)
+hedonism_means_df <- machines_as_fixed_df %>% 
+  select(item_ID, contains("mean")) %>%
+  select(item_ID, starts_with("HEDONISM"))
+```
+
+
+
+vars <- colnames(machines_as_fixed_df) %>% as.data.frame()
+
+         POWER, ACHIEVEMENT, HEDONISM, 
+         STIMULATION, SELF, UNIVERSALISM, 
+         BENEVOLENCE, TRADITION, 
+         CONFORMITY, SECURITY
+         
+```{r}
+# remove columns with means
+machines_as_fixed_df <- machines_as_fixed_df %>% select(-contains("mean"))
+```
+
+
+```{r}
+# add only mean columns measuring HEDONISM
+machines_as_fixed_f_df <- merge(
+  hedonism_means_df, 
+  machines_as_fixed_df %>% select(-contains("mean")),
+  by="item_ID")
+```
+
+```{r}
+# reorder
+machines_as_fixed_f_df <- machines_as_fixed_f_df %>% select(item_ID, all_of(starts_with(
+  values
+)))
+```
+
+
+```{r}
+save(machines_as_fixed_f_df, file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_f_df.RDS"))
+```
+
+```{r}
+#load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_f_df.RDS"))
+```
+

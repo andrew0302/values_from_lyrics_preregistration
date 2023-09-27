@@ -1,0 +1,113 @@
+---
+title: title: "exploratory SEM, machine variables"
+---
+
+This notebook takes an exploratory SEM approach to determine a suitable structural model for the machine variables, using lavaan. 
+
+Only two models approach convergence, both with very poor fit indices:
+1. all machine variables for each value, cfi = 0.213, tli = 0.181
+2. all mxm-trained variables for each value, cfi = 0.485, tli = 0.422
+
+
+
+```{r}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library("MplusAutomation") # Mplus Integration
+library("semPlot")         # visualization
+```
+
+```{r}
+# load machine dataset
+load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_f_df.RDS"))
+machines_as_fixed_f_df <- machines_as_fixed_f_df %>% select(-(contains("mean")))
+```
+
+
+```{r}
+# scale and center variables
+df <- machines_as_fixed_f_df
+df[,2:81] <- scale(df[,2:81])
+```
+
+```{r}
+# make dataframe of columns names
+col_names <- colnames(df) %>% as.data.frame()
+
+#col_names$mplus_name <- c("row_number", "item_ID", "participant_ID",
+col_names$mplus_name <- c("item_ID",
+    paste0("z", seq(1, 80))
+  ) %>% toupper()
+colnames(col_names) <- c("og_names", "mplus_name")
+
+#names <- hash(keys = col_names$mplus_name, values = col_names$og_names)
+
+rm(machines_as_fixed_df)
+```
+
+```{r}
+# load mplus model
+source(here("VI_data_collection", "6_machine_analysis", "_mplus_models", "1_all_all_1.4.R"))
+
+fit <- mplusModeler(mplus_model, 
+                    modelout = "VI_data_collection/_data/mplus_output/machine_1.inp", 
+                    hashfilename = FALSE,
+                    check = TRUE,
+                    run=TRUE)
+
+# print errors and warnings
+ fit$results$errors
+ fit$results$warnings
+ 
+out <-readModels(target = here("VI_data_collection/_data/mplus_output/machine_1.out"))
+
+AIC <- out$summaries$AIC
+BIX <- out$summaries$BIC
+CFI <- out$summaries$CFI
+TLI <- out$summaries$TLI
+
+#output_df <- out$parameters$stdyx.standardized
+#semPaths(here("VI_data_collection/_data/mplus_output/machine_1.out")) 
+#rm(fit, mplus_model)
+```
+
+```{r}
+# load mplus model
+source(here("VI_data_collection", "6_machine_analysis", "_mplus_models", "2_split_all_1.4.R"))
+
+fit <- mplusModeler(mplus_model, 
+                    modelout = "VI_data_collection/_data/mplus_output/machine_2.inp", 
+                    hashfilename = FALSE,
+                    check = TRUE,
+                    run=TRUE)
+
+# model fails to converge
+```
+```{r}
+df <- df %>% select(item_ID, contains("idf"))
+
+# make dataframe of columns names
+col_names <- colnames(df) %>% as.data.frame()
+
+#col_names$mplus_name <- c("row_number", "item_ID", "participant_ID",
+col_names$mplus_name <- c("item_ID",
+    paste0("z", seq(1, 40))
+  ) %>% toupper()
+colnames(col_names) <- c("og_names", "mplus_name")
+```
+
+```{r}
+# load mplus model
+source(here("VI_data_collection", "6_machine_analysis", "_mplus_models", "3_split_idf_1.4.R"))
+
+fit <- mplusModeler(mplus_model, 
+                    modelout = "VI_data_collection/_data/mplus_output/machine_3.inp", 
+                    hashfilename = FALSE,
+                    check = TRUE,
+                    run=TRUE)
+
+# print errors and warnings
+ fit$results$errors
+ fit$results$warnings
+```

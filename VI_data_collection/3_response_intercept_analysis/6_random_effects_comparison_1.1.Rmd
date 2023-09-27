@@ -27,10 +27,11 @@ load(here("VI_data_collection", "_data","intermediary_data", "lme4_random_effect
 load(here("VI_data_collection", "_data","intermediary_data", "mplus_random_effect_sd_dt.RDS"))
 
 # lme4 item intercepts
-lme4_intercept_dfs <- readRDS(here("VI_data_collection", "_data","intermediary_data", "lme4_item_intercept_dfs.RDS"))
+lme4_intercept_dfs <- readRDS(here("VI_data_collection", "_data","intermediary_data", "participant_lme4_item_intercept_dfs.RDS"))
+#lme4_intercept_dfs <- lme4_intercept_dfs[2:4]
 
 # mplus item intercepts
-mplus_intercept_dfs <- readRDS(here("VI_data_collection", "_data","intermediary_data", "mplus_item_intercept_dfs.RDS"))
+mplus_intercept_dfs <- readRDS(here("VI_data_collection", "_data","intermediary_data", "participant_mplus_item_intercept_dfs.RDS"))
 ```
 
 
@@ -158,8 +159,8 @@ p1 + p2
 ```
 
 ```{r}
-lme4_intercept_df  <- lme4_intercept_dfs[[1]]
-mplus_intercept_df <- mplus_intercept_dfs[[1]]
+lme4_intercept_df  <- lme4_intercept_dfs[[3]]
+mplus_intercept_df <- mplus_intercept_dfs[[3]]
 ```
 
 
@@ -316,6 +317,8 @@ p2 + p3
 ```
 
 ```{r}
+p1 <- p1 + ggtitle("original study")
+p2 <- p2 + ggtitle("our study")
 p1 + p2
 ```
 

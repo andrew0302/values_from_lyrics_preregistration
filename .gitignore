@@ -77,6 +77,7 @@ VI_data_collection/_data/survey_response_data/prolific_export_637357bf150585a467
 # workding dataframes
 VI_data_collection/_data/survey_response_data/all_dt.RDS
 VI_data_collection/_data/survey_response_data/working_df.RDS
+VI_data_collection/_data/survey_response_data/complete_dt.RDS
 
 # raw lyric data
 IV_survey_builder/primary_data_/

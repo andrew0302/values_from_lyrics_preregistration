@@ -1,0 +1,122 @@
+---
+title: "estimate correlations, single machines model, with Mplus"
+---
+
+This notebook estimates the correlations between the participant ratings, and the individual machine setups using Mplus. 
+
+```{r}
+library('data.table')      # data manipulation
+library('here')            # file logistics
+library('tidyverse')       # data manipulation
+library("MplusAutomation") # mplus integration
+library("ggplot2")         # visualization
+library("hash")            # dictionaries / hash tables
+library("stringr")         # string manipulation
+
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM", 
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION", 
+            "CONFORMITY", "SECURITY")
+```
+```{r}
+# load and merge datasets
+source(here("VI_data_collection", "7_participant_machine_correlation", "0_data_set_merge_1.0.R"))
+
+rm(machines_as_fixed_f_df, responses_dt)
+```
+
+
+```{r}
+# remove columns not in analysis
+cols <- c("writer", "familiar", "confidence")
+
+df <- responses_machines_as_fixed_df %>% 
+  # columns not in analysis
+  select(-all_of(cols)) %>% 
+  # remove mean columns
+  select(-contains("mean")) 
+
+# make dataframe of columns names
+col_names <- colnames(df) %>% as.data.frame()
+
+#col_names$mplus_name <- c("row_number", "item_ID", "participant_ID",
+col_names$mplus_name <- c("item_ID", "row_number", "participant_ID",
+    paste0("y", seq(1,10)), 
+    paste0("z", seq(1, 80))
+  ) %>% toupper()
+colnames(col_names) <- c("og_names", "mplus_name")
+
+#names <- hash(keys = col_names$mplus_name, values = col_names$og_names)
+
+rm(responses_machines_as_fixed_df, cols)
+```
+
+```{r}
+# set column names for mplus
+colnames(df) <- c("row_number", "item_ID", "participant_ID",
+  paste0("y", seq(1,10)), 
+  paste0("z", seq(1, 80)))
+
+df <- as.data.frame(df)
+```
+
+```{r}
+# load mplus model
+source(here("VI_data_collection", "7_participant_machine_correlation", "_mplus_models", "2_correlation_two_machines_model_1.4.R"))
+```
+
+
+```{r}
+ fit <- mplusModeler(mplus_model, 
+                     modelout = "VI_data_collection/_data/mplus_output/machine_5.inp", 
+                     hashfilename = FALSE,
+                     check = TRUE,
+                     run=TRUE)
+
+# print errors and warnings
+ fit$results$errors
+ fit$results$warnings
+ 
+rm(fit, mplus_model)
+```
+
+From Mplus User Guide:
+
+"The first type of standardization is shown under the heading StdYX in the output.  StdYX uses the variances of the continuous latent variables as well as the variances of the background and outcome variables for standardization.  The StdYX standardization is the one used in the linear regression of y on x,
+
+bStdYX = b*SD(x)/SD(y),
+
+where b is the unstandardized linear regression coefficient, SD(x) is the sample standard deviation of x, and SD(y) is the model estimated standard deviation of y.  The standardized coefficient bStdYX is interpreted as the change in y in y standard deviation units for a standard deviation change in x."
+
+From Cain and Zhang 2019:
+https://www.tandfonline.com/doi/pdf/10.1080/10705511.2018.1490648?casa_token=YId5z0ZbV-IAAAAA:65X_6l-0VwRChYjZN14dVFv0aU1_JI0jh-YpVayvH-rC9cD1dLxKS3JOm-jqSv__FuKaOMPbyVw
+
+"An excellent-fitting model is expected to have a PPP value
+around 0.5, and an extreme value indicates misspecification."
+
+"Like other information criteria, DIC does not follow a
+specified distribution, thus there is no formal test to compare
+two models."
+
+"The cutoffs PPP < 0.10 and ΔDIC > 7 work best in the conditions
+and models tested here to maintain low false detection rates and misspecified model selection rates"
+
+```{r}
+out <-readModels(target = here("VI_data_collection/_data/mplus_output/sin.out"))
+
+dic <- out$summaries$DIC
+PPP <- out$summaries$PostPred_PValue
+
+output_df <- out$parameters$ci.stdyx.standardized
+
+#rm(out)
+```
+
+```{r}
+
+```
+
+
+
+
