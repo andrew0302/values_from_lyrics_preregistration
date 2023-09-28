@@ -7,7 +7,8 @@ library('here')            # file logistics
 library('data.table')      # data manipulation
 library('tidyverse')       # data manipulation
 library("psych")           # factor analysis
-library("foreach")
+library("foreach")         # iterate over two lists
+library("purrr")           # iterate over two lists
 
 # load datasets
 machines_as_subjects_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS"))
@@ -170,12 +171,23 @@ machines_as_fixed_mean_df_list <- lapply(machines_as_fixed_df_list, make_mean_df
 ```
 
 ```{r}
-machines_as_fixed_r_df <- rbindlist(df_list) %>%
-  pivot_wider(., id_cols = item_ID, 
-            names_from = c(model, weight, method), 
-            values_from = values)
+# subset dataframes to include only NON-dimension reduced variables
+machines_as_fixed_reduced_df_list <- lapply(machines_as_fixed_df_list, function(df){
+  df <- df %>% select(item_ID, contains("glove"), contains("google"))
+})
 
-save(machines_as_fixed_r_df, file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_r_df.RDS"))
+# merge with dimension reduced dfs
+machines_as_fixed_factor_dfs <-map2(machines_as_fixed_reduced_df_list, machines_as_fixed_factor_df_list, inner_join, by="item_ID")
+
+machines_as_fixed_mean_dfs <-map2(machines_as_fixed_reduced_df_list, machines_as_fixed_mean_df_list, inner_join, by="item_ID")
+```
+
+
+```{r}
+save(machines_as_fixed_mean_dfs, file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_mean_dfs.RDS"))
+
+save(machines_as_fixed_factor_dfs, file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_mean_dfs.RDS"))
+
 rm(machines_as_fixed_df, machines_as_subjects_df, df_list, df, values)
 ```
 
