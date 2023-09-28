@@ -1,0 +1,161 @@
+---
+title: "machine dimension reduction"
+---
+
+```{r}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library("psych")           # factor analysis
+library("foreach")
+
+# load datasets
+machines_as_subjects_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS"))
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM", 
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION", 
+            "CONFORMITY", "SECURITY")
+```
+
+```{r}
+# pivot to wide: each machine / value combination is a column
+
+#machines_as_fixed_df <- machines_as_subjects_df[[1]] %>%
+#  pivot_wider(id_cols = item_ID, names_from = participant_ID, values_from = all_of(values))
+machines_as_fixed_df_list <- lapply(machines_as_subjects_df, function(df){
+  df %>% pivot_wider(id_cols = item_ID, names_from = participant_ID, values_from = all_of(values))
+})
+```
+
+
+```{r}
+estimate_factor_score <- function(df){
+  
+  # extract factor scores for each variable
+  factor_scores_df <- lapply(values, function(x){
+    # select all columns that start with value
+    df <- df %>% select(all_of(starts_with(x)))
+    # extract one factor using maximum likelihood
+    fa <- fa(df, nfactors=1, fm = "ml")
+    # extract scores for each item
+    scores <- fa$scores %>% as.data.frame()
+    # name column
+    colnames(scores) <- x
+    return(scores)
+  })
+
+  # rename items in list
+  names(factor_scores_df) <- values
+
+  # coerce to dataframe
+  factor_scores_df <- as.data.frame(do.call(cbind, factor_scores_df))
+  
+  return(factor_scores_df)
+}
+
+# far_idf_df <- machines_as_fixed_df %>% select(intersect(contains("far"), contains("idf")))
+# estimate_factor_score(far_idf_df)
+```
+
+```{r}
+estimate_average_score <- function(df){
+
+ # estimate average of scores for each machine setup 
+ average_scores_df <- lapply(values, function(x){
+   # select all columns that start with the value
+   df <- df %>% select(all_of(starts_with(x)))
+   # compute row means
+   scores <- df %>% mutate(average = rowMeans(.)) %>% select(average)
+   # rename column
+   colnames(scores) <- x
+   return(scores)
+  })
+
+ # rename items in the list
+ names(average_scores_df) <- values
+ 
+ # coerce list to a dataframe
+ average_scores_df <- as.data.frame(do.call(cbind, average_scores_df))
+ 
+ return(average_scores_df)
+}
+
+# far_idf_df <- machines_as_fixed_df %>% select(intersect(contains("far"), contains("idf")))
+# estimate_average_score(far_idf_df)
+#cor(average_res$ACHIEVEMENT, machines_as_fixed_df$ACHIEVEMENT_mxm_faruqui_0_idf_weight_lyrics)
+```
+
+```{r}
+make_factor_df_list <- function(machines_as_fixed_df){
+  
+  # create a df of machines and weights to iterate over
+  machines <- data.frame(machine = c("far", "far", "split", "split"), 
+                         weight = c("idf", "uniform", "idf", "uniform"))
+
+  # iterate over all combinations in machines df
+  foreach(i = machines$machine, j = machines$weight) %do% {
+    #subset main dataset by combination
+    df <- machines_as_fixed_df %>% select(intersect(contains(i), contains(j)))
+    
+    # estimate a single factor variable for each machine setup
+    factor_scores_df <- estimate_factor_score(df)
+    factor_scores_df$model  <- i
+    factor_scores_df$weight <- j
+    factor_scores_df$method <- "fa"
+    factor_scores_df$item_ID <- machines_as_fixed_df$item_ID
+    base::assign(paste0(i,"_",j, "_factor"), factor_scores_df)
+  
+    # compute single average variable for each machine setup
+    #average_scores_df <- estimate_average_score(df)
+    #average_scores_df$model  <- i
+    #average_scores_df$weight <- j
+    #average_scores_df$method <- "mean"
+    #average_scores_df$item_ID <- machines_as_fixed_df$item_ID
+    #base::assign(paste0(i,"_",j, "_average"), average_scores_df)
+  }
+
+  # output list for each setup  
+  #df_list <- list(far_idf_factor = far_idf_factor, 
+  #                far_uniform_factor = far_uniform_factor, 
+  #                far_idf_average = far_idf_average, 
+  #                far_uniform_average = far_uniform_average, 
+  #                split_idf_factor = split_idf_factor, 
+  #                split_uniform_factor = split_uniform_factor, 
+  #                split_idf_average = split_idf_average, 
+  #                split_uniform_average = split_uniform_average)
+  
+  df_factor_list <- list(far_idf_factor = far_idf_factor, 
+                         far_uniform_factor = far_uniform_factor, 
+                         split_idf_factor = split_idf_factor, 
+                         split_uniform_factor = split_uniform_factor)
+  
+  output_df <- rbindlist(df_factor_list) %>%
+      pivot_wider(., id_cols = item_ID, 
+            names_from = c(model, weight, method), 
+            values_from = values)
+  
+  #df_average_list <- list(far_idf_average = far_idf_average, 
+  #                        far_uniform_average = far_uniform_average, 
+  #                        split_idf_average = split_idf_average, 
+  #                        split_uniform_average = split_uniform_average)
+}
+
+#t<-make_factor_df_list(machines_as_fixed_df_list[[3]])
+```
+
+```{r}
+machines_as_fixed_factor_df_list <- lapply(machines_as_fixed_df_list, make_factor_df_list)
+```
+
+
+```{r}
+machines_as_fixed_r_df <- rbindlist(df_list) %>%
+  pivot_wider(., id_cols = item_ID, 
+            names_from = c(model, weight, method), 
+            values_from = values)
+
+save(machines_as_fixed_r_df, file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_r_df.RDS"))
+rm(machines_as_fixed_df, machines_as_subjects_df, df_list, df, values)
+```
+

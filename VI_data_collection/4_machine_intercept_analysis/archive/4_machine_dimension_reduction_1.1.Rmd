@@ -16,11 +16,18 @@ values <- c("POWER", "ACHIEVEMENT", "HEDONISM",
             "STIMULATION", "SELF", "UNIVERSALISM", 
             "BENEVOLENCE", "TRADITION", 
             "CONFORMITY", "SECURITY")
-
-# pivot to wide: each machine / value combination is a column
-machines_as_fixed_df <- machines_as_subjects_df %>%
-  pivot_wider(id_cols = item_ID, names_from = participant_ID, values_from = all_of(values))
 ```
+
+```{r}
+# pivot to wide: each machine / value combination is a column
+
+#machines_as_fixed_df <- machines_as_subjects_df[[1]] %>%
+#  pivot_wider(id_cols = item_ID, names_from = participant_ID, values_from = all_of(values))
+machines_as_fixed_df_list <- lapply(machines_as_subjects_df, function(df){
+  df %>% pivot_wider(id_cols = item_ID, names_from = participant_ID, values_from = all_of(values))
+})
+```
+
 
 ```{r}
 estimate_factor_score <- function(df){
@@ -76,49 +83,52 @@ estimate_average_score <- function(df){
 
 # far_idf_df <- machines_as_fixed_df %>% select(intersect(contains("far"), contains("idf")))
 # estimate_average_score(far_idf_df)
-```
-
-```{r}
 #cor(average_res$ACHIEVEMENT, machines_as_fixed_df$ACHIEVEMENT_mxm_faruqui_0_idf_weight_lyrics)
 ```
 
 ```{r}
-machines <- data.frame(machine = c("far", "far", "split", "split"), 
-                       weight = c("idf", "uniform", "idf", "uniform"))
+make_average_df_list <- function(df){
+  
+  # create a df of machines and weights to iterate over
+  machines <- data.frame(machine = c("far", "far", "split", "split"), 
+                         weight = c("idf", "uniform", "idf", "uniform"))
 
-foreach(i = machines$machine, j = machines$weight) %do% {
-  #subset main dataset
-  df <- machines_as_fixed_df %>% select(intersect(contains(i), contains(j)))
+  # iterate over all combinations in machines df
+  foreach(i = machines$machine, j = machines$weight) %do% {
+    #subset main dataset by combination
+    df <- df %>% select(intersect(contains(i), contains(j)))
+    
   
-  factor_scores_df <- estimate_factor_score(df)
-  factor_scores_df$model  <- i
-  factor_scores_df$weight <- j
-  factor_scores_df$method <- "fa"
-  factor_scores_df$item_ID <- machines_as_fixed_df$item_ID
-  base::assign(paste0(i,"_",j, "_factor"), factor_scores_df)
+    # compute single average variable for each machine setup
+    average_scores_df <- estimate_average_score(df)
+    average_scores_df$model  <- i
+    average_scores_df$weight <- j
+    average_scores_df$method <- "mean"
+    average_scores_df$item_ID <- machines_as_fixed_df$item_ID
+    base::assign(paste0(i,"_",j, "_average"), average_scores_df)
+  }
+
+  # output list for each setup  
+  df_list <- list(far_idf_average = far_idf_average, 
+                  far_uniform_average = far_uniform_average, 
+                  split_idf_average = split_idf_average, 
+                  split_uniform_average = split_uniform_average)
   
-  average_scores_df <- estimate_average_score(df)
-  average_scores_df$model  <- i
-  average_scores_df$weight <- j
-  average_scores_df$method <- "mean"
-  average_scores_df$item_ID <- machines_as_fixed_df$item_ID
-  base::assign(paste0(i,"_",j, "_average"), average_scores_df)
+  output_df <- rbindlist(df_list) %>%
+      pivot_wider(., id_cols = item_ID, 
+            names_from = c(model, weight, method), 
+            values_from = values)
+  
 }
-
-df_list <- list(far_idf_factor, far_uniform_factor, 
-                far_idf_average, far_uniform_average, 
-                split_idf_factor, split_uniform_factor, 
-                split_idf_average, split_uniform_average)
-
-
-rm(far_idf_factor, far_uniform_factor, 
-   far_idf_average, far_uniform_average, 
-   split_idf_factor, split_uniform_factor, 
-   split_idf_average, split_uniform_average, 
-   machines, i, j, df,
-   factor_scores_df, average_scores_df,
-   estimate_average_score, estimate_factor_score)
+#s<-make_average_df_list(machines_as_fixed_df_list[[1]])
 ```
+
+```{r}
+names(machines_as_fixed_df_list)
+
+machines_as_fixed_means_df_list <- lapply(machines_as_fixed_df_list, make_average_df_list)
+```
+
 
 ```{r}
 machines_as_fixed_r_df <- rbindlist(df_list) %>%
