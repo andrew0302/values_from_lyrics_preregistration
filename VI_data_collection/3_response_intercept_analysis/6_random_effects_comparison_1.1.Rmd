@@ -51,6 +51,9 @@ corr_df <- merged_intercept_dfs %>% group_by(dataset, value) %>%
   summarize(r = cor(intercept.x, intercept.y))
 ```
 
+It appears the main difference between the Mplus intercepts and the lme4 intercepts is that lme4 appears to be centered. 
+Otherwise, the correlations are > .99
+
 ```{r}
 corr_df %>% mutate(r = round(as.numeric(r), 5)) %>%
   ggplot(aes(x=dataset, y=value, fill = r)) +

@@ -1,0 +1,22 @@
+---
+title: "Untitled"
+author: "Andrew M. Demetriou"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+
+
+# machine multiverse
+load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_mean_dfs.RDS"))
+load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_factor_dfs.RDS"))
+
+readRDS(lme4_item_intercepts_dfs, here("VI_data_collection", "_data", "intermediary_data", "participant_lme4_item_intercept_dfs.RDS"))
+
+readRDS(participant_mean_dfs, here("VI_data_collection", "_data", "intermediary_data", "participant_mean_dfs.RDS"))
+```
+

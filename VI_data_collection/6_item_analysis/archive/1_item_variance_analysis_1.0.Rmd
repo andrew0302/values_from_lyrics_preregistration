@@ -1,0 +1,160 @@
+---
+title: "item_variance analysis"
+---
+
+```{r}
+library('here')       # file logistics
+library('data.table') # data logistics
+library('dplyr')      # code logistics
+library('ggplot2')    # visualization
+library('patchwork')  # multiple plots 
+library("knitr")      # visualize tables
+library("corrr")      # correlation analysis
+
+options(scipen=999)
+theme_set(theme_minimal())
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM",
+            "STIMULATION", "SELF", "UNIVERSALISM",
+            "BENEVOLENCE", "TRADITION", "CONFORMITY",
+            "SECURITY")
+```
+
+```{r}
+# participant responses
+response_dfs <- readRDS(here("VI_data_collection", "_data", "survey_response_data", "response_dfs.RDS"))
+
+# gather all responses
+response_df <- response_dfs$responses_dt
+
+rm(response_dfs)
+```
+
+```{r}
+# compare mean confidence to variance in responses
+sd_df <- response_df %>%
+  group_by(item_ID) %>%
+  summarise(
+    mean_confidence = mean(confidence, na.rm=T),
+    across(POWER:SECURITY, ~sd(.x, na.rm=T))
+    )
+
+mean_df <- response_df %>%
+  group_by(item_ID) %>%
+  summarise(
+    across(POWER:SECURITY, ~ mean(.x, na.rm=T))
+  )
+```
+
+```{r}
+# print range of each column
+sd_df %>%
+  select(-item_ID) %>%
+  sapply(., range, na.rm=F) %>%
+  t()
+
+# correlate mean confidence to standard deviation
+sd_df %>% select(-item_ID) %>% correlate() %>%
+  focus(mean_confidence)
+```
+
+```{r}
+lyrics_file    <- "not_simple_medium_alpha_2021_full_2_2.csv"
+selection_file <- "not_simple_medium_alpha_2021_full_10w (2).csv"
+primary_data_file_path <- here("IV_survey_builder", "primary_data_")
+# lyrics datasets
+all_lyrics_dt     <- fread(here(primary_data_file_path, lyrics_file)) %>% select(mxm_id, lyrics_body)
+
+# manual selection process
+selected_dt <- fread(here(primary_data_file_path, selection_file)) %>% 
+  select(mxm_id, Keep) %>% 
+  # these are the four identifiers from the lyric rating process
+  filter(Keep == "O" | Keep == "o" | Keep == "m" | Keep == "M" | Keep == "a" | Keep == "A")
+
+# making a single df
+selected_dt <- merge(selected_dt, all_lyrics_dt, be=mxm_id) |>
+  select(mxm_id, lyrics_body)
+
+rm(all_lyrics_dt, lyrics_file, primary_data_file_path, template_file_path, selection_file)
+```
+
+```{r}
+value <- "POWER"
+value <- "STIMULATION"
+
+high_sd <- sd_df %>%
+  arrange(desc(get(value))) %>%
+  head(20) %>%
+  select(item_ID)
+
+low_sd <- sd_df %>%
+  arrange(get(value)) %>%
+  head(20) %>%
+  select(item_ID)
+
+response_df %>% 
+  filter(item_ID %in% high_sd$item_ID) %>%
+  ggplot(aes(x=get(value))) +
+  facet_wrap(~item_ID) +
+  geom_histogram(bins = 10) +
+  xlab(value) +
+  ggtitle("high sd")
+
+response_df %>% 
+  filter(item_ID %in% low_sd$item_ID) %>%
+  ggplot(aes(x=get(value))) +
+  facet_wrap(~item_ID) +
+  geom_histogram(bins = 10) +
+  xlab(value) +
+  ggtitle("low sd")
+```
+```{r}
+# this should be non-sig, indicating a uniform
+response_df %>% 
+  filter(item_ID == "199050935") %>%
+  select(STIMULATION) %>%
+  ks.test(., "punif", min(-100), max(100))
+
+# this should be sig, indicating normal dist
+response_df %>% 
+  filter(item_ID == "90166650") %>%
+  select(STIMULATION) %>%
+  ks.test(., "punif", min(-100), max(100))
+```
+
+```{r}
+install.packages("nortest")
+library(nortest)
+ad.test(t$STIMULATION)
+
+# this should be non-sig, indicating a uniform
+t <- response_df %>% 
+  filter(item_ID == "199050935") %>%
+  select(STIMULATION)
+```
+
+
+
+```{r}
+Values <- response_df %>% 
+  filter(item_ID == "199050935") %>%
+  select(STIMULATION)
+
+plot(ecdf(Values$STIMULATION))
+curve(punif(x, min(Values), max(Values)), add=TRUE, col="red")
+
+Values <- response_df %>% 
+  filter(item_ID == "90166650") %>%
+  select(STIMULATION)
+
+plot(ecdf(Values$STIMULATION))
+curve(punif(x, min(Values), max(Values)), add=TRUE, col="red")
+```
+
+
+```{r}
+power_high_sd <- merge(power_high_sd, mean_df, by="item_ID")
+power_high_sd <- merge(power_high_sd, selected_dt, by.x= "item_ID", by.y = "mxm_id")
+power_high_sd%>% filter(item_ID == power_high_sd$item_ID[3]) %>% select(lyrics_body) %>% kable()
+```
+

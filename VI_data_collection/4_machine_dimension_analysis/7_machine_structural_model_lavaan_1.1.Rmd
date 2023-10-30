@@ -1,0 +1,192 @@
+---
+title: title: "exploratory SEM, machine variables"
+---
+
+
+
+
+```{r}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library("lavaan")          # SEM
+library("lavaanExtra")     # SEM helper functions
+library("semPlot")         # visualization
+```
+
+```{r}
+# load machine datasets
+load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_mean_dfs.RDS"))
+load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_factor_dfs.RDS"))
+
+# select all songs
+machines_as_fixed_factor_df <- machines_as_fixed_factor_dfs$machines_as_subjects_a
+machines_as_fixed_mean_df   <- machines_as_fixed_mean_dfs$machines_as_subjects_a
+
+rm(machines_as_fixed_factor_dfs, machines_as_fixed_mean_dfs)
+```
+
+
+```{r}
+# load participant response datasets
+
+# lme4 item intercepts
+participant_lme4_item_intercept_dfs <- readRDS(here("VI_data_collection", "_data","intermediary_data", "participant_lme4_item_intercept_dfs.RDS"))
+
+# select all songs
+lme4_intercept_df <- participant_lme4_item_intercept_dfs$lme4_intercept_dt_a
+
+# mplus item intercepts
+participant_mplus_item_intercept_dfs <- readRDS(here("VI_data_collection", "_data","intermediary_data", "participant_mplus_item_intercept_dfs.RDS"))
+
+# select all songs
+mplus_intercept_df <- participant_mplus_item_intercept_dfs$mplus_intercept_df_a
+
+rm(participant_lme4_item_intercept_dfs, participant_mplus_item_intercept_dfs)
+```
+
+```{r}
+# pivot to wide format
+lme4_intercept_df <- lme4_intercept_df %>%
+  select(-mean)%>%
+  pivot_wider(id_cols = "item_ID", values_from = "intercept", names_from = "value")
+
+mplus_intercept_df <- mplus_intercept_df %>%
+  pivot_wider(id_cols = "item_ID", values_from = "intercept", names_from = "value")
+```
+
+```{r}
+# merge with machine scores dataframe
+lme4_participant_machines_factor_df <- merge(lme4_intercept_df, machines_as_fixed_factor_df, by="item_ID")
+lme4_participant_machines_mean_df <- merge(lme4_intercept_df, machines_as_fixed_mean_df, by="item_ID")
+
+# merge with machine scores dataframe
+mplus_participant_machines_factor_df <- merge(mplus_intercept_df, machines_as_fixed_factor_df, by="item_ID")
+mplus_participant_machines_mean_df <- merge(mplus_intercept_df, machines_as_fixed_mean_df, by="item_ID")
+
+rm(mplus_intercept_df, lme4_intercept_df, machines_as_fixed_factor_df, machines_as_fixed_mean_df)
+```
+
+```{r}
+dfs <- list(
+  lme4_participant_machines_factor_df = lme4_participant_machines_factor_df, 
+  lme4_participant_machines_mean_df = lme4_participant_machines_mean_df, 
+  mplus_participant_machines_factor_df = mplus_participant_machines_factor_df, 
+  mplus_participant_machines_mean_df = mplus_participant_machines_mean_df
+)
+
+# scale and center variables
+dfs <- lapply(dfs, function(df){
+  df[,2:91] <- scale(df[,2:91])
+  return(df)
+})
+
+rm(mplus_participant_machines_mean_df, mplus_participant_machines_factor_df, 
+   lme4_participant_machines_factor_df, lme4_participant_machines_mean_df)
+```
+
+```{r}
+# analyze difference in 'participant' multiverse:
+df_lme4 <- dfs[[1]][,1:11]
+df_mplus<- dfs[[3]][,1:11] 
+
+for(column in seq(from = 2, to = 11)){
+  print(cor(df_lme4[, column], df_mplus[, column]))
+}
+
+# all correlations over .99
+# focusing on just one estimator from now on
+rm(df_mplus, df_lme4)
+```
+
+```{r}
+cols <- colnames(dfs[[1]])
+cols <- gsub("_fa", "", cols)
+
+colnames(dfs[[1]]) <- cols
+colnames(dfs[[2]]) <- cols
+```
+
+```{r}
+source(here("VI_data_collection", "4_machine_dimension_analysis", "_lavaan_models", "1_single_machines_lavaan_1.2.R"))
+```
+
+```{r}
+# model<-esem_all_all
+
+fit_model_twice <- function(model){
+  fit_1 <- sem(model=model, data=dfs[[1]])
+  fit_2 <- sem(model=model, data=dfs[[2]])
+  fit_row_1 <- nice_fit(fit_1)
+  fit_row_2 <- nice_fit(fit_2)
+  results_df <- rbind(fit_row_1, fit_row_2)
+  return(results_df)
+}
+```
+
+```{r}
+# exploratory structural equation (esem) with all machine variables
+esem_all_all_fit <- fit_model_twice(esem_all_all)
+
+# esem, split mxm and pre-trained models
+# model didn't converge
+esem_mxm_split_all_fit <- fit_model_twice(esem_mxm_split_all)
+
+# split mxm and pretrained models, using only idf weights
+# model didn't converge
+esem_weight_split_idf_fit <- fit_model_twice(esem_weight_split_idf)
+
+# esem split mxm and pretrained models, using only uniform weights
+# model didn't converge
+esem_weight_split_uni_fit <- fit_model_twice(esem_weight_split_uni)
+
+# only mxm trained models, both weights
+esem_mxm_only_all_fit <- fit_model_twice(esem_mxm_only_all)
+
+# only pretrained models, both weights
+# model didn't converge
+esem_pre_only_all_fit <- fit_model_twice(esem_pre_only_all)
+
+# only mxm models, split by weighting
+# model didn't converge
+esem_mxm_only_split_fit <- fit_model_twice(esem_mxm_only_split)
+
+# only pretrained models, split by weighting
+# model doesn't converge
+esem_pre_only_split_fit <- fit_model_twice(esem_pre_only_split)
+
+# mxm and pretrained models split, idf weights only
+# model doesn't converge
+esem_mxm_split_idf_fit <- fit_model_twice(esem_mxm_split_idf)
+
+# model doesn't converge
+model_split_idf_fit <- fit_model_twice(model_split_idf)
+```
+
+```{r}
+fit_model_once <- function(model, df){
+  fit_1 <- sem(model=model, data=df)
+  fit_row_1 <- nice_fit(fit_1)
+}
+```
+
+```{r}
+# split mxm and pretrained models, using only idf weights
+# models didn't converge
+esem_mxm_split_all_fit_1 <- fit_model_once(esem_mxm_split_all, dfs[[1]])
+esem_mxm_split_all_fit_2 <- fit_model_once(esem_mxm_split_all, dfs[[2]]) 
+
+# split mxm and pretrained models, using only idf weights
+# model didn't converge
+esem_weight_split_idf_fit_1 <- fit_model_once(esem_weight_split_idf, dfs[[1]])
+esem_weight_split_idf_fit_2 <- fit_model_once(esem_weight_split_idf, dfs[[2]])
+
+# model didn't converge
+esem_weight_split_uni_fit_1 <- fit_model_once(esem_weight_split_uni, dfs[[1]])
+esem_weight_split_uni_fit_2 <- fit_model_once(esem_weight_split_uni, dfs[[2]])
+
+# models didn't converge
+esem_pre_only_all_fit_1 <- fit_model_once(esem_pre_only_all, dfs[[1]])
+esem_pre_only_all_fit_2 <- fit_model_once(esem_pre_only_all, dfs[[2]])
+```
+

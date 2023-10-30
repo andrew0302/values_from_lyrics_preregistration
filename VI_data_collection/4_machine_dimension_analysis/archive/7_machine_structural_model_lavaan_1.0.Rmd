@@ -1,0 +1,154 @@
+---
+title: title: "exploratory SEM, machine variables"
+---
+
+This notebook takes an exploratory SEM approach to determine a suitable structural model for the machine variables, using lavaan. 
+
+Only two models approach convergence, both with very poor fit indices:
+1. all machine variables for each value, cfi = 0.213, tli = 0.181
+2. all mxm-trained variables for each value, cfi = 0.485, tli = 0.422
+
+
+
+```{r}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library("lavaan")          # SEM
+library("lavaanExtra")     # SEM helper functions
+library("semPlot")         # visualization
+```
+
+```{r}
+# load machine dataset
+load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_f_df.RDS"))
+machines_as_fixed_f_df <- machines_as_fixed_f_df %>% select(-(contains("mean")))
+
+# lme4 item intercepts
+load(here("VI_data_collection", "_data","intermediary_data", "lme4_intercept_and_predicted_dt.RDS"))
+
+# mplus item intercepts
+load(here("VI_data_collection", "_data","intermediary_data", "mplus_intercept_df.RDS"))
+```
+
+```{r}
+# pivot to wide format
+lme4_intercept_df <- lme4_intercept_and_predicted_dt %>%
+  select(-mean) %>%
+  pivot_wider(id_cols = "item_ID", values_from = "intercept", names_from = "value")
+
+mplus_intercept_df <- mplus_intercept_df %>%
+  rename(item_ID = ITEM_ID) %>%
+  pivot_wider(id_cols = "item_ID", values_from = "intercept", names_from = "value")
+
+
+rm(lme4_intercept_and_predicted_dt)
+```
+
+```{r}
+# merge with machine scores dataframe
+lme4_participant_machines_df <- merge(lme4_intercept_df, machines_as_fixed_f_df, by="item_ID")
+
+# merge with machine scores dataframe
+mplus_participant_machines_df <- merge(mplus_intercept_df, machines_as_fixed_f_df, by="item_ID")
+
+rm(mplus_intercept_df, lme4_intercept_df, machines_as_fixed_f_df)
+```
+
+```{r}
+# scale and center variables
+df <- lme4_participant_machines_df
+df[,2:91] <- scale(df[,2:91])
+```
+
+```{r}
+source(here("VI_data_collection", "6_machine_analysis", "_lavaan_models", "1_single_machines_lavaan_1.0.R"))
+```
+
+
+```{r}
+# exploratory structural equation (esem) with all machine variables
+# cfi = 0.213, tli = 0.181
+fit <- sem(model=esem_all_all, data=df)
+nice_fit(fit)
+semPaths(fit, layout="circle", sizeMan = 4, sizeLat = 4)
+semPaths(fit, layout="circle", sizeMan = 4, sizeLat = 4, "std", structural = TRUE)
+```
+
+
+```{r}
+# esem, split mxm and pre-trained models
+# model does not converge
+fit <- sem(model=esem_mxm_split_all, data=df)
+```
+
+```{r}
+# split mxm and pretrained models, using only idf weights
+# model does not converge
+fit <- sem(model = esem_weight_split_idf, data = df)
+#nice_fit(fit)
+#semPaths(fit, layout="tree", sizeMan = 4, sizeLat = 4, "est", "std", label.cex = 2)
+```
+
+```{r}
+# esem split mxm and pretrained models, using only uniform weights
+# model does not converge
+fit <- sem(model = esem_weight_split_uni, data = df)
+#nice_fit(fit)
+#semPaths(fit, layout="tree", sizeMan = 4, sizeLat = 4, "est", label.cex = 2)
+```
+
+```{r}
+# only mxm trained models, both weights
+# cfi = 0.485, tli = 0.422
+fit <- sem(model = esem_mxm_only_all, data = df)
+nice_fit(fit)
+semPaths(fit, layout="tree", sizeMan = 4, sizeLat = 4, "est", label.cex = 2)
+```
+
+```{r}
+# only pretrained models, both weights
+# model doesn't converge
+fit <- sem(model = esem_pre_only_all, data = df)
+#nice_fit(fit)
+#semPaths(fit, layout="tree", sizeMan = 4, sizeLat = 4, "est", label.cex = 2)
+```
+
+```{r}
+# only mxm models, split by weighting
+# model doesn't converge
+fit <- sem(model = esem_mxm_only_split, data = df)
+#nice_fit(fit)
+#semPaths(fit, layout="tree", sizeMan = 4, sizeLat = 4, "est", label.cex = 2)
+```
+
+```{r}
+# only pretrained models, split by weighting
+# model doesn't converge
+fit <- sem(model = esem_pre_only_split, data = df)
+#nice_fit(fit)
+#semPaths(fit, layout="tree", sizeMan = 4, sizeLat = 4, "est", label.cex = 2)
+```
+
+```{r}
+# mxm and pretrained models split, idf weights only
+# model doesn't converge
+fit <- sem(model = esem_mxm_split_idf, data = df)
+#nice_fit(fit)
+```
+
+
+```{r}
+# sem, mxm and pretrained models split, idf weights only
+# correlating with participant ratings
+fit <- sem(model = model_split_idf, data = df)
+# cfi .678, tli .595
+nice_fit(fit)
+lavaan_cor(fit)
+
+# mxm and pretrained models split, idf weights only
+# correlations among latent variables set to 0
+# model does not converge
+fit <- sem(model = model_split_idf_nocor, data = df)
+```
+
