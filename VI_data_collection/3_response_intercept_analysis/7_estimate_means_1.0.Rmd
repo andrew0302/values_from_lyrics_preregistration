@@ -43,8 +43,7 @@ mean_dfs_1 <- lapply(response_dfs[1:2], function(x){
   group_by(item_ID) %>%
   dplyr::summarise(
     across(
-      -c(participant_ID, row_number, writer, familiar), c(mean, sd)
-      ))
+      -c(participant_ID, row_number, writer, familiar), mean))
 })
 
 mean_dfs_2 <- lapply(response_dfs[3:4], function(x){

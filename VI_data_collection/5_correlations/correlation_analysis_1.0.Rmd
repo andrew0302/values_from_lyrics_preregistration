@@ -1,22 +1,163 @@
 ---
-title: "Untitled"
+title: "Correlation Analysis"
 author: "Andrew M. Demetriou"
-date: "`r Sys.Date()`"
-output: html_document
 ---
 
 ```{r setup, include=FALSE}
 library('here')            # file logistics
 library('data.table')      # data manipulation
 library('tidyverse')       # data manipulation
-
+library('corrr')           # correlation analysis
+library('patchwork')       # multiple plots 
+library('cowplot')
 
 # machine multiverse
 load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_mean_dfs.RDS"))
 load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_factor_dfs.RDS"))
 
-readRDS(lme4_item_intercepts_dfs, here("VI_data_collection", "_data", "intermediary_data", "participant_lme4_item_intercept_dfs.RDS"))
+# participant multiverse
+lme4_intercepts_dfs <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_lme4_item_intercept_dfs.RDS"))
 
-readRDS(participant_mean_dfs, here("VI_data_collection", "_data", "intermediary_data", "participant_mean_dfs.RDS"))
+participant_mean_dfs <-  readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_mean_dfs.RDS"))
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY")
+```
+
+```{r}
+machine_df     <- machines_as_fixed_mean_dfs[[1]]
+participant_df <- participant_mean_dfs[[1]]
+```
+
+```{r}
+df <- merge(participant_df, machine_df, by = "item_ID")
+```
+
+```{r}
+cor_list <- lapply(values, function(value){
+  result <- df %>% select(starts_with(value)) %>%
+  correlate(use = "na.or.complete") %>%
+  focus(!!!value)
+  
+  result$term <- gsub(paste0(value, "_"), "", result$term)
+  setDT(result)
+  
+  return(result)
+})
+
+result_df <- cor_list %>% reduce(left_join, by = "term")
+```
+```{r}
+result_df %>% pivot_longer(
+  cols = values, 
+  names_to = "value", 
+  values_to = "correlation") %>%
+  ggplot(., aes(x=value, y=term, fill = correlation)) +
+    geom_tile(color = "white") + 
+    geom_text(aes(label = round(correlation, 2)), color = "white")+
+  scale_fill_gradient(low = "blue", high = "red") +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+
+```{r}
+make_cor_df <- function(participant_df, machine_df){
+  df <- merge(participant_df, machine_df, by = "item_ID")
+  
+  cor_list <- lapply(values, function(value){
+    result <- df %>% select(starts_with(value)) %>%
+    correlate(use = "na.or.complete") %>%
+    focus(!!!value)
+  
+    result$term <- gsub(paste0(value, "_"), "", result$term)
+    setDT(result)
+  
+    return(result)
+  })
+
+  result_df <- cor_list %>% reduce(left_join, by = "term")
+}
+```
+
+
+
+```{r}
+plot_cor_df <- function(result_df){
+  result_df %>% pivot_longer(
+  cols = values, 
+  names_to = "value", 
+  values_to = "correlation") %>%
+  ggplot(., aes(x=value, y=term, fill = correlation)) +
+    geom_tile(color = "white") + 
+    geom_text(aes(label = round(correlation, 2)), color = "white")+
+  scale_fill_gradient(low = "blue", high = "red") +
+  theme(axis.text.x = element_text(angle = 90))
+}
+```
+
+```{r}
+p1 <- make_cor_df(participant_mean_dfs[[1]], machines_as_fixed_mean_dfs[[1]]) %>% plot_cor_df()
+#p1 <- p1 + ggtitle("participant means and machine means")
+
+p2 <- make_cor_df(lme4_intercepts_dfs[[1]] %>% select(-c(mean, dataset)) %>%
+  pivot_wider(id_cols = item_ID, names_from = value, values_from = intercept), machines_as_fixed_mean_dfs[[1]]) %>% plot_cor_df()
+#p2 <- p2 + ggtitle("participant intercepts and machine means")
+
+p3 <- make_cor_df(participant_mean_dfs[[1]], machines_as_fixed_factor_dfs[[1]]) %>% plot_cor_df()
+#p3 <- p3 + ggtitle("participant means and machine factors")
+
+p4 <- make_cor_df(lme4_intercepts_dfs[[1]] %>% select(-c(mean, dataset)) %>%
+  pivot_wider(id_cols = item_ID, names_from = value, values_from = intercept), machines_as_fixed_factor_dfs[[1]]) %>% plot_cor_df()
+#p4 <- p4 + ggtitle("participant intercepts and machine factors")
+
+complete_and_partial <- list(participant_means_machine_means = p1, 
+                             participant_intercepts_machine_means = p2, 
+                             participant_means_machine_factors = p3, 
+                             participant_intercepts_machine_factors = p4)
+```
+```{r}
+#p1 / p3
+complete_and_partial[[1]] / complete_and_partial[[3]]
+
+#p1 <- p1 + ggtitle("participant means and machine means")
+
+#p3 <- p3 + ggtitle("participant means and machine factors")
+```
+
+```{r}
+#p2 / p4
+complete_and_partial[[2]] / complete_and_partial[[4]]
+
+#p2 <- p2 + ggtitle("participant intercepts and machine means")
+#p4 <- p4 + ggtitle("participant intercepts and machine factors")
+
+```
+
+```{r}
+p1 <- make_cor_df(participant_mean_dfs[[4]], machines_as_fixed_mean_dfs[[4]]) %>% plot_cor_df()
+#p1 <- p1 + ggtitle("participant means and machine means")
+
+p2 <- make_cor_df(lme4_intercepts_dfs[[4]] %>% select(-c(mean, dataset)) %>%
+  pivot_wider(id_cols = item_ID, names_from = value, values_from = intercept), machines_as_fixed_mean_dfs[[4]]) %>% plot_cor_df()
+#p2 <- p2 + ggtitle("participant intercepts and machine means")
+
+p3 <- make_cor_df(participant_mean_dfs[[4]], machines_as_fixed_factor_dfs[[4]]) %>% plot_cor_df()
+#p3 <- p3 + ggtitle("participant means and machine factors")
+
+p4 <- make_cor_df(lme4_intercepts_dfs[[4]] %>% select(-c(mean, dataset)) %>%
+  pivot_wider(id_cols = item_ID, names_from = value, values_from = intercept), machines_as_fixed_factor_dfs[[4]]) %>% plot_cor_df()
+#p4 <- p4 + ggtitle("participant intercepts and machine factors")
+
+all_observations <- list(participant_means_machine_means = p1, 
+                             participant_intercepts_machine_means = p2, 
+                             participant_means_machine_factors = p3, 
+                             participant_intercepts_machine_factors = p4)
+```
+
+```{r}
+complete_and_partial[[4]]
+all_observations[[4]]
 ```
 
