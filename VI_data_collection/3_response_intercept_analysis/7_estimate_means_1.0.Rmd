@@ -27,17 +27,6 @@ From current survey:
 
 
 ```{r}
-#response_df <- response_dfs[[1]]
-#response_df$item_ID <- as.factor(response_df$item_ID)
-
-
-response_df %>% 
-  group_by(item_ID) %>%
-  dplyr::summarise(across(-c(participant_ID, row_number, writer, familiar), mean))
-
-```
-
-```{r}
 mean_dfs_1 <- lapply(response_dfs[1:2], function(x){
   x %>%
   group_by(item_ID) %>%
@@ -61,5 +50,41 @@ rm(mean_dfs_1, mean_dfs_2)
 
 ```{r}
 saveRDS(participant_mean_dfs, here("VI_data_collection", "_data", "intermediary_data", "participant_mean_dfs.RDS"))
+```
+
+```{r}
+weighted_mean = function(x, w, ..., na.rm=F){
+  if(na.rm){
+    keep = !is.na(x)&!is.na(w)
+    w = w[keep]
+    x = x[keep]
+  }
+  weighted.mean(x, w, ..., na.rm=F)
+}
+```
+
+
+```{r}
+response_df <- response_dfs[[1]]
+
+response_df$weight <- response_df$confidence / 100
+
+mean_df_1 <- response_df %>%
+  group_by(item_ID) %>%
+  dplyr::summarise(
+    across(
+      -c(participant_ID, row_number, writer, familiar), ~ weighted_mean(.x, weight, na.rm=T)))
+
+mean_df_2 <- response_df %>%
+  group_by(item_ID) %>%
+  dplyr::summarise(
+    across(
+      -c(participant_ID, row_number, writer, familiar), mean))
+```
+
+```{r}
+for(value in values){
+  print(cor(mean_df_1[[value]], mean_df_2[[value]]))
+}
 ```
 
