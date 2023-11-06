@@ -1,0 +1,219 @@
+---
+title: "Correlation Analysis"
+author: "Andrew M. Demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library('corrr')           # correlation analysis
+library('patchwork')       # multiple plots 
+library('stringr')         # string manipulation
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY")
+```
+
+```{r}
+# read score files into list
+
+# path to files
+path <- here("VI_data_collection", "_data", "machine_scores", "third_export")
+files <- list.files(path)
+
+# read in function
+read_files <- function(file){fread(here(path, file))}
+machine_scores_dfs <- lapply(files, read_files)
+
+# name files
+names(machine_scores_dfs) <- gsub(".csv", "", files)
+
+# read in item ids
+path <- here("VI_data_collection", "_data", "primary_data", "mxm_ids.RDS")
+mxm_IDs <- readRDS(path)
+
+rm(path, files, read_files)
+```
+
+```{r}
+# format dfs
+format_dfs <- function(df){
+  # make all column names uppercase
+  colnames(df) <- toupper(colnames(df))
+  
+  # rename variable to conform to convention
+  df <- df %>% rename(SELF = `SELF-DIRECTION`) %>% select(values)
+  
+  df$item_ID <- as.character(mxm_IDs$item_ID)
+  
+  return(df)
+}
+```
+
+```{r}
+# format downloaded machine scores
+machine_scores_dfs <- lapply(machine_scores_dfs, format_dfs)
+```
+
+```{r}
+# download and initially format og machines df
+load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_mean_dfs.RDS"))
+
+og_scores_df <- machines_as_fixed_mean_dfs[[1]] 
+
+colnames(og_scores_df) <- gsub("glove840B300d_uniform_weight_lyrics", "glove_uniform", colnames(og_scores_df))
+colnames(og_scores_df) <- gsub("glove840B300d_idf_weight_lyrics", "glove_idf", colnames(og_scores_df))
+colnames(og_scores_df) <- gsub("googlenews_uniform_weight_lyrics", "google_uniform", colnames(og_scores_df))
+colnames(og_scores_df) <- gsub("googlenews_idf_weight_lyrics", "google_idf", colnames(og_scores_df))
+```
+
+```{r}
+grid_1 <- c("google", "glove")
+grid_2 <- c("idf", "uniform")
+
+grid <- expand.grid(grid_1, grid_2)
+colnames(grid) <- c("machines", "weight")
+
+setups <- paste0(grid$machines, "_", grid$weight)
+
+rm(grid_1, grid_2, grid)
+```
+
+```{r}
+correlate_values <- function(df){
+  
+  cor_list <- lapply(values, function(value){
+    value_2 <- paste0(value, "_")
+  
+    cor(df[[value]], df[[value_2]])
+  })
+
+  names(cor_list) <- values
+
+  results_df <- data.frame(value = rep(names(cor_list), sapply(cor_list, length)),
+                 correlation = unlist(cor_list))
+  rownames(results_df) <- NULL
+  
+  return(results_df)
+}
+```
+
+```{r}
+results_list <-lapply(as.list(setups), function(setup){
+  machine <- str_split_i(setup, "_", 1)
+  weight <- str_split_i(setup, "_", 2)
+  
+  new_scores_df <- machine_scores_dfs[[setup]]
+  
+  old_scores_df <- og_scores_df %>% 
+    select(item_ID, contains(machine%>%as.character())) %>%
+    select(item_ID, contains(weight%>%as.character()))
+  
+  colnames(old_scores_df) <- gsub(setup, "", colnames(old_scores_df))
+  
+  df <- merge(old_scores_df, new_scores_df, by="item_ID")
+  results_dt <- correlate_values(df)
+  results_dt$model <- setup
+  setDT(results_dt)
+  return(results_dt)
+})
+
+results_df <- rbindlist(results_list)
+#results_df %>% pivot_wider(id_cols = value, names_from = model, values_from = correlation)
+
+rm(results_list)
+```
+
+```{r}
+make_cor_df <- function(participant_df, machine_df){
+  df <- merge(participant_df, machine_df, by = "item_ID")
+  
+  cor_list <- lapply(values, function(value){
+    result <- df %>% select(starts_with(value)) %>%
+    correlate(use = "na.or.complete") %>%
+    focus(!!!value)
+  
+    result$term <- gsub(paste0(value, "_"), "", result$term)
+    setDT(result)
+  
+    return(result)
+  })
+
+  result_df <- cor_list %>% reduce(left_join, by = "term")
+}
+```
+
+
+
+```{r}
+results_df %>% 
+  ggplot(., aes(x=model, y=value, fill = correlation)) +
+    geom_tile(color = "white") + 
+    geom_text(aes(label = round(correlation, 2)), color = "white")+
+  scale_fill_gradient(low = "blue", high = "red") +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+```{r}
+# read score files into list
+
+# path to files
+path <- here("VI_data_collection", "_data", "machine_scores", "fourth_export")
+files <- list.files(path)
+
+# read in function
+read_files <- function(file){fread(here(path, file))}
+machine_scores_dfs <- lapply(files, read_files)
+
+# name files
+names(machine_scores_dfs) <- gsub(".csv", "", files)
+
+# read in item ids
+path <- here("VI_data_collection", "_data", "primary_data", "mxm_ids.RDS")
+mxm_IDs <- readRDS(path)
+
+rm(path, files, read_files)
+```
+
+```{r}
+# format downloaded machine scores
+machine_scores_dfs <- lapply(machine_scores_dfs, format_dfs)
+```
+
+```{r}
+results_list <-lapply(as.list(setups), function(setup){
+  machine <- str_split_i(setup, "_", 1)
+  weight <- str_split_i(setup, "_", 2)
+  
+  new_scores_df <- machine_scores_dfs[[setup]]
+  
+  old_scores_df <- og_scores_df %>% 
+    select(item_ID, contains(machine%>%as.character())) %>%
+    select(item_ID, contains(weight%>%as.character()))
+  
+  colnames(old_scores_df) <- gsub(setup, "", colnames(old_scores_df))
+  
+  df <- merge(old_scores_df, new_scores_df, by="item_ID")
+  results_dt <- correlate_values(df)
+  results_dt$model <- setup
+  setDT(results_dt)
+  return(results_dt)
+})
+
+results_df <- rbindlist(results_list)
+#results_df %>% pivot_wider(id_cols = value, names_from = model, values_from = correlation)
+
+rm(results_list)
+```
+
+```{r}
+results_df %>% 
+  ggplot(., aes(x=model, y=value, fill = correlation)) +
+    geom_tile(color = "white") + 
+    geom_text(aes(label = round(correlation, 2)), color = "white")+
+  scale_fill_gradient(low = "blue", high = "red") +
+  theme(axis.text.x = element_text(angle = 90))
+```

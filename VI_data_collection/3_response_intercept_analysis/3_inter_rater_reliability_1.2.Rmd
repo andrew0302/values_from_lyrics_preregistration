@@ -243,6 +243,8 @@ samples_of_ICC <- function(
 ```{r}
 list_of_icc_dfs <- lapply(values, samples_of_ICC)
 sampled_icc_df <- rbindlist(list_of_icc_dfs)
+
+saveRDS(sampled_icc_df, file = here("VI_data_collection", "_data","intermediary_data", "sampled_icc_df.RDS"))
 ```
 
 ```{r}

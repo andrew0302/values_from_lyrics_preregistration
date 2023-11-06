@@ -1,0 +1,63 @@
+---
+title: "export lyric data"
+author: "Andrew M. Demetriou"
+date: "2023-05-16"
+---
+
+```{r}
+library("here")
+library("data.table")
+library("tidyverse")
+library("stringr")
+```
+
+```{r}
+# file names
+lyrics_file    <- "not_simple_medium_alpha_2021_full_2_2.csv"
+selection_file <- "not_simple_medium_alpha_2021_full_10w (2).csv"
+
+# paths with data and template
+primary_data_file_path <- here("IV_survey_builder", "primary_data_")
+template_file_path <- here("IV_survey_builder", "template_files_")
+```
+
+```{r}
+# lyrics datasets
+all_lyrics_dt     <- fread(here(primary_data_file_path, lyrics_file)) %>% select(mxm_id, lyrics_body)
+
+# manual selection process
+selected_dt <- fread(here(primary_data_file_path, selection_file)) %>% 
+  select(mxm_id, Keep) %>% 
+  # these are the four identifiers from the lyric rating process
+  filter(Keep == "O" | Keep == "o" | Keep == "m" | Keep == "M" | Keep == "a" | Keep == "A")
+
+# making a single df
+selected_dt <- merge(selected_dt, all_lyrics_dt, be=mxm_id) |>
+  select(mxm_id, lyrics_body)
+
+rm(all_lyrics_dt, lyrics_file, primary_data_file_path, template_file_path, selection_file)
+```
+
+
+```{r}
+export_dt <- selected_dt[1:360]
+mxm_ids <- export_dt$mxm_id %>% as.data.frame()
+colnames(mxm_ids) <- "item_ID"
+mxm_ids$V1 <- seq(0, length(mxm_ids$item_ID)-1)
+
+# remove punctuation and EOL symbols from lyric data
+export_dt$lyrics_body <- gsub(",", "", export_dt$lyrics_body)
+export_dt$lyrics_body <- gsub("\"", " ", export_dt$lyrics_body)
+export_dt$lyrics_body <- gsub("[\r\n]", " ", export_dt$lyrics_body)
+export_dt$lyrics_body <- gsub("抰", "", export_dt$lyrics_body)
+
+#export_dt <- export_dt %>% mutate(across(everything(), ~str_remove_all(., '"')))
+```
+
+```{r}
+path <- here("VI_data_collection", "_data","primary_data", "lyrics.txt")
+writeLines(export_dt$lyrics_body, path, sep = "\n")
+
+saveRDS(mxm_ids, here("VI_data_collection", "_data", "primary_data", "mxm_ids.RDS"))
+```
+

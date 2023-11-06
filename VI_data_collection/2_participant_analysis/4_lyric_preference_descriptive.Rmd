@@ -161,6 +161,18 @@ lyrics_questionnaire %>%
   ylab("")
 ```
 
+```{r}
+print("I prefer music that contains lyrics, as opposed to music that does not")
+lyric_preferences_dt$L_1 |> table() |> prop.table()
+# somewhat agree and strongly agree
+(202+232) / 600
+
+print("If a song has lyrics that I don't like for any reason, I don't listen to it")
+lyric_preferences_dt$L_5 |> table() |> prop.table()
+# somewhat agree and strongly agree:
+(174+87) / 600
+```
+
 
 ```{r}
 #estimate p values for each correlation in a matrix

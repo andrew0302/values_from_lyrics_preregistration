@@ -1,0 +1,125 @@
+---
+title: "compare exports to participant scores"
+author: "Andrew M. Demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library('corrr')           # correlation analysis
+library('patchwork')       # multiple plots 
+library('stringr')         # string manipulation
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY")
+```
+
+```{r}
+# read score files into list
+
+# path to files
+path <- here("VI_data_collection", "_data", "machine_scores", "third_export")
+files <- list.files(path)
+
+# read in function
+read_files <- function(file){fread(here(path, file))}
+machine_scores_dfs <- lapply(files, read_files)
+
+# name files
+names(machine_scores_dfs) <- gsub(".csv", "", files)
+
+# read in item ids
+path <- here("VI_data_collection", "_data", "primary_data", "mxm_ids.RDS")
+mxm_IDs <- readRDS(path)
+
+rm(path, files, read_files)
+```
+
+```{r}
+# format dfs
+format_dfs <- function(df){
+  # make all column names uppercase
+  colnames(df) <- toupper(colnames(df))
+  
+  # rename variable to conform to convention
+  df <- df %>% rename(SELF = `SELF-DIRECTION`) %>% select(values)
+  
+  df$item_ID <- as.character(mxm_IDs$item_ID)
+  
+  return(df)
+}
+```
+
+```{r}
+# format downloaded machine scores
+machine_scores_dfs <- lapply(machine_scores_dfs, format_dfs)
+
+machines_as_subjects <- rbindlist(machine_scores_dfs, idcol = T)
+machines_as_subjects <- machines_as_subjects %>% rename(model = .id)
+
+machine_df <- machines_as_subjects %>% 
+  pivot_wider(names_from = model, id_cols = item_ID, values_from = values)
+
+rm(mxm_IDs, machine_scores_dfs, format_dfs, machines_as_subjects)
+```
+
+```{r}
+# participant multiverse
+lme4_intercepts_dfs <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_lme4_item_intercept_dfs.RDS"))
+
+lme4_intercepts_dfs <- lapply(lme4_intercepts_dfs, function(df){
+  df %>% pivot_wider(id_cols = item_ID, names_from = value, values_from = intercept)
+})
+
+participant_mean_dfs <-  readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_mean_dfs.RDS"))
+
+participant_confidence_weighted_dfs <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_confidence_weighted_dfs.RDS"))
+```
+
+```{r}
+plot_correlations <- function(participant_df, machine_df){
+  df <- merge(participant_df, machine_df, by = "item_ID")
+  
+    cor_list <- lapply(values, function(value){
+    result <- df %>% select(starts_with(value)) %>%
+    correlate(use = "na.or.complete") %>%
+    focus(!!!value)
+  
+    result$term <- gsub(paste0(value, "_"), "", result$term)
+    setDT(result)
+  
+    return(result)
+  })
+
+  result_df <- cor_list %>% reduce(left_join, by = "term")
+
+  result_df %>% pivot_longer(
+  cols = values, 
+  names_to = "value", 
+  values_to = "correlation") %>%
+  ggplot(., aes(x=value, y=term, fill = correlation)) +
+    geom_tile(color = "white") + 
+    geom_text(aes(label = round(correlation, 2)), color = "white")+
+  scale_fill_gradient(low = "blue", high = "red") +
+  theme(axis.text.x = element_text(angle = 90))
+}
+```
+
+```{r}
+plot_correlations(participant_df = participant_mean_dfs[[1]], machine_df = machine_df)
+plot_correlations(participant_df = participant_mean_dfs[[2]], machine_df = machine_df)
+
+plot_correlations(participant_df = participant_confidence_weighted_dfs[[1]], machine_df = machine_df)
+plot_correlations(participant_df = participant_confidence_weighted_dfs[[2]], machine_df = machine_df)
+
+plot_correlations(participant_df = lme4_intercepts_dfs[[1]], machine_df = machine_df)
+plot_correlations(participant_df = lme4_intercepts_dfs[[2]], machine_df = machine_df)
+```
+
+```{r}
+word_counts_df <- machine_df %>% select(contains("word"))
+```
+

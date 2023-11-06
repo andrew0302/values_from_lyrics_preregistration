@@ -1,5 +1,5 @@
 ---
-title: "estimate intercepts using lme4 and mplus"
+title: "estimate means and confidence-weighted means"
 author: "andrew demetriou"
 ---
 
@@ -86,5 +86,23 @@ mean_df_2 <- response_df %>%
 for(value in values){
   print(cor(mean_df_1[[value]], mean_df_2[[value]]))
 }
+```
+
+```{r}
+participant_confidence_weighted_dfs <- lapply(response_dfs[1:2], function(df){
+  df$weight <- df$confidence / 100
+  
+  df <- df %>%
+  group_by(item_ID) %>%
+  dplyr::summarise(
+    across(
+      -c(participant_ID, row_number, writer, familiar), ~ weighted_mean(.x, weight, na.rm=T)))
+  
+  return(df)
+})
+```
+
+```{r}
+saveRDS(participant_confidence_weighted_dfs, here("VI_data_collection", "_data", "intermediary_data", "participant_confidence_weighted_dfs.RDS"))
 ```
 

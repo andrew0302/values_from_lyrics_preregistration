@@ -1,0 +1,132 @@
+---
+title: "inter rater reliability"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')       # file logistics
+library('data.table') # data manipulation
+library('dplyr')      # data manipulation
+library('tidyr')      # data manipulation
+library('ggplot2')    # visualization
+library('psych')      # intra class correlation
+library('patchwork')  # combine plots
+library('viridis')
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY")
+
+#options(scipen=999)
+theme_set(theme_minimal())
+```
+
+```{r}
+# load datasets
+sampled_icc_df <- readRDS(file = here("VI_data_collection", "_data","intermediary_data", "sampled_icc_df.RDS"))
+
+sampled_icc_df$n <- as.factor(sampled_icc_df$n)
+```
+
+```{r}
+# ICC2k
+p2 <- sampled_icc_df %>%
+  filter(type == "ICC2k") %>%
+  ggplot(aes(ICC, color = n)) +
+  facet_grid(~value)+
+  geom_line(stat = 'density', alpha = 0.7) +
+  theme(axis.text.x = element_text(angle = 90), 
+        strip.text.x = element_text(size = 4)) +
+  coord_flip()
+
+p2
+```
+
+```{r}
+# changes in correlation to canonical mean as a function of sample size
+
+p4 <- sampled_icc_df %>%
+  filter(type == "ICC2k") %>%
+  ggplot(aes(cor, color = as.factor(n))) +
+  facet_grid(~value)+ + 
+  geom_line(stat = 'density', alpha = .9) +
+  theme(axis.text.x = element_text(angle = 90), 
+        strip.text.x = element_text(size = 4)) +
+  coord_flip() +
+  labs(x = "correlation", colour = "n")
+
+
+p4
+```
+
+```{r}
+p4.1 <- sampled_icc_df %>%
+  filter(type == "ICC2k") %>%
+  ggplot(aes(cor, color = n)) +
+  facet_grid(~value)+
+  geom_line(stat = 'density') +
+  theme( 
+        strip.text.x = element_text(size = 4), 
+        axis.text.x = element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
+  coord_flip()
+
+p4.1
+```
+
+```{r}
+p4.2 <- sampled_icc_df %>%
+  filter(type == "ICC2k") %>%
+  ggplot(aes(cor, color = n, alpha = n)) +
+  facet_grid(~value)+
+  geom_line(stat = 'density') +
+  theme( 
+        strip.text.x = element_text(size = 4), 
+        axis.text.x = element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
+  scale_alpha_manual(values=c(0.3, 0.3,0.9,0.3)) +
+  coord_flip()
+
+p4.2
+```
+
+```{r}
+p4.3 <- sampled_icc_df %>%
+  filter(type == "ICC2k") %>%
+  ggplot(aes(cor, color = n, alpha = n)) +
+  facet_grid(~value)+
+  geom_line(stat = 'density') +
+  theme( 
+        strip.text.x = element_text(size = 4), 
+        axis.text.x = element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
+  scale_alpha_manual(values=c(0.7, 0.3,0.7,0.3)) +
+  scale_color_manual(values = c("5" = "#D55E00", "10" = "grey", "15" = "#0072B2","20" = "grey")) +
+  coord_flip()
+
+p4.3
+```
+
+```{r}
+p4.4 <- sampled_icc_df %>%
+  filter(type == "ICC2k") %>%
+  ggplot(aes(cor, color = n, alpha = n)) +
+  facet_grid(~value)+
+  geom_line(stat = 'density') +
+  theme( 
+        strip.text.x = element_text(size = 4), 
+        axis.text.x = element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
+  scale_alpha_manual(values=c(0.5, 0.5,0.7,0.5)) +
+  scale_color_manual(values = c("5" = "grey", "10" = "grey", "15" = "#D55E00","20" = "grey")) +
+  coord_flip()
+
+p4.4
+```
+
+

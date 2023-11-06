@@ -1,0 +1,187 @@
+---
+title: "compare exports to participant scores"
+author: "Andrew M. Demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library('corrr')           # correlation analysis
+library('stringr')         # string manipulation
+library('ircor')           # tie-robust rank correlation
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY")
+```
+
+```{r}
+# read score files into list
+
+# path to files
+path <- here("VI_data_collection", "_data", "machine_scores", "third_export")
+files <- list.files(path)
+
+# read in function
+read_files <- function(file){fread(here(path, file))}
+machine_scores_dfs <- lapply(files, read_files)
+
+# name files
+names(machine_scores_dfs) <- gsub(".csv", "", files)
+
+# read in item ids
+path <- here("VI_data_collection", "_data", "primary_data", "mxm_ids.RDS")
+mxm_IDs <- readRDS(path)
+
+rm(path, files, read_files)
+```
+
+```{r}
+# format dfs
+format_dfs <- function(df){
+  # make all column names uppercase
+  colnames(df) <- toupper(colnames(df))
+  
+  # rename variable to conform to convention
+  df <- df %>% rename(SELF = `SELF-DIRECTION`) %>% select(values)
+  
+  df$item_ID <- as.character(mxm_IDs$item_ID)
+  
+  return(df)
+}
+```
+
+```{r}
+# format downloaded machine scores
+machine_scores_dfs <- lapply(machine_scores_dfs, format_dfs)
+machines_as_subjects_df <- rbindlist(machine_scores_dfs, idcol = T)
+machines_as_subjects_df <- machines_as_subjects_df %>% rename(model = .id)
+
+rm(mxm_IDs, machine_scores_dfs, format_dfs)
+```
+
+```{r}
+# participant multiverse
+lme4_intercepts_dfs <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_lme4_item_intercept_dfs.RDS"))
+
+lme4_intercepts_dfs <- lapply(lme4_intercepts_dfs, function(df){
+  df %>% pivot_wider(id_cols = item_ID, names_from = value, values_from = intercept) %>%
+    select(item_ID, values)
+})
+
+participant_mean_dfs <-  readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_mean_dfs.RDS"))
+
+participant_confidence_weighted_dfs <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_confidence_weighted_dfs.RDS"))
+```
+
+```{r}
+compute_ranks <- function(df){
+  df <- df %>%
+   rowwise() %>% 
+   mutate(ranks = list(rank(c_across(POWER:SECURITY)))) %>%
+   unnest_wider(c(ranks), names_sep = "") %>%
+   rename(power_r = ranks1, 
+          achievement_r = ranks2, 
+          hedonism_r = ranks3, 
+          stimulation_r = ranks4, 
+          self_r = ranks5, 
+          universalism_r = ranks6, 
+          benevolence_r = ranks7,
+          tradition_r = ranks8, 
+          conformity_r = ranks9, 
+          security_r = ranks10)
+}
+```
+
+```{r}
+# compute ranks for different datasets
+machines_as_subjects_df <- compute_ranks(machines_as_subjects_df) %>%
+  select(item_ID, model, all_of(contains("_r")))
+colnames(machines_as_subjects_df) <- c("item_ID", "model", values)
+
+machines_as_fixed_df <- machines_as_subjects_df %>% 
+  pivot_wider(names_from = model, id_cols = item_ID, values_from = values)
+
+participant_confidence_weighted_df <- compute_ranks(participant_confidence_weighted_dfs[[1]]) %>%
+  select(item_ID, all_of(contains("_r")))
+colnames(participant_confidence_weighted_df) <- c("item_ID", values)
+```
+
+```{r}
+participant_confidence_weighted_df <- participant_confidence_weighted_df %>%
+  pivot_longer(cols = values, names_to = "value", values_to = "rank")
+
+machines_as_subjects_df <- machines_as_subjects_df %>% pivot_longer(cols = values, names_to = "value", values_to = "rank")
+```
+
+```{r}
+df <- merge(participant_confidence_weighted_df, machines_as_subjects_df, by = c("item_ID", "value"))
+
+df$rank.x <- as.numeric(df$rank.x)
+df$rank.y <- as.numeric(df$rank.y)
+```
+
+```{r}
+t <- df %>% group_by(item_ID, model) %>%
+  #summarize(k = cor(rank.x, rank.y, method = "kendall"))
+  summarize(kendall_t = cor(rank.x, rank.y, method = "kendall"))
+```
+
+```{r}
+t %>% group_by(model) %>%
+  summarize(mean = mean(kendall_t, na.rm=T), 
+            sd = sd(kendall_t), 
+            median = median(kendall_t, na.rm=T))
+
+t %>%
+  ggplot(aes(kendall_t, fill = model)) +
+  facet_wrap(~model) +
+  geom_histogram()
+```
+
+```{r}
+df %>% filter(model == "wordcount_idf")
+```
+
+```{r}
+df <- merge(participant_confidence_weighted_df, 
+  
+  machines_as_subjects_df %>% 
+    filter(model == "glove_idf") %>%
+    rename(glove_idf = rank) %>% 
+    select(item_ID, value, glove_idf), 
+  
+    by = c("item_ID", "value"))
+```
+
+```{r}
+t <- df %>% group_by(item_ID) %>%
+  arrange(desc(rank), .by_group = TRUE) %>%
+  summarize(tau = tauAP(rank, glove_idf))
+```
+
+```{r}
+t %>% ggplot(aes(tau)) +
+  geom_histogram(bins = 100)
+```
+
+```{r}
+models <- machines_as_subjects_df$model %>% unique() %>% as.list()
+
+df_list <- lapply(models, function(setup){
+  machines_as_subjects_df %>% 
+    filter(model == setup) %>%
+    rename(!!setup := rank) %>%
+    select(item_ID, value, setup)
+})
+```
+```{r}
+df <- merge(participant_confidence_weighted_df, df_list[[1]], by = c("item_ID", "value"))
+
+for(i in 2:length(df_list)){
+  df <- merge(df, df_list[[i]], by = c("item_ID", "value"))
+}
+```
+

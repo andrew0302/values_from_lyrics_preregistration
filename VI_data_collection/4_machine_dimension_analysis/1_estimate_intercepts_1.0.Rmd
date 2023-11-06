@@ -70,6 +70,8 @@ source(here("VI_data_collection", "3_response_intercept_analysis",
 # fit model
 fit <- mplus_df %>% fit_mplus_model()
 ```
+
+
 ```{r}
 ## responses_dt_c
 mplus_df <- format_df_for_mplus(machines_as_subjects[[2]])  
