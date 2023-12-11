@@ -10,6 +10,7 @@ library('tidyverse')       # data manipulation
 library('corrr')           # correlation analysis
 library('stringr')         # string manipulation
 library('ircor')           # tie-robust rank correlation
+library('ggridges')
 
 values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
             "STIMULATION", "SELF", "UNIVERSALISM", 
@@ -64,14 +65,14 @@ rm(mxm_IDs, machine_scores_dfs, format_dfs)
 
 ```{r}
 # participant multiverse
-lme4_intercepts_dfs <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_lme4_item_intercept_dfs.RDS"))
+#lme4_intercepts_dfs <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_lme4_item_intercept_dfs.RDS"))
 
-lme4_intercepts_dfs <- lapply(lme4_intercepts_dfs, function(df){
-  df %>% pivot_wider(id_cols = item_ID, names_from = value, values_from = intercept) %>%
-    select(item_ID, values)
-})
+#lme4_intercepts_dfs <- lapply(lme4_intercepts_dfs, function(df){
+#  df %>% pivot_wider(id_cols = item_ID, names_from = value, values_from = intercept) %>%
+#    select(item_ID, values)
+#})
 
-participant_mean_dfs <-  readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_mean_dfs.RDS"))
+#participant_mean_dfs <-  readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_mean_dfs.RDS"))
 
 participant_confidence_weighted_dfs <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_confidence_weighted_dfs.RDS"))
 ```
@@ -107,6 +108,8 @@ machines_as_fixed_df <- machines_as_subjects_df %>%
 participant_confidence_weighted_df <- compute_ranks(participant_confidence_weighted_dfs[[1]]) %>%
   select(item_ID, all_of(contains("_r")))
 colnames(participant_confidence_weighted_df) <- c("item_ID", values)
+
+rm(participant_confidence_weighted_dfs)
 ```
 
 ```{r}
@@ -124,22 +127,32 @@ df$rank.y <- as.numeric(df$rank.y)
 ```
 
 ```{r}
-t <- df %>% group_by(item_ID, model) %>%
-  #summarize(k = cor(rank.x, rank.y, method = "kendall"))
+df <- df %>% group_by(item_ID, model) %>%
   summarize(kendall_t = cor(rank.x, rank.y, method = "kendall"))
 ```
 
 ```{r}
-t %>% group_by(model) %>%
+df %>% group_by(model) %>%
   summarize(mean = mean(kendall_t, na.rm=T), 
             sd = sd(kendall_t), 
             median = median(kendall_t, na.rm=T))
 
-t %>%
-  ggplot(aes(kendall_t, fill = model)) +
-  facet_wrap(~model) +
-  geom_histogram()
+#df %>%
+#  ggplot(aes(kendall_t, fill = model)) +
+#  facet_wrap(~model) +
+#  geom_histogram()
 ```
+
+```{r}
+df %>%
+  ggplot(aes(kendall_t, model, fill = model)) +
+    geom_density_ridges(alpha = 0.4) +
+  scale_fill_viridis_d() +
+  theme_minimal() +
+  theme(legend.position = "none")
+  
+```
+
 
 ```{r}
 df %>% filter(model == "wordcount_idf")
@@ -185,3 +198,42 @@ for(i in 2:length(df_list)){
 }
 ```
 
+```{r}
+models <- colnames(df)[4:7] %>% as.list()
+
+result_glove_idf <- df %>% group_by(item_ID) %>%
+  arrange(desc(rank), .by_group = TRUE) %>%
+  summarize(tau = tauAP_a(rank, glove_idf)) %>%
+  mutate(model = "glove_idf")
+
+result_glove_uni <- df %>% group_by(item_ID) %>%
+  arrange(desc(rank), .by_group = TRUE) %>%
+  summarize(tau = tauAP_a(rank, glove_uniform)) %>%
+  mutate(model = "glove_uniform")
+
+result_google_idf <- df %>% group_by(item_ID) %>%
+  arrange(desc(rank), .by_group = TRUE) %>%
+  summarize(tau = tauAP_a(rank, google_idf)) %>%
+  mutate(model = "google_idf")
+
+result_google_uni <- df %>% group_by(item_ID) %>%
+  arrange(desc(rank), .by_group = TRUE) %>%
+  summarize(tau = tauAP_a(rank, google_uniform)) %>%
+  mutate(model = "google_uniform")
+
+result_wordcount <- df %>% group_by(item_ID) %>%
+  arrange(desc(rank), .by_group = TRUE) %>%
+  summarize(tau = tauAP_a(rank, wordcount_idf)) %>%
+  mutate(model = "wordcount")
+
+result_df <- rbind(result_glove_idf, result_glove_uni, result_google_idf, result_google_uni, result_wordcount)
+
+result_df %>%
+  ggplot(aes(tau, model, fill = model)) +
+    geom_density_ridges(alpha = 0.4) +
+    scale_fill_viridis_d() +
+    theme_minimal() +
+    theme(legend.position = "none")
+
+rm(result_glove_idf, result_glove_uni, result_google_idf, result_google_uni)
+```

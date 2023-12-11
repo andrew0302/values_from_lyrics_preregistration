@@ -1,0 +1,264 @@
+---
+title: "lyric preferences"
+author: "andrew demetriou"
+date: "11/12/2023"
+---
+
+# AIM: 
+
+To what degree does a US sample prefer songs with lyrics?
+
+```{r setup, include=FALSE}
+library('data.table') # data manipulation
+library('dplyr')      # data manipulation
+library('here')       # file logistics
+library("ggplot2")    # visualization
+library("cowplot")    # multiple plot visualization
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+Load sample 1:
+
+```{r}
+# path with the actual data
+data_file_path <- here("II_rater_pilot", "response_data")
+
+# create a list with all of the files
+data_files <- list.files(data_file_path)
+
+# read in qualtrics data file
+responses_dt <- fread(here(data_file_path, "annotation_number_estimation _2.2_November 28, 2021_07.51.csv"))
+
+# remove junk on first two rows
+responses_dt <- responses_dt[3:.N]
+
+# get question wording:
+questions <- colnames(fread(here(data_file_path, data_files[1]), skip=1))
+
+# working data table
+working_dt <- responses_dt[`Participant Consent`=='agree', ]
+
+rm(data_file_path, data_files, responses_dt)
+```
+
+
+```{r}
+# names of lyric preferences columns for subsetting
+lyric_column_names <- c(
+  "Lyric_preferences_1","Lyric_preferences_2","Lyric_preferences_3",
+  "Lyric_preferences_4","Lyric_preferences_5","Lyric_preferences_6",
+  "Lyric_preferences_7", "Lyric_preferences_8", "Lyric_preferences_9", "Lyric_percentage_1")
+
+# subset data table
+pilot_preferences_dt <- working_dt[, lyric_column_names, with=FALSE]
+
+#converts each possible response into numbers for a given column
+to_numbers <- function(x) {
+  if(x ==  "Strongly disagree"){x = as.numeric(1)
+  } else if (x== "Somewhat disagree"){x = as.numeric(2)
+  } else if (x== "Neither agree nor disagree"){x = as.numeric(3)
+  } else if (x=="Somewhat agree"){x = as.numeric(4)
+  } else if (x=="Strongly agree"){x = as.numeric(5)
+  } else {x = NA}
+}
+
+#execute recode function on relevant rows
+pilot_preferences_dt  <- pilot_preferences_dt[, .(
+  L1 = lapply(Lyric_preferences_1, to_numbers), 
+  L2 = lapply(Lyric_preferences_2, to_numbers), 
+  L3 = lapply(Lyric_preferences_3, to_numbers),
+  L4 = lapply(Lyric_preferences_4, to_numbers), 
+  L5 = lapply(Lyric_preferences_5, to_numbers), 
+  L6 = lapply(Lyric_preferences_6, to_numbers), 
+  L7 = lapply(Lyric_preferences_7, to_numbers),
+  L8 = lapply(Lyric_preferences_8, to_numbers),
+  L9 = lapply(Lyric_preferences_9, to_numbers),
+  L10 = Lyric_percentage_1)][, lapply(.SD, as.numeric)]
+
+#reverse codes question L2
+pilot_preferences_dt$L2 <- 6-pilot_preferences_dt$L2
+
+# subjectivity
+pilot_subjectivity <- working_dt[, "subjective"]
+
+rm(working_dt, lyric_column_names, to_numbers)
+```
+
+```{r}
+# extract actual wording of questions
+pilot_questions <- questions[20:29]
+
+# deletes repeated text
+pilot_questions <- gsub("Please indicate how much you agree with the following statements about your music preferences: - ", "", pilot_questions)
+
+# print questions
+pilot_questions
+
+rm(questions)
+```
+
+```{r}
+pilot_prop_table_list <-sapply(pilot_preferences_dt, function(x){ x %>% table() %>% prop.table()})
+
+pilot_agree_list <- lapply(pilot_prop_table_list[1:9], function(x){x[4] + x[5]})
+
+pilot_agree_list$L1 #"I prefer music that contains lyrics, as opposed to music that does not" 
+pilot_agree_list$L3 #"I always pay attention to the lyrics of a song, if the song has them"
+pilot_agree_list$L5 #"If a song has lyrics that I don't like for any reason, I don't listen to it"
+pilot_agree_list$L6 #"If I am not sure about the lyrics of a song, I search them on the internet"
+pilot_agree_list$L8 #"I memorize the lyrics to the songs I listen to"
+```
+
+```{r}
+L_10_props <- pilot_preferences_dt$L10 %>% table() %>% prop.table()
+
+L_10_prop_table <- pilot_preferences_dt$L10 |> 
+  # make frequency table
+  table() |> 
+  # convert to data table
+  as.data.frame() |> setDT() |> 
+  # rename response variable
+  rename(response = Var1)
+
+# assign as column
+L_10_prop_table$props <- L_10_props
+rm(L_10_props)
+
+# convert column to numeric
+L_10_prop_table$response <- L_10_prop_table$response |> 
+  as.character() |> as.numeric()
+
+# 74%
+L_10_prop_table[response >= 80]$props |> sum()
+
+# 10.8%
+L_10_prop_table[response >= 100]$props |> sum()
+```
+
+
+```{r}
+# load dataset
+load(here("VI_data_collection", "_data", "survey_response_data", "response_df.RDS"))
+
+# create a working dataset
+responses_dt <- as.data.table(response_df)
+rm(response_df)
+
+# subset lyrics df
+response_preferences_dt <- responses_dt %>%
+  select(
+    participant_ID, 
+    subjective,
+    all_of(starts_with("Lyric"))) %>%
+  unique()
+
+# rename columns
+colnames(response_preferences_dt) <- gsub("yric_preferences_", "", colnames(response_preferences_dt))
+names(response_preferences_dt)[names(response_preferences_dt) == 'Lyric_percentage_1'] <- 'L16'
+
+response_subjectivity <- response_preferences_dt %>% select(subjective)
+
+response_preferences_dt <- response_preferences_dt %>% select(all_of(paste0("L", seq(1, 16))))
+response_preferences_dt$L16 <- response_preferences_dt$L16 %>% as.numeric()
+
+rm(responses_dt)
+```
+
+```{r}
+response_questions <- c(
+  "I prefer music that contains lyrics, as opposed to music that does not",
+  "I only pay attention to the lyrics of songs or artists that I like.", 
+  "I always pay attention to the lyrics of a song, if the song has them", 
+  "I enjoy learning about song lyrics and their meaning, for example by reading  blogs and forums or listening to artist interviews", 
+  "If a song has lyrics that I don't like for any reason, I don't listen to it", 
+  "If I am not sure about the lyrics of a song, I search them on the internet", 
+  "I contribute to online resources on lyrics, for example forums, or on platforms where I can contribute lyric transcriptions", 
+  "I memorize the lyrics to the songs I listen to", 
+  "I write my own song lyrics", 
+  "I post excerpts of song lyrics online, e.g. on social media", 
+  "I discuss song lyrics with my friends", 
+  "I come up with alternate versions of song lyrics that I find entertaining, i.e. song parodies", 
+  "I ponder the meaning of song lyrics", 
+  "I quote lyrics often in conversation", 
+  "I read and/or write poetry", 
+  "What percentage of your music library do you think contains songs with lyrics?"
+)
+```
+
+```{r}
+response_prop_table_list <-sapply(response_preferences_dt, function(x){ x %>% table() %>% prop.table()})
+
+response_agree_list <- lapply(response_prop_table_list[1:9], function(x){x[4] + x[5]})
+
+response_agree_list$L1 #"I prefer music that contains lyrics, as opposed to music that does not" 
+response_agree_list$L3 #"I always pay attention to the lyrics of a song, if the song has them"
+response_agree_list$L5 #"If a song has lyrics that I don't like for any reason, I don't listen to it"
+response_agree_list$L6 #"If I am not sure about the lyrics of a song, I search them on the internet"
+response_agree_list$L8 #"I memorize the lyrics to the songs I listen to"
+```
+
+```{r}
+L_16_props <- response_preferences_dt$L16 %>% table() %>% prop.table()
+
+L_16_prop_table <- response_preferences_dt$L16 |> 
+  # make frequency table
+  table() |> 
+  # convert to data table
+  as.data.frame() |> setDT() |> 
+  # rename response variable
+  rename(response = Var1)
+
+# assign as column
+L_16_prop_table$props <- L_16_props
+rm(L_16_props)
+
+# convert column to numeric
+L_16_prop_table$response <- L_16_prop_table$response |> 
+  as.character() |> as.numeric()
+
+# 74%
+L_16_prop_table[response >= 80]$props |> sum()
+```
+
+```{r}
+pilot_median <- median(pilot_preferences_dt$L10)
+
+p1 <- pilot_preferences_dt %>%
+  ggplot(aes(x = as.numeric(L10))) +
+  geom_histogram(bins=40, color = "black", fill = "grey") +
+  #geom_histogram(data=subset(pilot_preferences_dt, L10>=80), bins=40, fill="red", alpha=.3) +
+  geom_vline(xintercept = pilot_median, color = 'red') +
+  ggplot2::annotate(geom = "text", x=70, y=85, 
+                    label = paste0("Median: ", pilot_median, "%")) +
+  #  ggplot2::annotate(geom = "text", x=70, y=65, label = "74% >= 80") +
+    xlab("Music Library Percentage") +
+    ylab("") +
+  ylim(0, 120) +
+  
+  
+  ggtitle("Pilot Study: n=505")
+```
+
+```{r}
+response_median <- median(response_preferences_dt$L16 %>% as.numeric())
+
+p2 <- response_preferences_dt %>%
+  ggplot(aes(x = as.numeric(L16))) +
+  geom_histogram(bins=40, color = "black", fill = "grey") +
+  #geom_histogram(data=subset(response_preferences_dt, L16>=80), bins=40, fill="red", alpha=.3) +
+  geom_vline(xintercept = response_median, color = 'red') +
+  ggplot2::annotate(geom = "text", x=70, y=85, 
+                    label = paste0("Median: ", response_median, "%")) +
+    #ggplot2::annotate(geom = "text", x=70, y=65, label = "74% >= 80") +
+    xlab("Music Library Percentage") +
+    ylab("") +
+  ylim(0, 120) +
+  ggtitle("Main Study: n=600")
+```
+
+```{r}
+plot_grid(p1, p2, labels = c("A", "B", label_size = 12))
+```
+

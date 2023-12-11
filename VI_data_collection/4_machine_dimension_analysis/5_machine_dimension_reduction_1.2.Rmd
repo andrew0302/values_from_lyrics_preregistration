@@ -81,6 +81,7 @@ estimate_average_score <- function(df){
  return(average_scores_df)
 }
 
+# machines_as_fixed_df <- machines_as_fixed_df_list[[1]]
 # far_idf_df <- machines_as_fixed_df %>% select(intersect(contains("far"), contains("idf")))
 # estimate_average_score(far_idf_df)
 #cor(average_res$ACHIEVEMENT, machines_as_fixed_df$ACHIEVEMENT_mxm_faruqui_0_idf_weight_lyrics)

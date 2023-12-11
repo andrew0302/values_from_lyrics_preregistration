@@ -1,7 +1,9 @@
 ---
-title: "Correlation Analysis"
+title: "Concordance Analysis"
 author: "Andrew M. Demetriou"
 ---
+
+Aim: the aim of this notebook is to examine the correlation in scores between the original, and subsequent exports of machines scores. 
 
 ```{r setup, include=FALSE}
 library('here')            # file logistics
@@ -10,32 +12,22 @@ library('tidyverse')       # data manipulation
 library('corrr')           # correlation analysis
 library('patchwork')       # multiple plots 
 library('stringr')         # string manipulation
+library("foreach")         # iterate over two lists
+library("purrr")           # iterate over two lists
 
 values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
             "STIMULATION", "SELF", "UNIVERSALISM", 
             "BENEVOLENCE", "TRADITION",  
             "CONFORMITY", "SECURITY")
-```
-
-```{r}
-# read score files into list
-
-# path to files
-path <- here("VI_data_collection", "_data", "machine_scores", "third_export")
-files <- list.files(path)
-
-# read in function
-read_files <- function(file){fread(here(path, file))}
-machine_scores_dfs <- lapply(files, read_files)
-
-# name files
-names(machine_scores_dfs) <- gsub(".csv", "", files)
 
 # read in item ids
 path <- here("VI_data_collection", "_data", "primary_data", "mxm_ids.RDS")
 mxm_IDs <- readRDS(path)
 
-rm(path, files, read_files)
+# read in function
+read_files <- function(file){fread(here(path, file))}
+
+rm(path)
 ```
 
 ```{r}
@@ -54,32 +46,21 @@ format_dfs <- function(df){
 ```
 
 ```{r}
-# format downloaded machine scores
-machine_scores_dfs <- lapply(machine_scores_dfs, format_dfs)
-```
-
-```{r}
-# download and initially format og machines df
+# load and format og machines df
 load(file = here("VI_data_collection", "_data","intermediary_data", "machines_as_fixed_mean_dfs.RDS"))
 
 og_scores_df <- machines_as_fixed_mean_dfs[[1]] 
 
-colnames(og_scores_df) <- gsub("glove840B300d_uniform_weight_lyrics", "glove_uniform", colnames(og_scores_df))
-colnames(og_scores_df) <- gsub("glove840B300d_idf_weight_lyrics", "glove_idf", colnames(og_scores_df))
-colnames(og_scores_df) <- gsub("googlenews_uniform_weight_lyrics", "google_uniform", colnames(og_scores_df))
-colnames(og_scores_df) <- gsub("googlenews_idf_weight_lyrics", "google_idf", colnames(og_scores_df))
-```
+colnames(og_scores_df) <- gsub("glove840B300d_uniform_weight_lyrics", 
+                               "glove_uniform", colnames(og_scores_df))
+colnames(og_scores_df) <- gsub("glove840B300d_idf_weight_lyrics", 
+                               "glove_idf", colnames(og_scores_df))
+colnames(og_scores_df) <- gsub("googlenews_uniform_weight_lyrics", 
+                               "google_uniform", colnames(og_scores_df))
+colnames(og_scores_df) <- gsub("googlenews_idf_weight_lyrics", 
+                               "google_idf", colnames(og_scores_df))
 
-```{r}
-grid_1 <- c("google", "glove")
-grid_2 <- c("idf", "uniform")
-
-grid <- expand.grid(grid_1, grid_2)
-colnames(grid) <- c("machines", "weight")
-
-setups <- paste0(grid$machines, "_", grid$weight)
-
-rm(grid_1, grid_2, grid)
+rm(machines_as_fixed_mean_dfs)
 ```
 
 ```{r}
@@ -102,80 +83,164 @@ correlate_values <- function(df){
 ```
 
 ```{r}
-results_list <-lapply(as.list(setups), function(setup){
-  machine <- str_split_i(setup, "_", 1)
-  weight <- str_split_i(setup, "_", 2)
+make_results_df <-function(
+    machine_scores, 
+    setups, 
+    format = "list",
+    values = c("POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY")){
   
-  new_scores_df <- machine_scores_dfs[[setup]]
+  results_list <- lapply(as.list(setups), function(setup){
   
+  # subset export
+  #  setup <- setups[[1]]
+  # machine_scores <- machine_scores_dfs  
+
+    if(format == "list"){
+      new_scores_df <- machine_scores[[setup]]
+    }else if(format == "dataframe"){
+      new_scores_df <- machine_scores %>%
+        select(item_ID, contains(setup))
+    }else(print("enter either 'dataframe' or 'list' as format"))
+  
+  # subset original scores
   old_scores_df <- og_scores_df %>% 
-    select(item_ID, contains(machine%>%as.character())) %>%
-    select(item_ID, contains(weight%>%as.character()))
+    select(item_ID, contains(setup))
   
+  # rename columns to conform to names of new scores df
   colnames(old_scores_df) <- gsub(setup, "", colnames(old_scores_df))
+  colnames(new_scores_df) <- gsub(paste0("_", setup), "", colnames(new_scores_df))
   
+  # merge two dfs
   df <- merge(old_scores_df, new_scores_df, by="item_ID")
+  # estimate correlations
   results_dt <- correlate_values(df)
+  # name result after setup
   results_dt$model <- setup
+  # convert to data table
   setDT(results_dt)
+  
   return(results_dt)
 })
 
+# bind list of dfs into a single list
 results_df <- rbindlist(results_list)
-#results_df %>% pivot_wider(id_cols = value, names_from = model, values_from = correlation)
+return(results_df)
 
-rm(results_list)
-```
-
-```{r}
-make_cor_df <- function(participant_df, machine_df){
-  df <- merge(participant_df, machine_df, by = "item_ID")
-  
-  cor_list <- lapply(values, function(value){
-    result <- df %>% select(starts_with(value)) %>%
-    correlate(use = "na.or.complete") %>%
-    focus(!!!value)
-  
-    result$term <- gsub(paste0(value, "_"), "", result$term)
-    setDT(result)
-  
-    return(result)
-  })
-
-  result_df <- cor_list %>% reduce(left_join, by = "term")
 }
 ```
 
-
-
 ```{r}
-results_df %>% 
+plot_cor_results <- function(results_df){
+  results_df %>%
   ggplot(., aes(x=model, y=value, fill = correlation)) +
     geom_tile(color = "white") + 
     geom_text(aes(label = round(correlation, 2)), color = "white")+
   scale_fill_gradient(low = "blue", high = "red") +
   theme(axis.text.x = element_text(angle = 90))
+}
 ```
 
 ```{r}
-# read score files into list
+# third export
+
+# path to files
+path <- here("VI_data_collection", "_data", "machine_scores", "third_export")
+files <- list.files(path)
+
+# read in files
+machine_scores_dfs <- lapply(files, read_files)
+
+# name files
+names(machine_scores_dfs) <- gsub(".csv", "", files)
+
+# format downloaded machine scores
+machine_scores_dfs <- lapply(machine_scores_dfs, format_dfs)
+
+rm(path, files)
+```
+
+```{r}
+grid_1 <- c("google", "glove")
+grid_2 <- c("idf", "uniform")
+
+grid <- expand.grid(grid_1, grid_2)
+colnames(grid) <- c("machines", "weight")
+
+setups <- paste0(grid$machines, "_", grid$weight)
+
+rm(grid_1, grid_2, grid)
+```
+
+```{r}
+# third export results
+results_df <- make_results_df(machine_scores_dfs, setups)
+results_df %>% plot_cor_results()
+```
+
+
+```{r}
+# fourth export
 
 # path to files
 path <- here("VI_data_collection", "_data", "machine_scores", "fourth_export")
 files <- list.files(path)
 
 # read in function
-read_files <- function(file){fread(here(path, file))}
 machine_scores_dfs <- lapply(files, read_files)
 
 # name files
 names(machine_scores_dfs) <- gsub(".csv", "", files)
 
-# read in item ids
-path <- here("VI_data_collection", "_data", "primary_data", "mxm_ids.RDS")
-mxm_IDs <- readRDS(path)
+# cut out word counting
+machine_scores_dfs <-  machine_scores_dfs[40:43]
 
-rm(path, files, read_files)
+rm(path, files)
+```
+
+```{r}
+# format downloaded machine scores
+machine_scores_dfs <- lapply(machine_scores_dfs, format_dfs)
+
+names(machine_scores_dfs) <- c("glove_idf",  "glove_uniform",  "google_idf", "google_uniform")
+```
+
+```{r}
+# fourth export, pretrained model results
+results_df <- make_results_df(machine_scores_dfs, setups)
+results_df %>% plot_cor_results()
+```
+
+```{r}
+cols <- colnames(og_scores_df)
+cols <- gsub("_mean", "", cols)
+cols <- gsub("_uniform", "_uni", cols)
+cols <- gsub("_split", "_cv", cols)
+
+colnames(og_scores_df) <- cols
+
+rm(cols)
+```
+
+```{r}
+# fourth export
+
+# path to files
+path <- here("VI_data_collection", "_data", "machine_scores", "fourth_export")
+files <- list.files(path)
+
+# read in function
+machine_scores_dfs <- lapply(files, read_files)
+
+# name files
+names(machine_scores_dfs) <- gsub(".csv", "", files)
+
+# cut out word counting
+machine_scores_dfs <-  machine_scores_dfs[1:43]
+
+rm(path, files)
 ```
 
 ```{r}
@@ -184,36 +249,106 @@ machine_scores_dfs <- lapply(machine_scores_dfs, format_dfs)
 ```
 
 ```{r}
-results_list <-lapply(as.list(setups), function(setup){
-  machine <- str_split_i(setup, "_", 1)
-  weight <- str_split_i(setup, "_", 2)
-  
-  new_scores_df <- machine_scores_dfs[[setup]]
-  
-  old_scores_df <- og_scores_df %>% 
-    select(item_ID, contains(machine%>%as.character())) %>%
-    select(item_ID, contains(weight%>%as.character()))
-  
-  colnames(old_scores_df) <- gsub(setup, "", colnames(old_scores_df))
-  
-  df <- merge(old_scores_df, new_scores_df, by="item_ID")
-  results_dt <- correlate_values(df)
-  results_dt$model <- setup
-  setDT(results_dt)
-  return(results_dt)
-})
+estimate_average_score <- function(df){
+    
+ # estimate average of scores for each machine setup 
+ average_scores_df <- lapply(values, function(x){
+   # select all columns that start with the value
+   df <- df %>% select(all_of(starts_with(x)))
+   # compute row means
+   scores <- df %>% mutate(average = rowMeans(.)) %>% select(average)
+   # rename column
+   colnames(scores) <- x
+   return(scores)
+  })
 
-results_df <- rbindlist(results_list)
-#results_df %>% pivot_wider(id_cols = value, names_from = model, values_from = correlation)
-
-rm(results_list)
+ # rename items in the list
+ names(average_scores_df) <- values
+ 
+ # coerce list to a dataframe
+ average_scores_df <- as.data.frame(do.call(cbind, average_scores_df))
+ 
+ return(average_scores_df)
+}
 ```
 
 ```{r}
-results_df %>% 
-  ggplot(., aes(x=model, y=value, fill = correlation)) +
-    geom_tile(color = "white") + 
-    geom_text(aes(label = round(correlation, 2)), color = "white")+
-  scale_fill_gradient(low = "blue", high = "red") +
-  theme(axis.text.x = element_text(angle = 90))
+make_mean_df_list <- function(machines_as_fixed_df){
+  
+  # create a df of machines and weights to iterate over
+  machines <- data.frame(machine = c("far", "far", "cv", "cv"), 
+                         weight = c("idf", "uni", "idf", "uni"))
+
+  # iterate over all combinations in machines df
+  foreach(i = machines$machine, j = machines$weight) %do% {
+    #subset main dataset by combination
+    df <- machines_as_fixed_df %>% select(intersect(contains(i), contains(j)))
+    
+  
+    # compute single average variable for each machine setup
+    average_scores_df <- estimate_average_score(df)
+    average_scores_df$model  <- i
+    average_scores_df$weight <- j
+    average_scores_df$method <- "mean"
+    average_scores_df$item_ID <- machines_as_fixed_df$item_ID
+    base::assign(paste0(i,"_",j, "_average"), average_scores_df)
+  }
+
+  # output list for each setup  
+  df_list <- list(far_idf_average = far_idf_average, 
+                  far_uni_average = far_uni_average, 
+                  cv_idf_average = cv_idf_average, 
+                  cv_uni_average = cv_uni_average)
+  
+  output_df <- rbindlist(df_list) %>%
+      pivot_wider(., id_cols = item_ID, 
+            names_from = c(model, weight, method), 
+            values_from = values)
+  
+}
+#s<-make_mean_df_list(machines_as_fixed_df_list[[3]])
 ```
+
+```{r}
+machine_scores_df <- rbindlist(machine_scores_dfs, idcol=T)
+machine_scores_df <- machine_scores_df %>% pivot_wider(names_from = .id, values_from = values)
+machine_scores_df <- make_mean_df_list(machine_scores_df)
+colnames(machine_scores_df) <- gsub("_mean", "", colnames(machine_scores_df)) 
+```
+
+```{r}
+#grid_1 <- c("google", "glove", "cv", "far")
+grid_1 <- c("cv", "far")
+grid_2 <- c("idf", "uni")
+
+grid <- expand.grid(grid_1, grid_2)
+colnames(grid) <- c("machines", "weight")
+
+setups <- paste0(grid$machines, "_", grid$weight)
+
+rm(grid_1, grid_2, grid)
+```
+
+```{r}
+results_df <- make_results_df(machine_scores = machine_scores_df, format = "dataframe", setups)
+results_df %>% plot_cor_results()
+```
+
+```{r}
+machines_as_subjects_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_subjects_df.RDS"))
+
+
+
+df <- machines_as_subjects_df[[1]]
+
+df <- df %>% filter(participant_ID == "mxm_faruqui_0_uniform_weight_lyrics")
+
+df_2 <- machine_scores_dfs[["far_0_idf"]]
+
+df_3 <- merge(df, df_2, by = "item_ID")
+
+cor(df_3$POWER.x, df_3$POWER.y)
+cor(df_3$ACHIEVEMENT.x, df_3$ACHIEVEMENT.y)
+cor(df_3$HEDONISM.x, df_3$HEDONISM.y)
+```
+

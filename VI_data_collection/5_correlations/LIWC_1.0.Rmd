@@ -1,0 +1,16 @@
+---
+title: "LIWC"
+author: "Andrew M. Demetriou"
+---
+
+```{r}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library('corrr')           # correlation analysis
+```
+
+```{r}
+LIWC_df <- fread(here("VI_data_collection", "_data", "machine_scores", "LIWC", "LIWC_word_count.csv"))
+```
+

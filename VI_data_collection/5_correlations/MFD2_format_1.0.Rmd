@@ -1,0 +1,36 @@
+---
+title: "toJson"
+author: "Andrew M. Demetriou"
+---
+
+```{r}
+library('here')
+library('jsonlite')
+
+```
+
+```{r}
+path <- here("VI_data_collection", "_data", "dictionary_files")
+
+files <- list.files(here("VI_data_collection", "_data", "dictionary_files"))
+```
+
+Moral Foundations Theory is a psychological framework developed by Jonathan Haidt that suggests human morality is shaped by innate moral foundations: Care/Harm, Fairness/Cheating, Loyalty/Betrayal, Authority/Subversion, Sanctity/Degradation, and Liberty/Oppression. These foundations serve as the building blocks of our moral judgments and vary across cultures.^p^pThe Moral Foundations Dictionary was developed by a team of researchers led by Jonathan Haidt and Jesse Graham as part of their work on moral psychology and cultural variation in morality and the version 2.0 includes more than 200 words per foundation. For more information on this version of the dictionary see:
+
+Frimer, J. A., Boghrati, R., Haidt, J., Graham, J., & Dehgani, M. (2019). Moral Foundations Dictionary for Linguistic Analyses 2.0. Unpublished manuscript. https://doi.org/10.17605/OSF.IO/EZN37
+
+```{r}
+
+```
+
+
+AUTHORITY.VICE
+AUTHORITY.VIRTUE
+CARE.VICE
+CARE.VIRTUE
+FAIRNESS.VICE
+FAIRNESS.VIRTUE
+LOYALTY.VICE
+LOYALTY.VIRTUE
+SANCTITY.VICE
+SANCTITY.VIRTUE
