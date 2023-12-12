@@ -230,15 +230,14 @@ p1 <- pilot_preferences_dt %>%
   geom_histogram(bins=40, color = "black", fill = "grey") +
   #geom_histogram(data=subset(pilot_preferences_dt, L10>=80), bins=40, fill="red", alpha=.3) +
   geom_vline(xintercept = pilot_median, color = 'red') +
-  ggplot2::annotate(geom = "text", x=70, y=85, 
+  ggplot2::annotate(geom = "text", x=60, y=85, size = 7, 
                     label = paste0("Median: ", pilot_median, "%")) +
   #  ggplot2::annotate(geom = "text", x=70, y=65, label = "74% >= 80") +
     xlab("Music Library Percentage") +
     ylab("") +
   ylim(0, 120) +
-  
-  
-  ggtitle("Pilot Study: n=505")
+  theme(panel.grid.major = element_blank())
+  #ggtitle("Pilot Study: n=505")
 ```
 
 ```{r}
@@ -249,16 +248,103 @@ p2 <- response_preferences_dt %>%
   geom_histogram(bins=40, color = "black", fill = "grey") +
   #geom_histogram(data=subset(response_preferences_dt, L16>=80), bins=40, fill="red", alpha=.3) +
   geom_vline(xintercept = response_median, color = 'red') +
-  ggplot2::annotate(geom = "text", x=70, y=85, 
+  ggplot2::annotate(geom = "text", x=60, y=85, size = 7, 
                     label = paste0("Median: ", response_median, "%")) +
     #ggplot2::annotate(geom = "text", x=70, y=65, label = "74% >= 80") +
     xlab("Music Library Percentage") +
     ylab("") +
   ylim(0, 120) +
-  ggtitle("Main Study: n=600")
+  theme(panel.grid.major = element_blank())
+  #ggtitle("Main Study: n=600")
 ```
 
 ```{r}
-plot_grid(p1, p2, labels = c("A", "B", label_size = 12))
+plot_grid(p1, p2, labels = c("A", "B", label_size = 15))
+```
+
+```{r}
+# convert worded ratings to numbers
+pilot_subjectivity[pilot_subjectivity == "Completely objective"] <- 1
+pilot_subjectivity[pilot_subjectivity == "Very objective"] <- 2
+pilot_subjectivity[pilot_subjectivity == "Somewhat objective"] <- 3
+pilot_subjectivity[pilot_subjectivity == "Neither subjective nor objective"] <- 4
+pilot_subjectivity[pilot_subjectivity == "Somewhat subjective"] <- 5
+pilot_subjectivity[pilot_subjectivity == "Very subjective"] <- 6
+pilot_subjectivity[pilot_subjectivity == "Completely subjective"] <- 7
+```
+
+```{r}
+p3 <- pilot_subjectivity |>
+  ggplot(aes(x=as.numeric(subjective))) +
+  geom_histogram(bins=7, color = "black", fill = "orange") +
+  scale_x_continuous(
+       position = "top",
+       breaks = seq(1, 7, by = 1),
+       labels = c(
+       "Completely objective", "Very objective", "Somewhat objective", 
+       "Neither subjective nor objective", "Somewhat subjective", "Very subjective", 
+       "Completely subjective")
+  ) +
+      stat_bin(binwidth=1,geom='text', 
+               aes(label=after_stat(
+                 paste0(
+                 100*round(count/sum(count), digits = 2), "%"
+                 ))), 
+           position=position_stack(vjust=1)) +
+  coord_flip() +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(), 
+        axis.title.x = element_blank(), 
+        panel.grid.major = element_blank()) #+
+  #ggtitle("Pilot: n=505")
+
+```
+
+```{r}
+# qualtrics reversed the scoring
+response_subjectivity$subjective <- 8- as.numeric(response_subjectivity$subjective)
+```
+
+
+```{r}
+p4 <- response_subjectivity |>
+  ggplot(aes(x=as.numeric(subjective))) +
+  geom_histogram(bins=7, color = "black", fill = "orange") +
+  scale_x_continuous(
+       position = "top",
+       breaks = seq(1, 7, by = 1),
+       labels = c(
+       "Completely objective", "Very objective", "Somewhat objective", 
+       "Neither subjective nor objective", "Somewhat subjective", "Very subjective", 
+       "Completely subjective")
+  ) +
+      stat_bin(binwidth=1,geom='text', 
+               aes(label=after_stat(
+                 paste0(
+                 100*round(count/sum(count), digits = 2), "%"
+                 ))), 
+           position=position_stack(vjust=1)) +
+  coord_flip() +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(), 
+        axis.title.x = element_blank(), 
+        panel.grid.major = element_blank()) #+
+  #ggtitle("Main: n=600")
+
+```
+
+```{r}
+plot_grid(p3, p4, labels = c("A", "B", label_size = 12))
+```
+
+```{r}
+sum(is.na(response_subjectivity$subjective))
+sum(!is.na(response_subjectivity$subjective))
+
+sum(is.na(pilot_subjectivity$subjective))
+sum(!is.na(pilot_subjectivity$subjective))
+
+22+34+22
+20+43+23
 ```
 
