@@ -1,0 +1,150 @@
+---
+title: "Concordance Analysis"
+author: "Andrew M. Demetriou"
+---
+
+Aim: the aim of this notebook is to examine the correlation in scores between the original, and subsequent exports of machines scores. 
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library('corrr')           # correlation analysis
+library('patchwork')       # multiple plots 
+library('stringr')         # string manipulation
+library("foreach")         # iterate over two lists
+library("purrr")           # iterate over two lists
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY")
+
+# read in item ids
+path <- here("VI_data_collection", "_data", "primary_data", "mxm_ids.RDS")
+mxm_IDs <- readRDS(path)
+
+# read in function
+read_files <- function(file){fread(here(path, file))}
+
+rm(path)
+```
+
+```{r}
+# format dfs
+format_dfs <- function(df){
+  # make all column names uppercase
+  colnames(df) <- toupper(colnames(df))
+  
+  # rename variable to conform to convention
+  df <- df %>% rename(SELF = `SELF-DIRECTION`) %>% select(values)
+  
+  df$item_ID <- as.character(mxm_IDs$item_ID)
+  
+  return(df)
+}
+```
+
+```{r}
+# fourth export
+
+# path to files
+path <- here("VI_data_collection", "_data", "machine_scores", "fourth_export")
+files <- list.files(path)
+
+# read in function
+machine_scores_dfs <- lapply(files, read_files)
+
+# name files
+names(machine_scores_dfs) <- gsub(".csv", "", files)
+
+rm(path, files)
+```
+
+```{r}
+# format downloaded machine scores
+machine_scores_dfs <- lapply(machine_scores_dfs, format_dfs)
+```
+
+```{r}
+estimate_average_score <- function(df){
+    
+ # estimate average of scores for each machine setup 
+ average_scores_df <- lapply(values, function(x){
+   # select all columns that start with the value
+   df <- df %>% select(all_of(starts_with(x)))
+   # compute row means
+   scores <- df %>% mutate(average = rowMeans(.)) %>% select(average)
+   # rename column
+   colnames(scores) <- x
+   return(scores)
+  })
+
+ # rename items in the list
+ names(average_scores_df) <- values
+ 
+ # coerce list to a dataframe
+ average_scores_df <- as.data.frame(do.call(cbind, average_scores_df))
+ 
+ return(average_scores_df)
+}
+```
+
+```{r}
+make_mean_df_list <- function(machines_as_fixed_df){
+  
+  # create a df of machines and weights to iterate over
+  machines <- data.frame(machine = c("far", "far", "cv", "cv"), 
+                         weight = c("idf", "uni", "idf", "uni"))
+
+  # iterate over all combinations in machines df
+  foreach(i = machines$machine, j = machines$weight) %do% {
+    #subset main dataset by combination
+    df <- machines_as_fixed_df %>% select(intersect(contains(i), contains(j)))
+    
+  
+    # compute single average variable for each machine setup
+    average_scores_df <- estimate_average_score(df)
+    average_scores_df$model  <- i
+    average_scores_df$weight <- j
+    average_scores_df$method <- "mean"
+    average_scores_df$item_ID <- machines_as_fixed_df$item_ID
+    base::assign(paste0(i,"_",j, "_average"), average_scores_df)
+  }
+
+  # output list for each setup  
+  df_list <- list(far_idf_average = far_idf_average, 
+                  far_uni_average = far_uni_average, 
+                  cv_idf_average = cv_idf_average, 
+                  cv_uni_average = cv_uni_average)
+  
+  output_df <- rbindlist(df_list) %>%
+      pivot_wider(., id_cols = item_ID, 
+            names_from = c(model, weight, method), 
+            values_from = values)
+  
+}
+#s<-make_mean_df_list(machines_as_fixed_df_list[[3]])
+```
+
+```{r}
+# create dataframe from all machine scores
+machines_as_subjects <- rbindlist(machine_scores_dfs, idcol=T)
+machine_scores_df <- machines_as_subjects %>% pivot_wider(names_from = .id, values_from = values)
+
+# create dataframe of cross-validation mean columns
+our_machines_df <- make_mean_df_list(machines_as_fixed)
+colnames(our_machines_df) <- gsub("_mean", "", colnames(our_machines_df)) 
+
+# select pre-trained columns
+pre_trained_machines_df <- machine_scores_df %>% 
+  select(item_ID, contains("glove") | contains("google") | contains("word"))
+
+# merged df
+machine_scores_df <- merge(our_machines_df, pre_trained_machines_df, by = "item_ID")
+```
+
+```{r}
+saveRDS(machine_scores_df, here("VI_data_collection", "_data", "machine_response_data", "machines_as_fixed_df_4.RDS"))
+```
+

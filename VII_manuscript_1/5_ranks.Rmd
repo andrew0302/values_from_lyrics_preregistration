@@ -1,0 +1,176 @@
+---
+title: "computing ranks, and rank correlations"
+author: "Andrew M. Demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library('corrr')           # correlation analysis
+library('stringr')         # string manipulation
+library('ircor')           # tie-robust rank correlation
+library('ggridges')        # joy plots
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY")
+```
+
+```{r}
+# load data files
+machine_scores_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_fixed_df_4.RDS"))
+
+participant_confidence_df <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_confidence_weighted_dfs.RDS"))[[1]]
+```
+
+```{r}
+# pivot to long format
+machine_scores_df <- machine_scores_df %>% 
+  pivot_longer(!item_ID, values_to = "score", names_to = c("value",  "model", "weight"), names_sep = "_")
+
+# create new variable for model
+machine_scores_df$model <- paste0(machine_scores_df$model, "_", machine_scores_df$weight)
+machine_scores_df$weight <- NULL
+
+machines_as_subjects_df <- machine_scores_df %>% pivot_wider(names_from  = value, values_from = score)
+```
+
+
+```{r}
+compute_ranks <- function(df){
+  df <- df %>%
+   rowwise() %>% 
+   mutate(ranks = list(rank(c_across(POWER:SECURITY)))) %>%
+   unnest_wider(c(ranks), names_sep = "") %>%
+   rename(power_r = ranks1, 
+          achievement_r = ranks2, 
+          hedonism_r = ranks3, 
+          stimulation_r = ranks4, 
+          self_r = ranks5, 
+          universalism_r = ranks6, 
+          benevolence_r = ranks7,
+          tradition_r = ranks8, 
+          conformity_r = ranks9, 
+          security_r = ranks10)
+}
+```
+
+```{r}
+# compute ranks for machine dataset
+machines_as_subjects_df <- compute_ranks(machines_as_subjects_df) %>%
+  select(item_ID, model, all_of(contains("_r")))
+# format column names
+colnames(machines_as_subjects_df) <- c("item_ID", "model", values)
+
+# pivot to wide format
+machines_as_fixed_df <- machines_as_subjects_df %>% 
+  pivot_wider(names_from = model, id_cols = item_ID, values_from = values)
+
+# compute ranks for participant dataset
+participant_confidence_df <- participant_confidence_df %>% compute_ranks() %>%
+  select(item_ID, all_of(contains("_r")))
+# format column names
+colnames(participant_confidence_df) <- c("item_ID", values)
+
+rm(machine_scores_df, compute_ranks)
+```
+
+```{r}
+participant_confidence_df <- participant_confidence_df %>%
+  pivot_longer(cols = values, names_to = "value", values_to = "rank")
+
+machines_as_subjects_df <- machines_as_subjects_df %>% pivot_longer(cols = values, names_to = "value", values_to = "rank")
+```
+
+```{r}
+df <- merge(participant_confidence_df, machines_as_subjects_df, by = c("item_ID", "value"))
+
+df$rank.x <- as.numeric(df$rank.x)
+df$rank.y <- as.numeric(df$rank.y)
+```
+
+```{r}
+df <- df %>% group_by(item_ID, model) %>%
+  summarize(kendall_t = cor(rank.x, rank.y, method = "kendall"))
+
+df %>% group_by(model) %>%
+  summarize(mean = mean(kendall_t, na.rm=T), 
+            sd = sd(kendall_t), 
+            median = median(kendall_t, na.rm=T))
+```
+```{r}
+df %>%
+  ggplot(aes(kendall_t, model, fill = model)) +
+    geom_density_ridges(alpha = 0.4) +
+  scale_fill_viridis_d() +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+df <- merge(participant_confidence_df, 
+  
+  machines_as_subjects_df %>% 
+    filter(model == "glove_idf") %>%
+    rename(glove_idf = rank) %>% 
+    select(item_ID, value, glove_idf), 
+  
+    by = c("item_ID", "value"))
+```
+
+```{r}
+models <- machines_as_subjects_df$model %>% unique() %>% as.list()
+
+df_list <- lapply(models, function(setup){
+  machines_as_subjects_df %>% 
+    filter(model == setup) %>%
+    rename(!!setup := rank) %>%
+    select(item_ID, value, setup)
+})
+```
+```{r}
+df <- merge(participant_confidence_df, df_list[[1]], by = c("item_ID", "value"))
+
+for(i in 2:length(df_list)){
+  df <- merge(df, df_list[[i]], by = c("item_ID", "value"))
+}
+```
+
+```{r}
+# make list of model names
+models <- colnames(df)[4:12] %>% as.list()
+
+# compute list of tauAPs one for each model
+tauAP_list <- lapply(models, function(model){
+  model <- as.symbol(model)
+  df %>% group_by(item_ID) %>%
+  arrange(desc(rank), .by_group = TRUE) %>%
+    summarize(tau = tauAP_a(rank, !!model)) %>%
+    mutate(model = as.character(model))
+})
+
+result_df <- rbindlist(tauAP_list)
+```
+
+```{r}
+result_df %>% group_by(model) %>% summarize(high_cor = sum(tau > 0.1)/360*100)
+```
+
+
+```{r}
+result_df %>%
+  ggplot(aes(tau, model, fill = model)) +
+    geom_density_ridges(alpha = 0.4) +
+    scale_fill_viridis_d() +
+    theme_minimal() +
+    theme(legend.position = "none") +
+  xlab("tauAP") +
+  ylab("")
+```
+
+```{r}
+
+```
+

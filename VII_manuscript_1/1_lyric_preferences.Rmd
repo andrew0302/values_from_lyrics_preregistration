@@ -1,7 +1,6 @@
 ---
 title: "lyric preferences"
 author: "andrew demetriou"
-date: "11/12/2023"
 ---
 
 # AIM: 

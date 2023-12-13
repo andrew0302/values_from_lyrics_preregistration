@@ -1,0 +1,109 @@
+---
+title: "correlation plotting"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')       # file logistics
+library('data.table') # data manipulation
+library('dplyr')      # data manipulation
+library('tidyr')      # data manipulation
+library('ggplot2')    # visualization
+library('cowplot')    # multiple plots 
+library('corrplot')   # correlation plots
+library('corrr')      # correlation analysis
+library('tidyverse')       # data manipulation
+library('stringr')         # string manipulation
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY")
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+```{r}
+# load dataframes
+
+# means
+participant_mean_df<-readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_mean_dfs.RDS"))[[1]] %>% select(-confidence)
+
+# confidence-weighted means
+participant_confidence_df <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_confidence_weighted_dfs.RDS"))[[1]] %>% select(-confidence, -weight)
+
+# lme4 item intercepts
+participant_intercept_df <- readRDS(here("VI_data_collection", "_data","intermediary_data", "participant_lme4_item_intercept_dfs.RDS"))[[1]] %>% select(-mean, -dataset) %>%
+  pivot_wider(values_from = intercept, names_from = value)
+
+# fourth export of machine scores
+machine_scores_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_fixed_df_4.RDS")) 
+
+# correlation matrix from Schwartz, 2001:
+og_correlation_matrix <- rbind(
+    c(   1,  .04, -.04, -.20, -.32, -.48,  -.11,  .01,  .09,   .50), #power
+    c( .04,    1,  .25,  .08,  .01, -.30,  -.34, -.35, -.12,  -.11), #security
+    c(-.04,  .25,    1,  .35,  .15, -.19,  -.41, -.31, -.32,  -.18), #conformity
+    c(-.20,  .08,  .35,    1,  .12, -.07,  -.31, -.19, -.42,  -.38), #tradition
+    c(-.32,  .01,  .15,  .12,    1, -.08,  -.20, -.25, -.26,  -.25), #benevolence
+    c(-.48, -.30, -.19, -.07, -.08,    1,   .12, -.02, -.01,  -.39), #universalism
+    c(-.11, -.34, -.41, -.31, -.20,  .12,     1,  .22,  .19,   .13), #self-direction
+    c( .01, -.35, -.31, -.19, -.25, -.02,   .22,    1,  .29,   .02), #stimulation
+    c( .09, -.12, -.32, -.42, -.26, -.01,   .19,  .29,    1,   .12), #hedonism
+    c( .50, -.11, -.18, -.38, -.25, -.39,   .13,  .02,  .12,     1)  #achievement 
+) %>% as.data.frame()
+
+# name columns
+colnames(og_correlation_matrix) <- c("power", "security", "conformity", 
+                                  "tradition", "benevolence", "universalism", 
+                                  "self", "stimulation", 
+                                  "hedonism", "achievement") %>% toupper() 
+# order columns
+og_correlation_matrix %>% select(all_of(values))
+```
+
+```{r}
+plot_correlations <- function(participant_df, machine_df){
+  df <- merge(participant_df, machine_df, by = "item_ID")
+  
+    cor_list <- lapply(values, function(value){
+    result <- df %>% select(starts_with(value)) %>%
+    correlate(use = "na.or.complete") %>%
+    focus(!!!value)
+  
+    result$term <- gsub(paste0(value, "_"), "", result$term)
+    setDT(result)
+  
+    return(result)
+  })
+
+  result_df <- cor_list %>% reduce(left_join, by = "term")
+
+  result_df %>% pivot_longer(
+  cols = values, 
+  names_to = "value", 
+  values_to = "correlation") %>%
+  ggplot(., aes(x=value, y=term, fill = correlation)) +
+    geom_tile(color = "white") + 
+    geom_text(aes(label = round(correlation, 2)), color = "black")+
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  theme(axis.text.x = element_text(angle = 90))
+}
+```
+
+```{r}
+p1 <- plot_correlations(participant_confidence_df, machine_scores_df)
+p2 <- plot_correlations(participant_mean_df, machine_scores_df)
+p3 <- plot_correlations(participant_intercept_df, machine_scores_df)
+```
+
+```{r}
+#plot_grid(p1, p2, p3)
+p1
+```
+
+```{r}
+
+```
+

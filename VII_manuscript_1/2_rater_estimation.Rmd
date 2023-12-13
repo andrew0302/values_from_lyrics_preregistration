@@ -1,0 +1,293 @@
+---
+title: "rater number estimation"
+author: "andrew demetriou"
+---
+
+# AIM:
+
+The aim of this notebook is to estimate the number of ratings necessary per item. The threshold is estimated using cronbach's alpha. 
+
+```{r setup, include=FALSE}
+library('data.table') # data manipulation
+library('here')       # file logistics
+library('dplyr')      # logistics
+library('ggplot2')    # visualization
+library('cowplot')    # combine plots
+library('psych')      # compute ICC2k
+library('tidyverse')
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY")
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+Import dataset in qualtrics format, and re-organize for further processing:
+
+```{r}
+# organize qualtrics output
+source(here("II_rater_pilot", "scripts", "data_file_re-shape_1.0.R"))
+
+# path with the actual data
+data_file_path <- here("II_rater_pilot", "response_data")
+
+# file name as a string
+file_name <- "annotation_number_estimation _2.2_November 28, 2021_07.51.csv"
+
+# read in qualtrics data file
+responses_dt <- fread(here(data_file_path, file_name)) %>%
+  data_file_reshape(., file_name)
+
+rm(data_file_path, file_name, data_file_reshape)
+```
+
+The general approach is to compute the cronbach's alpha per value. Participants responded on a scale of -100 to 100. Because 0 is a legitimate response, issues may arise with further computations. Thus, I add 101 to the scores. 
+
+```{r}
+responses_dt[,3:12] <- responses_dt[,3:12] + 101
+```
+
+```{r}
+# import custom alpha estimation function
+source(here("0_functions", "alpha_function_1.9.R"))
+```
+
+```{r}
+# make a dataframe of alpha estimations for each variable
+list_of_alpha_tibbles <- make_list_of_alpha_tibbles(responses_dt)
+
+# summarize dataframes
+alpha_tibble_summary <- make_tibble_of_alpha_tibble_summaries(responses_dt)
+
+# smallest n that reaches threshold
+minimum_n <- minimum_n_by_alpha(responses_dt)
+
+rm(get_alpha, make_list_of_alpha_tibbles, pivot_dataframe, make_list_of_pivoted_dataframes, rename_columns, samples_of_alphas, summarize_alpha_tibble, make_tibble_of_alpha_tibble_summaries, minimum_n_by_alpha)
+```
+
+
+```{r}
+plot_alphas <- function(alpha_dt){
+  ggplot(alpha_dt) +
+    geom_vline(xintercept = 0.8, color = "red" ) +
+    geom_density(aes(alpha, colour = as.factor(n))) + 
+    xlim(0, 1) +
+    ylim(0, 125) +
+    ylab("") +
+    labs(color = "Rater n\n") +
+    ggplot2::annotate(geom = "text", x=.40, y=65, size = 6, 
+                    label = "alpha = .8") +
+    theme_minimal()
+}
+```
+
+```{r}
+list_of_plots <- lapply(list_of_alpha_tibbles, plot_alphas)
+#names <- names(list_of_alpha_tibbles)
+names <- colnames(responses_dt)[3:12]
+names(list_of_plots) <- names
+```
+
+```{r}
+for(i in 1:length(names)){
+  list_of_plots[[i]] <- list_of_plots[[i]] + labs(title=paste(names[i]))
+}
+```
+
+```{r}
+p1 <- list_of_plots[[1]]
+p2 <- list_of_plots[[9]]
+
+plot_grid(p1, p2, labels = c("A", "B", label_size = 15))
+```
+
+```{r}
+# main study data
+response_df <- readRDS(file=here("VI_data_collection", "_data", "survey_response_data", "response_dfs.RDS"))[[1]]
+
+
+# subset
+response_df <- response_df %>% dplyr::select(
+  participant_ID, item_ID, 
+  POWER, ACHIEVEMENT, HEDONISM, 
+  STIMULATION, SELF, UNIVERSALISM, 
+  BENEVOLENCE, TRADITION, 
+  CONFORMITY, SECURITY)
+```
+
+```{r}
+  count_df <- response_df %>%
+    group_by(item_ID) %>%
+    count()
+
+  count_median <- median(count_df$n)
+  count_mean <- mean(count_df$n)
+
+  # range 22 - 30, 
+  
+  count_df %>%
+    ggplot(aes(n)) +
+    geom_histogram(bins=10, color = 'black', fill = 'grey') +
+    xlab("ratings per item") +
+    geom_vline(xintercept = count_mean, color = "red")
+  
+  rm(count_df, count_mean, count_median)
+```
+
+```{r}
+make_icc_df <- function(df){
+  # iterate over list of values
+  list_of_icc_dfs <- lapply(values,function(value){
+  
+    # select columns
+  df <- df %>% dplyr::select(participant_ID, item_ID, value) %>%
+    # pivot so that participants are columns
+    pivot_wider(names_from = participant_ID, values_from = value)
+  
+  # remove item_ID column
+  icc_df <- df %>% dplyr::select(-item_ID) %>% 
+    # pass to ICC function
+    psych::ICC()
+  
+  # select relevant ICC output
+  icc_df <- icc_df$results %>% filter(type =="ICC2k")
+  icc_df$value <- value
+  return(icc_df)
+})
+  
+  # bind list of icc dfs
+  icc_df <- rbindlist(list_of_icc_dfs)
+}
+```
+
+```{r}
+icc_df <- make_icc_df(response_df)
+```
+
+```{r}
+get_icc <- function(df=response_df, n, value){
+  df$item_ID <- as.factor(df$item_ID)
+
+  df%>% dplyr::select(value)
+  
+  # get canonical mean per value
+  canon <- df %>%
+      #select only stimuli columns
+      dplyr::select(item_ID, value, -participant_ID) %>%
+      #group by each column
+      group_by(item_ID) %>%
+      #calculate means of all columns
+      summarize_all(mean)
+  
+  # subsample data
+  data_sample <- df %>% dplyr::select(participant_ID, item_ID, value) %>% 
+    group_by(item_ID) %>%
+    sample_n(n) %>% ungroup() 
+  
+  # calculate mean sample ratings
+  sample_means <- data_sample %>%
+    dplyr::select(-participant_ID) %>%
+    group_by(item_ID) %>%
+    summarize_all(mean)
+  
+  # calculate correlation between sample mean and canonical mean
+  cor <- cor(canon[,2], sample_means[,2])[[1,1]]
+  
+  # compute ICC
+  icc_df <- data_sample %>%
+    pivot_wider(names_from = participant_ID, values_from = value) %>%
+    dplyr::select(-item_ID) %>% ICC() 
+  
+  # subset rows
+  #icc_df <- icc_df$results %>% filter(type == 'ICC2' | type == 'ICC2k') %>%
+  icc_df <- icc_df$results %>% filter(type == 'ICC2k') %>%
+    dplyr::select(type, ICC, `lower bound`, `upper bound`)
+  
+  # remove rownames
+  rownames(icc_df) <- NULL
+  
+  # collect values to return
+  icc_df$value <- value
+  icc_df$n <- n
+  icc_df$cor <- cor
+  
+  return(icc_df)
+}  
+
+```
+
+```{r}
+samples_of_ICC <- function(
+  value,
+  df = response_df, 
+  n_samples = 10, 
+  n_raters = seq(5, 20, by = 5)
+  ){
+  #draw n_raters number of samples n_samples number of times
+  icc_tibble <- rep(n_raters, each = n_samples) %>% 
+    purrr::map_df( function(n) { 
+      get_icc(df, n, value)
+    })
+  return(icc_tibble)
+}
+```
+
+```{r}
+list_of_icc_dfs <- lapply(values, samples_of_ICC)
+sampled_icc_df <- rbindlist(list_of_icc_dfs)
+
+saveRDS(sampled_icc_df, file = here("VI_data_collection", "_data","intermediary_data", "sampled_icc_df.RDS"))
+```
+
+```{r}
+labels <- sampled_icc_df$value
+
+labels <- labels %>%
+  str_replace("POWER", "POW") %>%
+  str_replace("ACHIEVEMENT", "ACHIE") %>%
+  str_replace("HEDONISM", "HEDO") %>%
+  str_replace("STIMULATION", "STIM") %>%
+  str_replace("SELF", "SELF") %>%
+  str_replace("UNIVERSALISM", "UNIV") %>%
+  str_replace("BENEVOLENCE", "BENE") %>%
+  str_replace("TRADITION", "TRAD") %>%
+  str_replace("CONFORMITY", "CONF") %>%
+  str_replace("SECURITY", "SECU" )
+
+sampled_icc_df$labels <- labels
+```
+
+
+```{r}
+sampled_icc_df %>%
+  ggplot(aes(ICC, ..scaled.., color = as.factor(n))) +
+  facet_grid(~labels)+
+  geom_line(stat = 'density', alpha = 0.8) +
+  theme(
+    panel.grid.major = element_blank(),
+    axis.text.x = element_text(angle = 90),
+    strip.text.x = element_text(size = 10)) + 
+  coord_flip() +
+  xlim(0.93, 1) +
+  ylab("Density") +
+  labs(color = "Rater n")
+```
+
+```{r}
+sampled_icc_df %>%
+  ggplot(aes(cor, color = as.factor(n))) +
+  facet_grid(~labels)+
+  geom_line(stat = 'density') +
+  theme(
+    panel.grid.major = element_blank(),
+    axis.text.x = element_text(angle = 90),
+    strip.text.x = element_text(size = 10)) + 
+  coord_flip() +
+  ylab("Density") +
+  xlab("Correlation") +
+  labs(color = "Rater n")
+```
+

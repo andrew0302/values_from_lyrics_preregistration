@@ -1,0 +1,168 @@
+---
+title: "MDS plotting"
+author: "andrew demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')       # file logistics
+library('data.table') # data manipulation
+library('dplyr')      # data manipulation
+library('tidyr')      # data manipulation
+library('ggplot2')    # visualization
+library('ggridges')   # joyplots
+library('smacof')     # multidimensional scaling
+library('cowplot')    # multiple plots 
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY")
+
+options(scipen=999)
+theme_set(theme_minimal())
+```
+
+```{r}
+# load dataframes
+
+# means
+participant_mean_df<-readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_mean_dfs.RDS"))[[1]] %>% select(-confidence)
+
+# confidence-weighted means
+participant_confidence_df <- readRDS(here("VI_data_collection", "_data", "intermediary_data", "participant_confidence_weighted_dfs.RDS"))[[1]] %>% select(-confidence, -weight)
+
+# lme4 item intercepts
+participant_intercept_df <- readRDS(here("VI_data_collection", "_data","intermediary_data", "participant_lme4_item_intercept_dfs.RDS"))[[1]] %>% select(-mean, -dataset) %>%
+  pivot_wider(values_from = intercept, names_from = value)
+
+# fourth export of machine scores
+machine_scores_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_fixed_df_4.RDS")) 
+
+# correlation matrix from Schwartz, 2001:
+og_correlation_matrix <- rbind(
+    c(   1,  .04, -.04, -.20, -.32, -.48,  -.11,  .01,  .09,   .50), #power
+    c( .04,    1,  .25,  .08,  .01, -.30,  -.34, -.35, -.12,  -.11), #security
+    c(-.04,  .25,    1,  .35,  .15, -.19,  -.41, -.31, -.32,  -.18), #conformity
+    c(-.20,  .08,  .35,    1,  .12, -.07,  -.31, -.19, -.42,  -.38), #tradition
+    c(-.32,  .01,  .15,  .12,    1, -.08,  -.20, -.25, -.26,  -.25), #benevolence
+    c(-.48, -.30, -.19, -.07, -.08,    1,   .12, -.02, -.01,  -.39), #universalism
+    c(-.11, -.34, -.41, -.31, -.20,  .12,     1,  .22,  .19,   .13), #self-direction
+    c( .01, -.35, -.31, -.19, -.25, -.02,   .22,    1,  .29,   .02), #stimulation
+    c( .09, -.12, -.32, -.42, -.26, -.01,   .19,  .29,    1,   .12), #hedonism
+    c( .50, -.11, -.18, -.38, -.25, -.39,   .13,  .02,  .12,     1)  #achievement 
+) %>% as.data.frame()
+
+# name columns
+colnames(og_correlation_matrix) <- c("power", "security", "conformity", 
+                                  "tradition", "benevolence", "universalism", 
+                                  "self", "stimulation", 
+                                  "hedonism", "achievement") %>% toupper() 
+# order columns
+og_correlation_matrix %>% select(all_of(values))
+```
+
+```{r}
+# compute mds and plot
+# input is dataframe of values scores without any IDs
+
+mds_plot <- function(correlation_matrix, title) {
+  
+  # compute a correlation matrix from dataframe
+  #correlation_matrix <- cor(df) |> round(2)  
+  
+  #compute distance matrix from correlation matrix
+  idiss <- sim2diss(correlation_matrix)
+  rownames(idiss) <- colnames(idiss)
+  # fit ratio mds 
+  fit_ratio <-  smacof::mds(idiss)
+  
+  # extract mds values and place in dataframe
+  mds.values <- fit_ratio$conf
+  mds.data   <- data.frame(
+    Sample = rownames(mds.values), 
+    X=mds.values[,1],
+    Y=mds.values[,2], 
+    # point stress contribution per value
+    # the larger the value, the less certain the estimate
+    spp = fit_ratio$spp)
+
+  # plot
+  mds.data %>%
+    ggplot(aes(x=X, y=Y, label=Sample)) + 
+    # set scales of axes
+    scale_x_continuous(name="", limits=c(-1, 1)) + 
+    scale_y_continuous(name="", limits=c(-1, 1)) +
+    # map point size to stress per point
+    geom_point(aes(size = spp, color = Sample)) +
+    geom_point(shape = 1, color = "black", (aes(size = spp))) +
+    # place text underneath points
+    geom_text(nudge_y = -.10) +
+    # remove all plot elements
+    theme_void() +
+    # remove legend
+    theme(legend.position = "none") +
+    ggtitle(title)
+}
+```
+
+```{r}
+p1 <- participant_confidence_df %>% select(-item_ID) %>% cor() %>% mds_plot(., "confidence_weighted")
+p2 <- participant_mean_df %>% select(-item_ID) %>% cor() %>% mds_plot(., "mean")
+p3 <- participant_intercept_df %>% select(-item_ID) %>% cor() %>% mds_plot(., "intercept")
+p4 <- og_correlation_matrix %>% mds_plot(., "original study")
+```
+
+```{r}
+#plot_grid(p1, p2, p3, p4)
+plot_grid(p1, p4)
+```
+
+```{r}
+machine_cor_matrix <- function(setup, df=machine_scores_df){
+  #df <- machine_scores_df
+  df <- df %>% select(contains(setup)) %>%
+    cor() %>% as.data.frame()
+  colnames(df) <- gsub(paste0("_", setup), "", colnames(df))
+  rownames(df) <- gsub(paste0("_", setup), "", rownames(df))
+  return(df)
+}
+```
+
+```{r}
+grid_1 <- c("google", "glove", "far", "cv")
+grid_2 <- c("idf", "uni")
+
+grid <- expand.grid(grid_1, grid_2)
+colnames(grid) <- c("machines", "weight")
+
+setups <- paste0(grid$machines, "_", grid$weight) %>% as.list()
+
+rm(grid_1, grid_2, grid)
+```
+
+```{r}
+machine_cor_list <- lapply(setups, machine_cor_matrix)
+names(machine_cor_list) <- setups
+```
+
+```{r}
+p5 <- mds_plot(machine_cor_list[[1]], names(machine_cor_list[1]))
+p6 <- mds_plot(machine_cor_list[[2]], names(machine_cor_list[2]))
+p7 <- mds_plot(machine_cor_list[[5]], names(machine_cor_list[5]))
+p8 <- mds_plot(machine_cor_list[[6]], names(machine_cor_list[6]))
+
+plot_grid(p5, p7)
+#plot_grid(p6, p8)
+```
+
+```{r}
+p1 <- participant_confidence_df %>% select(-item_ID) %>% cor() %>% mds_plot(., "Participant Confidence-weighted Means")
+p5 <- mds_plot(machine_cor_list[[1]], "word2vec Google News idf-weighted")
+p4 <- og_correlation_matrix %>% mds_plot(., "Schwartz, 2001")
+```
+
+
+```{r fig.align="center", echo=FALSE, fig.width=12, fig.height=4}
+plot_grid(p4, p1, p5, ncol = 3)
+```
+
