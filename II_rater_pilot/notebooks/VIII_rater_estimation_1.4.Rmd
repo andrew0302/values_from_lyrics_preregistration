@@ -11,6 +11,7 @@ The aim of this notebook is to estimate the number of ratings necessary per item
 ```{r setup, include=FALSE}
 library('data.table') # data manipulation
 library('here')       # file logistics
+library('tidyverse')
 library('dplyr')      # logistics
 library('ggplot2')    # visualization
 library('shiny')      # interactive results

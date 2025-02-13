@@ -1,0 +1,70 @@
+---
+title: "joyplot dump"
+author: "Andrew M. Demetriou"
+---
+
+```{r setup, include=FALSE}
+library('here')            # file logistics
+library('data.table')      # data manipulation
+library('tidyverse')       # data manipulation
+library('ggridges')        # joy plots
+
+values <- c("POWER", "ACHIEVEMENT", "HEDONISM",  
+            "STIMULATION", "SELF", "UNIVERSALISM", 
+            "BENEVOLENCE", "TRADITION",  
+            "CONFORMITY", "SECURITY")
+```
+
+```{r}
+ # disaggregated participant data
+participant_disaggregated_df <- readRDS(here("VI_data_collection", "_data", "survey_response_data", "response_dfs.RDS"))[[1]]
+```
+
+```{r}
+df <- participant_disaggregated_df %>% select(-familiar, -confidence, -writer, -row_number) %>% pivot_longer(cols = values, names_to = "value", values_to = "score")
+```
+
+```{r}
+df %>% group_by(item_ID) %>%
+  ggplot(aes(score, value, fill=value)) +
+  geom_density_ridges(alpha = 0.4) +
+  scale_fill_viridis_d() +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+
+
+plot_list <- lapply(items, function(item){
+  item <- as.symbol(item)
+  df %>% filter(item_ID == item) %>%
+    ggplot(aes(score, value, fill=value)) +
+  geom_density_ridges(alpha = 0.4) +
+  scale_fill_viridis_d() +
+  theme_minimal() +
+  theme(legend.position = "none") +
+    ggtitle(paste0("song# ", item%>%as.character()))
+})
+
+names(plot_list) <- items
+```
+
+```{r}
+items <- df$item_ID %>% unique() %>% as.list()
+path <- here("VII_manuscript_1", "plot_dump")
+
+lapply(items, function(item){
+  item <- as.symbol(item)
+  
+  df %>% filter(item_ID == item) %>% 
+  ggplot(aes(score, value, fill=value)) +
+  geom_density_ridges(alpha = 0.4) +
+  scale_fill_viridis_d() +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+ggsave(filename = here(path, paste0(item%>%as.character(), ".jpg")), device = "jpeg")
+})
+```
+

@@ -88,7 +88,9 @@ plot_correlations <- function(participant_df, machine_df){
     geom_tile(color = "white") + 
     geom_text(aes(label = round(correlation, 2)), color = "black")+
   scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
-  theme(axis.text.x = element_text(angle = 90))
+  theme(axis.text.x = element_text(angle = 90))+
+    ylab("") +
+    xlab("")
 }
 ```
 
@@ -103,7 +105,68 @@ p3 <- plot_correlations(participant_intercept_df, machine_scores_df)
 p1
 ```
 
-```{r}
 
+```{r}
+participant_disaggregated_df <- readRDS(here("VI_data_collection", "_data", "survey_response_data", "response_dfs.RDS"))[[1]]
+```
+
+```{r}
+median_df <- participant_disaggregated_df %>% group_by(item_ID) %>% 
+  summarize(POWER = abs(median(POWER)), 
+            ACHIEVEMENT = abs(median(ACHIEVEMENT)), 
+            HEDONISM = abs(median(HEDONISM)), 
+            STIMULATION = abs(median(STIMULATION)), 
+            SELF = abs(median(SELF)), 
+            UNIVERSALISM = abs(median(UNIVERSALISM)), 
+            BENEVOLENCE = abs(median(BENEVOLENCE)),
+            TRADITION = abs(median(TRADITION)),
+            CONFORMITY = abs(median(CONFORMITY)),
+            SECURITY = abs(median(SECURITY))
+            )
+
+mean_df <- participant_disaggregated_df %>% group_by(item_ID) %>% 
+  summarize(POWER = abs(mean(POWER)), 
+            ACHIEVEMENT = abs(mean(ACHIEVEMENT)), 
+            HEDONISM = abs(mean(HEDONISM)), 
+            STIMULATION = abs(mean(STIMULATION)), 
+            SELF = abs(mean(SELF)), 
+            UNIVERSALISM = abs(mean(UNIVERSALISM)), 
+            BENEVOLENCE = abs(mean(BENEVOLENCE)),
+            TRADITION = abs(mean(TRADITION)),
+            CONFORMITY = abs(mean(CONFORMITY)),
+            SECURITY = abs(mean(SECURITY))
+            )
+```
+
+```{r}
+t<- median_df %>% 
+  pivot_longer(cols = values, names_to = "value", values_to = "median") %>%
+  group_by(item_ID) %>%
+  summarize(max = max(median)) 
+
+t %>%
+  ggplot(aes(max)) +
+  geom_histogram()
+
+s <- mean_df %>%
+  pivot_longer(cols = values, names_to = "value", values_to = "mean") %>%
+  group_by(item_ID) %>%
+  summarize(max = max(mean)) 
+
+s %>%
+  ggplot(aes(max)) +
+  geom_histogram()
+
+```
+
+```{r}
+arranged_t <- t %>% arrange(desc(max))
+high_median <- arranged_t[1:180, ] %>% select(item_ID)
+```
+
+```{r}
+high_median_df <- merge(high_median, participant_confidence_df, by = "item_ID")
+
+plot_correlations(high_median_df, machine_scores_df)
 ```
 

@@ -38,7 +38,7 @@ participant_intercept_df <- readRDS(here("VI_data_collection", "_data","intermed
 # fourth export of machine scores
 machine_scores_df <- readRDS(here("VI_data_collection", "_data", "machine_response_data", "machines_as_fixed_df_4.RDS")) 
 
-# correlation matrix from Schwartz, 2001:
+# correlation matrix from Schwartz, 2001, Table 2 (upper triangle):
 og_correlation_matrix <- rbind(
     c(   1,  .04, -.04, -.20, -.32, -.48,  -.11,  .01,  .09,   .50), #power
     c( .04,    1,  .25,  .08,  .01, -.30,  -.34, -.35, -.12,  -.11), #security
@@ -106,15 +106,15 @@ mds_plot <- function(correlation_matrix, title) {
 ```
 
 ```{r}
-p1 <- participant_confidence_df %>% select(-item_ID) %>% cor() %>% mds_plot(., "confidence_weighted")
+p1 <- participant_confidence_df %>% select(-item_ID) %>% cor() %>% mds_plot(., "Confidence-weighted Means")
 p2 <- participant_mean_df %>% select(-item_ID) %>% cor() %>% mds_plot(., "mean")
 p3 <- participant_intercept_df %>% select(-item_ID) %>% cor() %>% mds_plot(., "intercept")
-p4 <- og_correlation_matrix %>% mds_plot(., "original study")
+p4 <- og_correlation_matrix %>% mds_plot(., "Schwartz, 2001")
 ```
 
 ```{r}
 #plot_grid(p1, p2, p3, p4)
-plot_grid(p1, p4)
+plot_grid(p4, p1)
 ```
 
 ```{r}

@@ -42,6 +42,14 @@ working_dt <- responses_dt[`Participant Consent`=='agree', ]
 rm(data_file_path, data_files, responses_dt)
 ```
 
+```{r}
+working_dt <- working_dt %>% select(-StartDate:-`Participant Consent`)
+
+here()
+
+write.csv(working_dt, here("pilot.csv"))
+```
+
 
 ```{r}
 # names of lyric preferences columns for subsetting
